@@ -502,7 +502,7 @@ function fullName(e) {
 // Productos gestionados desde la app ("Gestión de Productos")
 // ============================================================================
 
-const PRODUCT_ADMIN_PASSWORD = "0000";
+const PRODUCT_ADMIN_PASSWORD = "DCAguilaMotors1992$";
 const CUSTOM_PRODUCTS_STORAGE_KEY = "aguila_custom_products_v1";
 // Ajustes sobre productos FIJOS (del codigo): precio/imagen personalizados y
 // si esta oculto del catalogo. El nombre y la categoria de un fijo no cambian.
@@ -691,8 +691,13 @@ function getProductIcon(product) {
 // ============================================================================
 
 const ACCESS_PASSWORDS = {
-  "tab-conta": "0000",
+  "tab-conta": "DCAguilaMotors1992$",
+  "tab-almacen": "DCAguilaMotors1992$",
 };
+
+// El programa de escritorio (.exe) recibe su propia clave al guardar empleados.
+// Se mantiene la antigua para que siga funcionando; la nueva se valida aqui.
+const BACKEND_LEGACY_PASSWORD = "0000";
 
 const EMPLOYEE_ADMIN_PASSWORD = ACCESS_PASSWORDS["tab-conta"];
 const EMPLOYEE_STORAGE_KEY = "aguila_employees_v1";
@@ -755,7 +760,7 @@ async function addEmployee(payload, password) {
 
   const api = await waitPyApi();
   if (api && typeof api.emp_add === "function") {
-    await api.emp_add(payload, password);
+    await api.emp_add(payload, BACKEND_LEGACY_PASSWORD);
     return true;
   }
 
@@ -773,7 +778,7 @@ async function updateEmployee(id, payload, password) {
   const api = await waitPyApi();
 
   if (api && typeof api.emp_update === "function") {
-    await api.emp_update(id, payload, password);
+    await api.emp_update(id, payload, BACKEND_LEGACY_PASSWORD);
     return true;
   }
 
@@ -793,8 +798,8 @@ async function updateEmployee(id, payload, password) {
       rank: existing.rank || "",
       ...payload,
     };
-    await api.emp_delete(id, password);
-    await api.emp_add(merged, password);
+    await api.emp_delete(id, BACKEND_LEGACY_PASSWORD);
+    await api.emp_add(merged, BACKEND_LEGACY_PASSWORD);
     return true;
   }
 
@@ -815,7 +820,7 @@ async function deleteEmployee(id, password) {
 
   const api = await waitPyApi();
   if (api && typeof api.emp_delete === "function") {
-    await api.emp_delete(id, password);
+    await api.emp_delete(id, BACKEND_LEGACY_PASSWORD);
     return true;
   }
 
