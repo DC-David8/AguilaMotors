@@ -634,3 +634,31 @@ button.danger {
 #access-toggle{
   white-space: nowrap;
 }
+
+
+/* ---- Modulo de Almacen ---- */
+.alm-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.alm-card.is-low { border-color: #c0392b; background: #2a1210; }
+.alm-card .alm-qty { font-size: 2rem; font-weight: 700; margin: 4px 0; color: var(--accent-2); }
+.alm-card.is-low .alm-qty { color: #ff7b6b; }
+.alm-mini-row { margin: 6px 0 0; align-items: center; gap: 6px; }
+.alm-mini-row input { min-width: 0; width: 100%; }
+.alm-split { margin: 14px 0; }
+.alm-split > .card { min-width: 0; }
+.alm-date-row { margin: 8px 0; align-items: center; }
+.alm-manual { flex-wrap: wrap; gap: 6px; }
+.alm-manual .text-input { flex: 1 1 120px; min-width: 0; }
+.alm-filters { flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.alm-filters .text-input { flex: 1 1 180px; min-width: 0; }
+.alm-alias { min-width: 130px; }
+.alm-link { color: var(--accent-2); font-size: 0.85rem; }
+.alm-in { color: var(--ok); }
+.alm-out { color: #ff9a7a; }
+.alm-adj { color: var(--warn); }
+.alm-backup { margin-top: 12px; }
+.alm-backup summary { cursor: pointer; color: var(--muted); }
+.alm-backup textarea { min-height: 70px; margin-top: 8px; }
+select.text-input { background: #0f0c09; color: var(--text); }
+@media (max-width: 900px) {
+  .alm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

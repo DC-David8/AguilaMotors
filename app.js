@@ -1324,7 +1324,7 @@ const RE_TO = /^\s*Para:\s*(.+?)\s*$/i;
 const RE_AMOUNT = /^\s*Cantidad:\s*\$?\s*`?([\d.,]+)`?\s*$/i;
 const RE_CONCEPT = /^\s*Concepto:\s*(.+?)\s*$/i;
 const RE_TS = /^\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s*$/i;
-const RE_IGNORE = /(Haz clic para reaccionar|Anadir reaccion|Añadir reaccion|Responder|Reenviar|Mas|Más|^:\w+:$)/i;
+const RE_IGNORE = /^(Haz clic para reaccionar|Anadir reaccion|Añadir reaccion|Responder|Reenviar|Mas|Más|:\w+:)$/i;
 
 // Formato nuevo: Datafono TPV. El bloque se abre con la linea de importe
 // ("1€", "2.500€", etc.) porque la cabecera "Datáfono TPVAPP — HH:MM" suele
@@ -2085,7 +2085,573 @@ function setupEmployeesAdminModal({ onChanged }) {
   refresh();
 }
 
+// ============================================================================
+// Modulo de Almacen: inventario del taller a partir del log de Discord
+// ============================================================================
+const ALM_STORAGE_KEY = "aguila_almacen_v1";
+const ALM_INVENTORY = "mecanico_storage_aguilamotor";
+const ALM_TRACKED = [
+  { key: "bayeta", label: "Bayetas", names: ["bayeta", "bayetas"], min: 100 },
+  { key: "mando_neon", label: "Mandos de Neón", names: ["neones", "neon", "mando de neon", "mando de neones", "mando de neones rgb"], min: 10 },
+  { key: "kit_desvuelco", label: "Kits de Desvuelco", names: ["desvolcar vehiculo", "desvolcarvehiculo", "kit de desvuelco", "kits de desvuelco", "desvolcar"], min: 10 },
+  { key: "rueda", label: "Ruedas", names: ["rueda", "ruedas"], min: 8 },
+];
+
+function almNorm(s) {
+  return String(s ?? "")
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function almItemInfo(rawName) {
+  const n = almNorm(rawName);
+  for (const t of ALM_TRACKED) {
+    if (t.names.includes(n)) return { key: t.key, label: t.label, tracked: true };
+  }
+  return { key: "otro:" + n, label: String(rawName).trim(), tracked: false };
+}
+
+function almPad(n) {
+  return String(n).padStart(2, "0");
+}
+
+function almIsoDay(d) {
+  return `${d.getFullYear()}-${almPad(d.getMonth() + 1)}-${almPad(d.getDate())}`;
+}
+
+// Resuelve la cabecera de fecha del log ("5/10/2026 20:51", "ayer a las 18:44", "20:16").
+function almResolveTs(text, refDate, prev, info) {
+  const t = String(text).trim();
+  let m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+  if (m) {
+    const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    return { day: d, hm: `${almPad(m[4])}:${m[5]}` };
+  }
+  m = t.match(/^(hoy|ayer)\D*(\d{1,2}):(\d{2})/i);
+  if (m) {
+    info.relative = true;
+    const d = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+    if (m[1].toLowerCase() === "ayer") d.setDate(d.getDate() - 1);
+    return { day: d, hm: `${almPad(m[2])}:${m[3]}` };
+  }
+  m = t.match(/^(\d{1,2}):(\d{2})/);
+  if (m) {
+    const base = prev ? prev.day : new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+    if (!prev) info.relative = true;
+    return { day: base, hm: `${almPad(m[1])}:${m[2]}` };
+  }
+  return prev;
+}
+
+// Lee el texto copiado de Discord. Devuelve los movimientos del almacen del taller.
+function almParseLog(raw, refDate) {
+  const info = { events: [], ignored: 0, noDiscord: 0, noTime: 0, relative: false };
+  const counts = new Map();
+  let cur = null;
+
+  for (const line of String(raw || "").split(/\r?\n/)) {
+    const hm = line.match(
+      /Logs?\s+de\s+inventarios?\w*\s*[—–-]\s*(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}|(?:hoy|ayer)\D*?\d{1,2}:\d{2}|\d{1,2}:\d{2})/i
+    );
+    if (hm) cur = almResolveTs(hm[1], refDate, cur, info);
+
+    const m = line.match(/(METER|SACAR)\s+(.+?)\((\d+)\)[\s`]*\u{1F4E6}\s*(.+?)\s*\((\d+)\)/iu);
+    if (!m) continue;
+
+    const inv = line.match(/Inventory=%22([^%&"]+)%22/i);
+    if (inv && inv[1] !== ALM_INVENTORY) {
+      info.ignored += 1;
+      continue;
+    }
+
+    const action = m[1].toUpperCase();
+    const player = m[2].replace(/[`\s]+$/g, "").trim();
+    const pid = m[3];
+    const itemRaw = m[4].trim();
+    const qty = Number(m[5]);
+    const dm = line.match(/discord(?::|%3A)(\d{15,20})/i);
+    const discord = dm ? dm[1] : "";
+    if (!discord) info.noDiscord += 1;
+
+    let ts;
+    if (cur) ts = `${almIsoDay(cur.day)} ${cur.hm}`;
+    else {
+      ts = `${almIsoDay(refDate)} 00:00`;
+      info.noTime += 1;
+    }
+
+    const item = almItemInfo(itemRaw);
+    const base = [ts, action, discord || player, item.key, qty].join("|");
+    const n = (counts.get(base) || 0) + 1;
+    counts.set(base, n);
+
+    info.events.push({
+      id: `${base}|${n}`,
+      ts,
+      action,
+      player,
+      pid,
+      discord,
+      item: item.key,
+      itemLabel: item.label,
+      qty,
+      source: "log",
+    });
+  }
+  return info;
+}
+
+function almEmptyState() {
+  return { events: [], min: {}, alias: {} };
+}
+
+function almLoad() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ALM_STORAGE_KEY) || "null");
+    if (raw && Array.isArray(raw.events)) {
+      return { events: raw.events, min: raw.min || {}, alias: raw.alias || {} };
+    }
+  } catch {
+    // sin almacenamiento
+  }
+  return almEmptyState();
+}
+
+function almSave(state) {
+  try {
+    localStorage.setItem(ALM_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // sin almacenamiento
+  }
+}
+
+function almStock(events) {
+  const stock = {};
+  for (const e of events) {
+    const sign = e.action === "METER" ? 1 : e.action === "SACAR" ? -1 : 1; // AJUSTE ya trae signo
+    stock[e.item] = (stock[e.item] || 0) + sign * Number(e.qty || 0);
+  }
+  return stock;
+}
+
+function almPeople(events, alias) {
+  const map = new Map();
+  for (const e of events) {
+    if (e.action === "AJUSTE") continue;
+    const key = e.discord || "n:" + almNorm(e.player);
+    let p = map.get(key);
+    if (!p) {
+      p = { key, discord: e.discord || "", player: e.player, last: e.ts, items: {} };
+      map.set(key, p);
+    }
+    if (e.ts >= p.last) {
+      p.last = e.ts;
+      p.player = e.player;
+    }
+    const slot = (p.items[e.item] = p.items[e.item] || { in: 0, out: 0 });
+    if (e.action === "METER") slot.in += Number(e.qty);
+    else slot.out += Number(e.qty);
+  }
+  return [...map.values()].sort((a, b) => (b.last > a.last ? 1 : -1));
+}
+
+function setupAlmacen() {
+  const root = byId("tab-almacen");
+  if (!root) return;
+
+  let state = almLoad();
+  const cardsEl = byId("alm-cards");
+  const inputEl = byId("alm-input");
+  const statusEl = byId("alm-status");
+  const refDateEl = byId("alm-refdate");
+  const peopleBody = byId("alm-people-body");
+  const histBody = byId("alm-hist-body");
+  const othersBody = byId("alm-others-body");
+  const fItem = byId("alm-f-item");
+  const fPerson = byId("alm-f-person");
+  const fAction = byId("alm-f-action");
+  const mItem = byId("alm-m-item");
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const num = (n) => Number(n).toLocaleString("es-ES");
+
+  const labelFor = (itemKey) => {
+    const t = ALM_TRACKED.find((x) => x.key === itemKey);
+    if (t) return t.label;
+    const ev = state.events.find((e) => e.item === itemKey);
+    return ev ? ev.itemLabel : itemKey;
+  };
+  const personLabel = (p) => state.alias[p.key] || p.player;
+  const minFor = (t) => (state.min[t.key] !== undefined ? Number(state.min[t.key]) : t.min);
+
+  function setStatus(msg, ok) {
+    statusEl.textContent = msg;
+    statusEl.style.color = ok ? "var(--ok)" : "var(--warn)";
+  }
+
+  function renderCards() {
+    cardsEl.textContent = "";
+    const stock = almStock(state.events);
+    for (const t of ALM_TRACKED) {
+      const qty = stock[t.key] || 0;
+      const min = minFor(t);
+      const low = qty <= min;
+      const card = el("article", "mini-card alm-card" + (low ? " is-low" : ""));
+      card.appendChild(el("h3", "", t.label));
+      card.appendChild(el("p", "alm-qty", num(qty)));
+      card.appendChild(el("p", low ? "warn" : "muted", low ? "⚠ Reponer pronto" : "En existencia"));
+
+      const row = el("div", "form-row alm-mini-row");
+      const minIn = el("input", "text-input");
+      minIn.type = "number";
+      minIn.min = "0";
+      minIn.value = String(min);
+      minIn.title = "Mínimo para avisar";
+      minIn.addEventListener("change", () => {
+        state.min[t.key] = Math.max(0, Number(minIn.value) || 0);
+        almSave(state);
+        renderCards();
+      });
+      row.appendChild(el("label", "muted", "Avisar en"));
+      row.appendChild(minIn);
+      card.appendChild(row);
+
+      const row2 = el("div", "form-row alm-mini-row");
+      const realIn = el("input", "text-input");
+      realIn.type = "number";
+      realIn.min = "0";
+      realIn.placeholder = "Conteo real";
+      const setBtn = el("button", "ghost small", "Fijar");
+      setBtn.type = "button";
+      setBtn.addEventListener("click", () => {
+        if (realIn.value === "") return;
+        const real = Math.max(0, Math.floor(Number(realIn.value)));
+        const delta = real - (almStock(state.events)[t.key] || 0);
+        if (delta === 0) {
+          setStatus(`${t.label}: ya coincide con el conteo (${num(real)}).`, true);
+          return;
+        }
+        state.events.push({
+          id: "adj-" + safeRandomId(),
+          ts: almNowIso(),
+          action: "AJUSTE",
+          player: "Conteo real",
+          pid: "",
+          discord: "",
+          item: t.key,
+          itemLabel: t.label,
+          qty: delta,
+          source: "manual",
+        });
+        almSave(state);
+        setStatus(`${t.label}: ajustado a ${num(real)} (${delta > 0 ? "+" : ""}${num(delta)}).`, true);
+        renderAll();
+      });
+      row2.appendChild(realIn);
+      row2.appendChild(setBtn);
+      card.appendChild(row2);
+      cardsEl.appendChild(card);
+    }
+  }
+
+  function almNowIso() {
+    const d = new Date();
+    return `${almIsoDay(d)} ${almPad(d.getHours())}:${almPad(d.getMinutes())}`;
+  }
+
+  function renderPeople() {
+    peopleBody.textContent = "";
+    const people = almPeople(state.events, state.alias);
+    if (!people.length) {
+      const tr = el("tr");
+      const td = el("td", "muted", "Sin movimientos todavía.");
+      td.colSpan = 7;
+      tr.appendChild(td);
+      peopleBody.appendChild(tr);
+      return;
+    }
+    for (const p of people) {
+      const tr = el("tr");
+      const nameTd = el("td");
+      const nameIn = el("input", "text-input alm-alias");
+      nameIn.type = "text";
+      nameIn.value = personLabel(p);
+      nameIn.title = "Escribe un nombre para reconocerlo";
+      nameIn.addEventListener("change", () => {
+        const v = nameIn.value.trim();
+        if (v && v !== p.player) state.alias[p.key] = v;
+        else delete state.alias[p.key];
+        almSave(state);
+        renderAll();
+      });
+      nameTd.appendChild(nameIn);
+      tr.appendChild(nameTd);
+
+      const dTd = el("td");
+      if (p.discord) {
+        const a = el("a", "alm-link", p.discord);
+        a.href = "https://discord.com/users/" + p.discord;
+        a.target = "_blank";
+        a.rel = "noopener";
+        dTd.appendChild(a);
+        const cp = el("button", "ghost small", "Copiar mención");
+        cp.type = "button";
+        cp.title = "Copia <@id>: pégalo en Discord y verás el nombre";
+        cp.addEventListener("click", () => copyText(`<@${p.discord}>`));
+        dTd.appendChild(document.createTextNode(" "));
+        dTd.appendChild(cp);
+      } else {
+        dTd.appendChild(el("span", "muted", "—"));
+      }
+      tr.appendChild(dTd);
+
+      for (const t of ALM_TRACKED) {
+        const s = p.items[t.key];
+        tr.appendChild(el("td", "num", s ? `+${num(s.in)} / −${num(s.out)}` : "—"));
+      }
+      let oi = 0;
+      let oo = 0;
+      for (const [k, v] of Object.entries(p.items)) {
+        if (k.startsWith("otro:")) {
+          oi += v.in;
+          oo += v.out;
+        }
+      }
+      tr.appendChild(el("td", "num", oi || oo ? `+${num(oi)} / −${num(oo)}` : "—"));
+      peopleBody.appendChild(tr);
+    }
+  }
+
+  function renderOthers() {
+    othersBody.textContent = "";
+    const stock = almStock(state.events);
+    const keys = Object.keys(stock).filter((k) => k.startsWith("otro:"));
+    if (!keys.length) {
+      const tr = el("tr");
+      const td = el("td", "muted", "—");
+      td.colSpan = 2;
+      tr.appendChild(td);
+      othersBody.appendChild(tr);
+      return;
+    }
+    keys.sort((a, b) => labelFor(a).localeCompare(labelFor(b), "es"));
+    for (const k of keys) {
+      const tr = el("tr");
+      tr.appendChild(el("td", "", labelFor(k)));
+      tr.appendChild(el("td", "num", num(stock[k])));
+      othersBody.appendChild(tr);
+    }
+  }
+
+  function renderFilters() {
+    const keepI = fItem.value;
+    const keepP = fPerson.value;
+    fItem.textContent = "";
+    fItem.appendChild(new Option("Todos los artículos", ""));
+    const itemKeys = [...new Set(state.events.map((e) => e.item))];
+    itemKeys.sort((a, b) => labelFor(a).localeCompare(labelFor(b), "es"));
+    for (const k of itemKeys) fItem.appendChild(new Option(labelFor(k), k));
+    fItem.value = itemKeys.includes(keepI) ? keepI : "";
+
+    fPerson.textContent = "";
+    fPerson.appendChild(new Option("Todas las personas", ""));
+    const people = almPeople(state.events, state.alias);
+    for (const p of people) fPerson.appendChild(new Option(personLabel(p), p.key));
+    fPerson.value = people.some((p) => p.key === keepP) ? keepP : "";
+  }
+
+  function eventPersonKey(e) {
+    return e.discord || "n:" + almNorm(e.player);
+  }
+
+  function renderHistory() {
+    histBody.textContent = "";
+    let rows = state.events.slice();
+    if (fItem.value) rows = rows.filter((e) => e.item === fItem.value);
+    if (fPerson.value) rows = rows.filter((e) => eventPersonKey(e) === fPerson.value);
+    if (fAction.value) rows = rows.filter((e) => e.action === fAction.value);
+    rows.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+    const total = rows.length;
+    rows = rows.slice(0, 300);
+    byId("alm-hist-count").textContent = total > 300 ? `Mostrando 300 de ${num(total)}` : `${num(total)} movimientos`;
+
+    for (const e of rows) {
+      const tr = el("tr");
+      tr.appendChild(el("td", "", e.ts));
+      const who =
+        e.action === "AJUSTE"
+          ? "Conteo real"
+          : state.alias[eventPersonKey(e)] || e.player;
+      tr.appendChild(el("td", "", who));
+      tr.appendChild(el("td", "", labelFor(e.item)));
+      const act = e.action === "METER" ? "Metió" : e.action === "SACAR" ? "Sacó" : "Ajuste";
+      const cls = e.action === "METER" ? "alm-in" : e.action === "SACAR" ? "alm-out" : "alm-adj";
+      tr.appendChild(el("td", cls, act));
+      const q = e.action === "AJUSTE" ? (e.qty > 0 ? "+" : "") + num(e.qty) : num(e.qty);
+      tr.appendChild(el("td", "num", q));
+      const delTd = el("td", "num");
+      const del = el("button", "ghost small", "Quitar");
+      del.type = "button";
+      del.addEventListener("click", () => {
+        state.events = state.events.filter((x) => x.id !== e.id);
+        almSave(state);
+        renderAll();
+      });
+      delTd.appendChild(del);
+      tr.appendChild(delTd);
+      histBody.appendChild(tr);
+    }
+  }
+
+  function renderAll() {
+    renderCards();
+    renderPeople();
+    renderOthers();
+    renderFilters();
+    renderHistory();
+  }
+
+  function processLog() {
+    const text = inputEl.value;
+    if (!text.trim()) {
+      setStatus("Pega primero el texto del log.", false);
+      return;
+    }
+    const parts = String(refDateEl.value || "").split("-");
+    const ref = parts.length === 3 ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])) : new Date();
+    const res = almParseLog(text, ref);
+    const have = new Set(state.events.map((e) => e.id));
+    let added = 0;
+    let dup = 0;
+    for (const e of res.events) {
+      if (have.has(e.id)) {
+        dup += 1;
+        continue;
+      }
+      have.add(e.id);
+      state.events.push(e);
+      added += 1;
+    }
+    almSave(state);
+    const bits = [`${added} movimientos nuevos`];
+    if (dup) bits.push(`${dup} ya estaban`);
+    if (res.ignored) bits.push(`${res.ignored} de otro almacén ignorados`);
+    if (res.noDiscord) bits.push(`${res.noDiscord} sin Discord (el texto copiado no trae el enlace)`);
+    if (res.relative) bits.push(`usé ${refDateEl.value || "hoy"} como "hoy" para las fechas relativas`);
+    if (res.noTime) bits.push(`${res.noTime} sin hora`);
+    if (!res.events.length) setStatus("No encontré movimientos en ese texto.", false);
+    else setStatus(bits.join(" · "), added > 0 || dup > 0);
+    renderAll();
+  }
+
+  refDateEl.value = almIsoDay(new Date());
+
+  byId("alm-process").addEventListener("click", processLog);
+  byId("alm-paste").addEventListener("click", async () => {
+    try {
+      inputEl.value = await navigator.clipboard.readText();
+      processLog();
+    } catch {
+      alert("No se pudo leer el portapapeles. Pega con Ctrl+V y pulsa Procesar.");
+    }
+  });
+  byId("alm-clear-input").addEventListener("click", () => {
+    inputEl.value = "";
+    setStatus("", true);
+  });
+
+  for (const t of ALM_TRACKED) mItem.appendChild(new Option(t.label, t.key));
+
+  byId("alm-m-add").addEventListener("click", () => {
+    const qty = Math.floor(Number(byId("alm-m-qty").value));
+    const who = byId("alm-m-who").value.trim() || "Manual";
+    const action = byId("alm-m-action").value;
+    if (!qty || qty < 1) {
+      setStatus("Pon una cantidad válida.", false);
+      return;
+    }
+    const t = ALM_TRACKED.find((x) => x.key === mItem.value);
+    const known = almPeople(state.events, state.alias).find(
+      (p) => almNorm(p.player) === almNorm(who) || almNorm(state.alias[p.key] || "") === almNorm(who)
+    );
+    state.events.push({
+      id: "man-" + safeRandomId(),
+      ts: almNowIso(),
+      action,
+      player: known ? known.player : who,
+      pid: "",
+      discord: known ? known.discord : "",
+      item: t.key,
+      itemLabel: t.label,
+      qty,
+      source: "manual",
+    });
+    almSave(state);
+    byId("alm-m-qty").value = "";
+    setStatus(`${action === "METER" ? "Entrada" : "Salida"} registrada: ${num(qty)} ${t.label}.`, true);
+    renderAll();
+  });
+
+  [fItem, fPerson, fAction].forEach((n) => n.addEventListener("change", renderHistory));
+
+  byId("alm-export").addEventListener("click", () => {
+    if (!state.events.length) {
+      alert("No hay movimientos para exportar.");
+      return;
+    }
+    const rows = state.events
+      .slice()
+      .sort((a, b) => (a.ts < b.ts ? -1 : 1))
+      .map((e) => [
+        e.ts,
+        e.action,
+        state.alias[eventPersonKey(e)] || e.player,
+        e.pid,
+        e.discord,
+        labelFor(e.item),
+        e.qty,
+      ]);
+    downloadCsv("almacen_taller.csv", ["Fecha", "Accion", "Persona", "ID juego", "Discord", "Articulo", "Cantidad"], rows);
+  });
+
+  byId("alm-backup-copy").addEventListener("click", () => copyText(JSON.stringify(state)));
+  byId("alm-backup-restore").addEventListener("click", () => {
+    const box = byId("alm-backup-text");
+    try {
+      const data = JSON.parse(box.value);
+      if (!data || !Array.isArray(data.events)) throw new Error("x");
+      if (!window.confirm("Esto reemplaza lo que hay ahora en el almacén. ¿Continuar?")) return;
+      state = { events: data.events, min: data.min || {}, alias: data.alias || {} };
+      almSave(state);
+      box.value = "";
+      setStatus("Respaldo restaurado.", true);
+      renderAll();
+    } catch {
+      setStatus("El respaldo no es válido.", false);
+    }
+  });
+
+  byId("alm-reset").addEventListener("click", () => {
+    if (!window.confirm("¿Borrar TODO el historial y las existencias del almacén? No se puede deshacer.")) return;
+    state = almEmptyState();
+    almSave(state);
+    setStatus("Almacén reiniciado.", true);
+    renderAll();
+  });
+
+  renderAll();
+}
+
 setupCopyFallbackModal();
 setupTabs();
 setupCaja();
 setupContabilidad();
+setupAlmacen();
