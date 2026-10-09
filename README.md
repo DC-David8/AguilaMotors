@@ -69,6 +69,12 @@ Los empleados, los productos agregados o editados y el almacén se guardan **en 
 - En incógnito la página sale vacía (y se borra al cerrar).
 - Cada PC y cada navegador tiene sus propios datos. El almacén se puede pasar de uno a otro con **Copiar respaldo** / **Restaurar respaldo**.
 
+## Como app en el iPhone
+
+En Safari, abre la web → botón **Compartir** → **Añadir a pantalla de inicio**. Queda con el icono de Aguila Motors y, al abrirla, muestra el logo mientras carga y se abre a pantalla completa, sin la barra de Safari. En Android (Chrome) es **Menú → Añadir a pantalla de inicio**.
+
+> La app de la pantalla de Inicio guarda sus datos aparte de Safari: los empleados y el almacén que tengas en Safari no aparecen en ella, y al borrarla del Inicio se borran los suyos.
+
 ## Programa de escritorio
 
 La misma página funciona dentro del programa de escritorio (pywebview, `.exe`), en la carpeta `Empleados_Badulaque/Pagina_badu`. Para actualizarlo, copia `index.html`, `app.js` y `styles.css` encima de los anteriores **sin borrar la carpeta**. En el programa, los empleados los guarda el propio `.exe`.
@@ -80,7 +86,9 @@ La misma página funciona dentro del programa de escritorio (pywebview, `.exe`),
 ├── app.js                   Catálogo, ticket, lectura de Discord, comisiones y almacén
 ├── styles.css               Tema negro y naranja
 ├── aguila_motors_logo.png   Logo del taller
-└── favicon.ico              Icono de la pestaña
+├── favicon.ico              Icono de la pestaña
+├── manifest.webmanifest     Nombre e iconos de la app en la pantalla de Inicio
+└── icons/                   Icono del iPhone/Android y pantallas de arranque del iPhone
 ```
 
 No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
@@ -92,11 +100,16 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 - **Pestañas de la Caja**: `app.js` → `PRODUCT_CATEGORIES`.
 - **Artículos del almacén y sus mínimos**: `app.js` → `ALM_TRACKED`.
 - **Precio por kit** en Pagos: se cambia en la propia página (por defecto $800).
-- **Logo**: reemplaza `aguila_motors_logo.png` manteniendo el nombre.
+- **Logo**: reemplaza `aguila_motors_logo.png` manteniendo el nombre. Los iconos y pantallas de arranque de `icons/` se generan a partir de él, así que si cambia el logo hay que generarlos de nuevo.
 
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 6 · 9 de octubre de 2026
+- Icono de Aguila Motors al añadir la web a la pantalla de Inicio del iPhone (y Android), con el nombre «Aguila Motors».
+- Al abrirla desde el Inicio aparece el logo mientras carga y se abre a pantalla completa.
+- Pantallas de arranque para los iPhone desde el SE hasta el 17 Pro Max.
 
 ### Versión 5 · 8 de octubre de 2026
 - Nueva pestaña **Full Tuning** en la Caja con los 6 Full Tunings (Motos, Gama Baja, Media, Alta, VIP y Aéreos).
