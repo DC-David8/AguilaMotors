@@ -372,6 +372,7 @@ const PRODUCT_CATEGORIES = [
   { key: "gama_alta", label: "Gama Alta" },
   { key: "gama_vip", label: "Gama VIP" },
   { key: "aereos", label: "Aéreos" },
+  { key: "full_tuning", label: "Full Tuning" },
   { key: "servicios_taller", label: "Servicios (Taller)" },
   { key: "servicios_grua", label: "Servicios (Grúa)" },
   { key: "camaleonica", label: "Camaleónica" },
@@ -428,7 +429,9 @@ function buildTuningProducts() {
   for (const gama of GAMAS) {
     const prices = TUNING_PRICES[gama.key];
     TUNING_PIECES.forEach((piece, i) => {
-      out.push({ name: `${piece} (${gama.label})`, price: prices[i], category: gama.key });
+      // El Full Tuning de todas las gamas va junto en su propia pestaña.
+      const category = piece === "Full Tuning" ? "full_tuning" : gama.key;
+      out.push({ name: `${piece} (${gama.label})`, price: prices[i], category });
     });
   }
   return out;
