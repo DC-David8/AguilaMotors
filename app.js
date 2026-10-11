@@ -708,6 +708,48 @@ const EMPLOYEE_ADMIN_PASSWORD = ACCESS_PASSWORDS["tab-conta"];
 // como la etiqueta del rol. Para cambiar de rol, cambia solo el numero.
 const EMPLOYEE_OF_WEEK_ROLE_ID = "1263156546519433333";
 const EMPLOYEE_OF_WEEK_TAG = `<@&${EMPLOYEE_OF_WEEK_ROLE_ID}>`;
+
+// ID de Discord de cada empleado, para etiquetarlo (<@ID>) al copiar los totales.
+// Se guarda aparte, por nombre completo, porque el programa de escritorio solo
+// guarda nombre, apellido y rango (y al editar un empleado le cambia el id).
+const EMPLOYEE_DISCORD_STORAGE_KEY = "aguila_employee_discord_v1";
+
+function loadEmployeeDiscordMap() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(EMPLOYEE_DISCORD_STORAGE_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveEmployeeDiscordMap(map) {
+  try {
+    localStorage.setItem(EMPLOYEE_DISCORD_STORAGE_KEY, JSON.stringify(map || {}));
+  } catch {
+    // sin almacenamiento
+  }
+}
+
+// Acepta el numero solo o pegado como <@123...> / <@!123...>. "" = borrar; null = no valido.
+function parseDiscordId(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const m = s.match(/^<?@?!?(\d{17,20})>?$/);
+  return m ? m[1] : null;
+}
+
+function getEmployeeDiscord(fullNameStr) {
+  return loadEmployeeDiscordMap()[normalizeKeySimple(fullNameStr)] || "";
+}
+
+function setEmployeeDiscord(fullNameStr, id) {
+  const map = loadEmployeeDiscordMap();
+  const key = normalizeKeySimple(fullNameStr);
+  if (id) map[key] = id;
+  else delete map[key];
+  saveEmployeeDiscordMap(map);
+}
 const EMPLOYEE_STORAGE_KEY = "aguila_employees_v1";
 
 function loadEmployeesLocal() {
@@ -1802,7 +1844,7 @@ function setupEmployeesModal(state) {
       const gross = paid + kitsValue;
       const pct = pctForRank(e.rank);
       const payout = Math.round(gross * pct);
-      return { id: e.id, name, rank: e.rank || "", pct, gross, payout };
+      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name) };
     });
     totalsRows.sort((a, b) => b.payout - a.payout || a.name.localeCompare(b.name, "es"));
   }
@@ -1856,10 +1898,17 @@ function setupEmployeesModal(state) {
     return maxPayout > 0 && row.payout === maxPayout;
   }
 
+  // "Nombre (Rango) <@ID>": el nombre de rol se mantiene y, si tiene Discord, se le etiqueta.
+  function labelForCopy(row) {
+    let label = row.rank ? `${row.name} (${row.rank})` : row.name;
+    if (row.discord) label += ` <@${row.discord}>`;
+    return label;
+  }
+
   byId("employees-copy-sel").addEventListener("click", async () => {
     const row = totalsRows.find((r) => r.id === selectedId);
     if (!row) return;
-    const name = row.rank ? `${row.name} (${row.rank})` : row.name;
+    const name = labelForCopy(row);
     const pctTxt = row.pct ? `${Math.round(row.pct * 100)}%` : "-";
     let text = `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)}`;
     if (isEmployeeOfWeek(row)) text += ` | ${EMPLOYEE_OF_WEEK_TAG}`;
@@ -1881,8 +1930,7 @@ function setupEmployeesModal(state) {
       return;
     }
     const lines = totalsRows.map((r) => {
-      const name = r.rank ? `${r.name} (${r.rank})` : r.name;
-      let line = `* ${name}: ${fmtMoneyPlain(r.payout)}`;
+      let line = `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)}`;
       if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
       return line;
     });
@@ -1921,6 +1969,8 @@ function setupEmployeesAdminModal({ onChanged }) {
   const nameInput = byId("emp-new-name");
   const surInput = byId("emp-new-surname");
   const rankInput = byId("emp-new-rank");
+  const discordInput = byId("emp-new-discord");
+  const discordStatus = byId("emp-discord-status");
 
   const searchInput = byId("emp-search");
   const body = byId("emp-admin-body");
@@ -1971,6 +2021,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         <td>${full}</td>
         <td><select class="text-input emp-rank-select" data-id="${String(e.id)}"></select></td>
         <td class="num" data-pct-cell="${String(e.id)}">${pctText}</td>
+        <td><input class="text-input emp-discord-input" type="text" inputmode="numeric" placeholder="ID de Discord" title="ID de Discord: clic derecho sobre la persona → Copiar ID de usuario" /></td>
         <td class="num">
           <button type="button" class="danger" data-del="${String(e.id)}">Eliminar</button>
         </td>
@@ -1989,6 +2040,27 @@ function setupEmployeesAdminModal({ onChanged }) {
         select.appendChild(opt);
       }
       select.value = e.rank || "";
+
+      const dInput = tr.querySelector(".emp-discord-input");
+      dInput.value = getEmployeeDiscord(full);
+      dInput.addEventListener("change", async () => {
+        if (!unlocked) {
+          alert("Primero desbloquea con la contrasena.");
+          dInput.value = getEmployeeDiscord(full);
+          return;
+        }
+        const id = parseDiscordId(dInput.value);
+        if (id === null) {
+          dInput.classList.add("is-bad");
+          alert("Eso no parece un ID de Discord. Es un numero de 17 a 20 cifras (clic derecho sobre la persona → Copiar ID de usuario).");
+          dInput.value = getEmployeeDiscord(full);
+          dInput.classList.remove("is-bad");
+          return;
+        }
+        setEmployeeDiscord(full, id);
+        dInput.value = id;
+        await (onChanged?.());
+      });
     }
 
     body.querySelectorAll("select.emp-rank-select").forEach((select) => {
@@ -2026,6 +2098,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         if (!confirm(`Eliminar a ${label}?`)) return;
         try {
           await deleteEmployee(id, adminPass);
+          if (emp) setEmployeeDiscord(fullName(emp), "");
           await refresh();
           await (onChanged?.());
         } catch (err) {
@@ -2068,9 +2141,14 @@ function setupEmployeesAdminModal({ onChanged }) {
     const name = String(nameInput.value || "").trim();
     const surname = String(surInput.value || "").trim();
     const rank = String(rankInput.value || "").trim();
+    const discord = parseDiscordId(discordInput?.value);
 
     if (!name || !surname) {
       alert("Pon Nombre y Apellido.");
+      return;
+    }
+    if (discord === null) {
+      alert("El ID de Discord no es valido. Es un numero de 17 a 20 cifras (o dejalo vacio).");
       return;
     }
     if (!unlocked) {
@@ -2079,6 +2157,8 @@ function setupEmployeesAdminModal({ onChanged }) {
     }
     try {
       await addEmployee({ name, surname, rank }, adminPass);
+      if (discord) setEmployeeDiscord(`${name} ${surname}`, discord);
+      if (discordInput) discordInput.value = "";
       nameInput.value = "";
       surInput.value = "";
       rankInput.value = "";
@@ -2090,6 +2170,44 @@ function setupEmployeesAdminModal({ onChanged }) {
   });
 
   byId("emp-refresh").addEventListener("click", refresh);
+
+  // Busca en el Modulo de Almacen a la persona con el mismo nombre (nombre del
+  // juego o el que se le puso en "Quien mueve el almacen") y copia su Discord.
+  // Solo rellena a quien aun no tiene; no pisa los que ya estan puestos.
+  byId("emp-discord-fill")?.addEventListener("click", async () => {
+    if (!unlocked) {
+      alert("Primero desbloquea con la contrasena.");
+      return;
+    }
+    const alm = almLoad();
+    const byName = new Map();
+    for (const p of almPeople(alm.events, alm.alias)) {
+      if (!p.discord) continue;
+      for (const n of [p.player, alm.alias[p.key]]) {
+        if (n) byName.set(normalizeKeySimple(n), p.discord);
+      }
+    }
+    let filled = 0;
+    let missing = 0;
+    for (const e of employees) {
+      const full = fullName(e);
+      if (getEmployeeDiscord(full)) continue;
+      const id = byName.get(normalizeKeySimple(full));
+      if (id) {
+        setEmployeeDiscord(full, id);
+        filled += 1;
+      } else {
+        missing += 1;
+      }
+    }
+    if (discordStatus) {
+      discordStatus.textContent = byName.size
+        ? `Rellenados: ${filled}. Sin encontrar en el almacén: ${missing}.`
+        : "El almacén no tiene a nadie con Discord todavía (procesa primero el log en Módulo de Almacén).";
+    }
+    renderList();
+    await (onChanged?.());
+  });
   searchInput.addEventListener("input", renderList);
 
   modal.addEventListener("close", () => {

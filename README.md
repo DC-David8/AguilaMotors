@@ -40,6 +40,16 @@ Se aplican igual a las facturas y a las ventas de kits. El rango de cada emplead
 
 Los porcentajes se cambian en `app.js` → `RANKS`.
 
+### Etiquetar a cada empleado en Discord
+
+En **Gestión de empleados** cada empleado tiene una casilla **Discord** para su ID de usuario (modo desarrollador de Discord → clic derecho sobre la persona → *Copiar ID de usuario*; también vale pegarlo como `<@ID>`). Al copiar los totales, a quien lo tenga se le etiqueta:
+
+```
+* Damián Alberto (Jefe) <@ID>: 5000 <@&ID-del-rol>
+```
+
+El botón **Rellenar Discord desde Almacén** busca a cada empleado por su nombre en el Módulo de Almacén y copia el Discord que sale en el log; solo rellena a quien aún no lo tiene. Los IDs se guardan en el navegador, como el resto de datos.
+
 ### Empleado de la semana
 
 En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* (`<@&ID>`) al copiar, tanto en **Copiar seleccionado** como en **Copiar todo**. Al pegarlo en Discord se ve el rol con su color. Si hay empate, la llevan todos los empatados. El texto solo menciona el rol: asignarlo se sigue haciendo en Discord.
@@ -111,6 +121,11 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 8 · 10 de octubre de 2026
+- **Gestión de empleados**: nueva casilla **Discord** con el ID de usuario de cada empleado, también al añadir uno nuevo.
+- Botón **Rellenar Discord desde Almacén**, que toma el Discord del log del almacén cuando el nombre coincide.
+- **Copiar seleccionado** y **Copiar todo** etiquetan a cada empleado (`<@ID>`) junto a su nombre.
 
 ### Versión 7 · 10 de octubre de 2026
 - En **Totales empleados**, el empleado que más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* en lugar del 🏆.

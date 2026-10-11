@@ -679,3 +679,8 @@ select.text-input { background: #0f0c09; color: var(--text); }
 }
 .is-app .app-splash img { width: 50vw; max-width: 320px; height: auto; }
 .is-app .app-splash.is-hidden { opacity: 0; visibility: hidden; }
+
+/* ID de Discord de cada empleado (Gestión de empleados) */
+.form-grid .emp-discord-new { grid-column: 1 / -1; }
+.emp-discord-input { min-width: 170px; font-variant-numeric: tabular-nums; }
+.emp-discord-input.is-bad { border-color: #ff9a7a; }

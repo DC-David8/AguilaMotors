@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=7" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -294,7 +294,7 @@
         </div>
       </section>
     </section>
-    <footer class="app-version">Versión 7 · Rol de Empleado de la semana</footer>
+    <footer class="app-version">Versión 8 · Etiquetas de Discord por empleado</footer>
   </main>
 
   <dialog id="add-product-modal">
@@ -412,11 +412,12 @@
             <input id="emp-new-name" class="text-input" type="text" placeholder="Nombre" />
             <input id="emp-new-surname" class="text-input" type="text" placeholder="Apellido" />
             <select id="emp-new-rank" class="text-input"></select>
+            <input id="emp-new-discord" class="text-input emp-discord-new" type="text" inputmode="numeric" placeholder="ID de Discord (opcional)" />
           </div>
           <div class="actions">
             <button type="button" id="emp-new-add">Añadir</button>
           </div>
-          <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor).</p>
+          <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor). Con el ID de Discord, al copiar los totales se le etiqueta.</p>
         </div>
       </section>
 
@@ -424,7 +425,9 @@
       <div class="form-row">
         <input id="emp-search" class="text-input" type="text" placeholder="Buscar por nombre, apellido o rango..." />
         <button type="button" id="emp-refresh">Actualizar</button>
+        <button type="button" id="emp-discord-fill" class="ghost" title="Busca el Discord de cada empleado en el Módulo de Almacén por su nombre">Rellenar Discord desde Almacén</button>
       </div>
+      <p class="muted" id="emp-discord-status"></p>
 
       <div class="table-wrap" style="max-height: 44vh;">
         <table>
@@ -433,6 +436,7 @@
               <th>Empleado</th>
               <th>Rango</th>
               <th class="num">% de Comisión según Rango</th>
+              <th>Discord</th>
               <th class="num">Acciones</th>
             </tr>
           </thead>
@@ -486,6 +490,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
