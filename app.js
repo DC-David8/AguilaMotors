@@ -752,6 +752,48 @@ function setEmployeeDiscord(fullNameStr, id) {
   saveEmployeeDiscordMap(map);
 }
 
+// IBAN del personaje (banco del servidor, p. ej. J739745) para depositar la nomina.
+// Se guarda igual que el Discord: por nombre completo, en el navegador.
+const EMPLOYEE_IBAN_STORAGE_KEY = "aguila_employee_iban_v1";
+const IBAN_PENDING_TEXT = "**IBAN pendiente**"; // en negrita en Discord
+
+function loadEmployeeIbanMap() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(EMPLOYEE_IBAN_STORAGE_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveEmployeeIbanMap(map) {
+  try {
+    localStorage.setItem(EMPLOYEE_IBAN_STORAGE_KEY, JSON.stringify(map || {}));
+  } catch {
+    // sin almacenamiento
+  }
+}
+
+// Una letra y 6 numeros (J739745); se aceptan minusculas y espacios. "" = borrar; null = no valido.
+function parseIban(raw) {
+  const s = String(raw ?? "").replace(/\s+/g, "").toUpperCase();
+  if (!s) return "";
+  return /^[A-Z]\d{6}$/.test(s) ? s : null;
+}
+
+function getEmployeeIban(fullNameStr) {
+  const map = isSharedReadOnly() ? SHARED_DATA.iban : loadEmployeeIbanMap();
+  return map[normalizeKeySimple(fullNameStr)] || "";
+}
+
+function setEmployeeIban(fullNameStr, iban) {
+  const map = loadEmployeeIbanMap();
+  const key = normalizeKeySimple(fullNameStr);
+  if (iban) map[key] = iban;
+  else delete map[key];
+  saveEmployeeIbanMap(map);
+}
+
 // ============================================================================
 // Datos compartidos (datos.js en el repositorio)
 // ----------------------------------------------------------------------------
@@ -849,14 +891,21 @@ function normalizeSharedData(raw) {
       surname: String(e?.surname || "").trim(),
       rank: String(e?.rank || "").trim(),
       discord: parseDiscordId(e?.discord) || "",
+      iban: parseIban(e?.iban) || "",
     }))
     .filter((e) => e.name && e.surname);
   const discord = {};
-  for (const e of employees) if (e.discord) discord[normalizeKeySimple(fullName(e))] = e.discord;
+  const iban = {};
+  for (const e of employees) {
+    const key = normalizeKeySimple(fullName(e));
+    if (e.discord) discord[key] = e.discord;
+    if (e.iban) iban[key] = e.iban;
+  }
   return {
     publishedAt: String(raw.publishedAt || ""),
     employees,
     discord,
+    iban,
     customProducts: Array.isArray(raw.customProducts) ? raw.customProducts : [],
     productOverrides: raw.productOverrides && typeof raw.productOverrides === "object" ? raw.productOverrides : {},
   };
@@ -912,12 +961,14 @@ function fmtStamp(d = new Date()) {
 // Arma datos.js con los datos de ESTA PC (los que edita el encargado).
 async function buildSharedDataFile() {
   const map = loadEmployeeDiscordMap();
+  const ibanMap = loadEmployeeIbanMap();
   const employees = (await listEmployees())
     .map((e) => ({
       name: String(e.name || "").trim(),
       surname: String(e.surname || "").trim(),
       rank: String(e.rank || "").trim(),
       discord: map[normalizeKeySimple(fullName(e))] || "",
+      iban: ibanMap[normalizeKeySimple(fullName(e))] || "",
     }))
     .filter((e) => e.name && e.surname)
     .sort((a, b) => `${a.surname} ${a.name}`.localeCompare(`${b.surname} ${b.name}`, "es", { sensitivity: "base" }));
@@ -938,12 +989,11 @@ async function buildSharedDataFile() {
 async function importSharedIntoLocal() {
   const local = await listEmployees();
   for (const e of local) await deleteEmployee(e.id, EMPLOYEE_ADMIN_PASSWORD);
-  const map = {};
+  saveEmployeeDiscordMap(SHARED_DATA.discord);
+  saveEmployeeIbanMap(SHARED_DATA.iban);
   for (const e of SHARED_DATA.employees) {
     await addEmployee({ name: e.name, surname: e.surname, rank: e.rank }, EMPLOYEE_ADMIN_PASSWORD);
-    if (e.discord) map[normalizeKeySimple(fullName(e))] = e.discord;
   }
-  saveEmployeeDiscordMap(map);
   saveCustomProductsLocal(SHARED_DATA.customProducts);
   saveProductOverridesLocal(SHARED_DATA.productOverrides);
 }
@@ -1016,7 +1066,7 @@ function setupSharedData() {
   });
 
   btnImport.addEventListener("click", async () => {
-    if (!window.confirm("Esto reemplaza los empleados, Discord y productos de esta PC por los publicados. ¿Continuar?")) return;
+    if (!window.confirm("Esto reemplaza los empleados, Discord, IBAN y productos de esta PC por los publicados. ¿Continuar?")) return;
     statusEl.textContent = "Cargando los datos publicados en esta PC…";
     btnImport.disabled = true;
     try {
@@ -2127,7 +2177,7 @@ function setupEmployeesModal(state) {
       const gross = paid + kitsValue;
       const pct = pctForRank(e.rank);
       const payout = Math.round(gross * pct);
-      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name) };
+      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name) };
     });
     totalsRows.sort((a, b) => b.payout - a.payout || a.name.localeCompare(b.name, "es"));
   }
@@ -2188,12 +2238,14 @@ function setupEmployeesModal(state) {
     return label;
   }
 
+  const ibanForCopy = (row) => (row.iban ? `IBAN ${row.iban}` : IBAN_PENDING_TEXT);
+
   byId("employees-copy-sel").addEventListener("click", async () => {
     const row = totalsRows.find((r) => r.id === selectedId);
     if (!row) return;
     const name = labelForCopy(row);
     const pctTxt = row.pct ? `${Math.round(row.pct * 100)}%` : "-";
-    let text = `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)}`;
+    let text = `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)} | ${ibanForCopy(row)}`;
     if (isEmployeeOfWeek(row)) text += ` | ${EMPLOYEE_OF_WEEK_TAG}`;
 
     const ok = await copyText(text);
@@ -2213,7 +2265,7 @@ function setupEmployeesModal(state) {
       return;
     }
     const lines = totalsRows.map((r) => {
-      let line = `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)}`;
+      let line = `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
       if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
       return line;
     });
@@ -2253,6 +2305,7 @@ function setupEmployeesAdminModal({ onChanged }) {
   const surInput = byId("emp-new-surname");
   const rankInput = byId("emp-new-rank");
   const discordInput = byId("emp-new-discord");
+  const ibanInput = byId("emp-new-iban");
 
   const searchInput = byId("emp-search");
   const body = byId("emp-admin-body");
@@ -2316,6 +2369,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         <td><select class="text-input emp-rank-select" data-id="${String(e.id)}"></select></td>
         <td class="num" data-pct-cell="${String(e.id)}">${pctText}</td>
         <td><input class="text-input emp-discord-input" type="text" inputmode="numeric" placeholder="ID de Discord" title="ID de Discord: clic derecho sobre la persona → Copiar ID de usuario" /></td>
+        <td><input class="text-input emp-iban-input" type="text" placeholder="J000000" maxlength="9" title="IBAN del banco del servidor (una letra y 6 números)" /></td>
         <td class="num">
           <button type="button" class="danger" data-del="${String(e.id)}">Eliminar</button>
         </td>
@@ -2337,9 +2391,12 @@ function setupEmployeesAdminModal({ onChanged }) {
 
       const dInput = tr.querySelector(".emp-discord-input");
       dInput.value = getEmployeeDiscord(full);
+      const iInput = tr.querySelector(".emp-iban-input");
+      iInput.value = getEmployeeIban(full);
       if (readOnly) {
         select.disabled = true;
         dInput.readOnly = true;
+        iInput.readOnly = true;
         tr.querySelector("button[data-del]")?.remove();
       }
       dInput.addEventListener("change", async () => {
@@ -2358,6 +2415,23 @@ function setupEmployeesAdminModal({ onChanged }) {
         }
         setEmployeeDiscord(full, id);
         dInput.value = id;
+        await (onChanged?.());
+      });
+      iInput.addEventListener("change", async () => {
+        if (readOnly) return;
+        if (!unlocked) {
+          alert("Primero desbloquea con la contrasena.");
+          iInput.value = getEmployeeIban(full);
+          return;
+        }
+        const iban = parseIban(iInput.value);
+        if (iban === null) {
+          alert("El IBAN no es valido. Es una letra y 6 numeros, como J739745 (sale en el banco, en Informaciones).");
+          iInput.value = getEmployeeIban(full);
+          return;
+        }
+        setEmployeeIban(full, iban);
+        iInput.value = iban;
         await (onChanged?.());
       });
     }
@@ -2397,7 +2471,10 @@ function setupEmployeesAdminModal({ onChanged }) {
         if (!confirm(`Eliminar a ${label}?`)) return;
         try {
           await deleteEmployee(id, adminPass);
-          if (emp) setEmployeeDiscord(fullName(emp), "");
+          if (emp) {
+            setEmployeeDiscord(fullName(emp), "");
+            setEmployeeIban(fullName(emp), "");
+          }
           await refresh();
           await (onChanged?.());
         } catch (err) {
@@ -2441,6 +2518,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     const surname = String(surInput.value || "").trim();
     const rank = String(rankInput.value || "").trim();
     const discord = parseDiscordId(discordInput?.value);
+    const iban = parseIban(ibanInput?.value);
 
     if (!name || !surname) {
       alert("Pon Nombre y Apellido.");
@@ -2448,6 +2526,10 @@ function setupEmployeesAdminModal({ onChanged }) {
     }
     if (discord === null) {
       alert("El ID de Discord no es valido. Es un numero de 17 a 20 cifras (o dejalo vacio).");
+      return;
+    }
+    if (iban === null) {
+      alert("El IBAN no es valido. Es una letra y 6 numeros, como J739745 (o dejalo vacio).");
       return;
     }
     if (!unlocked) {
@@ -2458,6 +2540,8 @@ function setupEmployeesAdminModal({ onChanged }) {
       await addEmployee({ name, surname, rank }, adminPass);
       if (discord) setEmployeeDiscord(`${name} ${surname}`, discord);
       if (discordInput) discordInput.value = "";
+      if (iban) setEmployeeIban(`${name} ${surname}`, iban);
+      if (ibanInput) ibanInput.value = "";
       nameInput.value = "";
       surInput.value = "";
       rankInput.value = "";

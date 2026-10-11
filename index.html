@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=11" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=10" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=11" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -306,7 +306,7 @@
         </div>
       </section>
     </section>
-    <footer class="app-version">Versión 10 · Datos compartidos</footer>
+    <footer class="app-version">Versión 11 · IBAN para la nómina</footer>
   </main>
 
   <dialog id="add-product-modal">
@@ -425,11 +425,12 @@
             <input id="emp-new-surname" class="text-input" type="text" placeholder="Apellido" />
             <select id="emp-new-rank" class="text-input"></select>
             <input id="emp-new-discord" class="text-input emp-discord-new" type="text" inputmode="numeric" placeholder="ID de Discord (opcional)" />
+            <input id="emp-new-iban" class="text-input emp-iban-new" type="text" maxlength="9" placeholder="IBAN (ej. J739745)" />
           </div>
           <div class="actions">
             <button type="button" id="emp-new-add">Añadir</button>
           </div>
-          <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor). Con el ID de Discord, al copiar los totales se le etiqueta.</p>
+          <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor). Con el ID de Discord se le etiqueta al copiar los totales, y con el IBAN sale su cuenta para la nómina.</p>
         </div>
       </section>
 
@@ -449,6 +450,7 @@
               <th>Rango</th>
               <th class="num">% de Comisión según Rango</th>
               <th>Discord</th>
+              <th>IBAN</th>
               <th class="num">Acciones</th>
             </tr>
           </thead>
@@ -502,6 +504,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

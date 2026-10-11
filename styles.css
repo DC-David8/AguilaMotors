@@ -681,7 +681,9 @@ select.text-input { background: #0f0c09; color: var(--text); }
 .is-app .app-splash.is-hidden { opacity: 0; visibility: hidden; }
 
 /* ID de Discord de cada empleado (Gestión de empleados) */
-.form-grid .emp-discord-new { grid-column: 1 / -1; }
+.form-grid .emp-discord-new { grid-column: 1 / 3; }
+.form-grid .emp-iban-new { grid-column: 3 / 4; }
+.emp-iban-input { width: 105px; text-transform: uppercase; }
 .emp-discord-input { min-width: 170px; font-variant-numeric: tabular-nums; }
 .emp-discord-input.is-bad { border-color: #ff9a7a; }
 
@@ -692,3 +694,6 @@ select.text-input { background: #0f0c09; color: var(--text); }
 .emp-readonly-note { color: var(--accent-2); }
 
 [hidden] { display: none !important; }
+@media (max-width: 980px) {
+  .form-grid .emp-discord-new, .form-grid .emp-iban-new { grid-column: auto; }
+}

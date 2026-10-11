@@ -50,6 +50,17 @@ En **Gestión de empleados** cada empleado tiene una casilla **Discord** para su
 
 Los IDs se guardan en el navegador de cada PC, como el resto de datos.
 
+### IBAN para la nómina
+
+Cada empleado tiene también una casilla **IBAN** con la cuenta de su personaje en el banco del servidor (una letra y 6 números, como `J739745`; sale en el banco, en *Informaciones*). Al copiar los totales aparece junto a lo que hay que pagarle; si falta, sale **IBAN pendiente** en negrita:
+
+```
+* Esteban Dido (Jefe) <@ID>: 2000 · IBAN J739745
+* Gxbo Dead (Mecánico) <@ID>: 4500 · **IBAN pendiente** <@&ID-del-rol>
+```
+
+Los IBAN se publican en `datos.js` junto con el rango y el Discord.
+
 ### Empleado de la semana
 
 En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* (`<@&ID>`) al copiar, tanto en **Copiar seleccionado** como en **Copiar todo**. Al pegarlo en Discord se ve el rol con su color. Si hay empate, la llevan todos los empatados. El texto solo menciona el rol: asignarlo se sigue haciendo en Discord.
@@ -79,7 +90,7 @@ Las existencias salen solo del log del almacén: la Caja no las descuenta al ven
 
 ## Datos compartidos (empleados y productos)
 
-El encargado publica los empleados (con rango y Discord) y los productos para que todos vean lo mismo. Los jefes de taller solo los ven: no pueden cambiarlos.
+El encargado publica los empleados (con rango, Discord e IBAN) y los productos para que todos vean lo mismo. Los jefes de taller solo los ven: no pueden cambiarlos.
 
 **Cómo funciona**
 
@@ -98,7 +109,7 @@ En una PC nueva, después de entrar en modo encargado, **Cargar los publicados e
 
 **Contraseña del encargado:** en el código solo está su huella SHA-256 (`app.js` → `EDITOR_PASSWORD_SHA256`). Para cambiarla, calcula la huella de la nueva (`echo -n "NuevaContraseña" | sha256sum`) y sustitúyela.
 
-> El repositorio es público: los nombres de los empleados y sus IDs de Discord de `datos.js` los puede ver cualquiera que lo busque.
+> El repositorio es público: los nombres de los empleados, sus IDs de Discord y sus IBAN de `datos.js` los puede ver cualquiera que lo busque.
 
 ## Dónde se guardan los datos
 
@@ -145,6 +156,11 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 11 · 10 de octubre de 2026
+- **Gestión de empleados**: nueva casilla **IBAN** (cuenta del personaje en el banco, como J739745), también al añadir un empleado. Avisa si el formato no es válido.
+- **Copiar seleccionado** y **Copiar todo** añaden el IBAN de cada empleado, o **IBAN pendiente** en negrita si falta.
+- Los IBAN se incluyen en `datos.js` para que los jefes de taller también los vean.
 
 ### Versión 10 · 10 de octubre de 2026
 - **Datos compartidos**: el encargado exporta `datos.js` con empleados (rango y Discord) y productos y lo sube al repositorio; la página lo carga sola para todos.
