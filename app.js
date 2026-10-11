@@ -1970,7 +1970,6 @@ function setupEmployeesAdminModal({ onChanged }) {
   const surInput = byId("emp-new-surname");
   const rankInput = byId("emp-new-rank");
   const discordInput = byId("emp-new-discord");
-  const discordStatus = byId("emp-discord-status");
 
   const searchInput = byId("emp-search");
   const body = byId("emp-admin-body");
@@ -2171,43 +2170,6 @@ function setupEmployeesAdminModal({ onChanged }) {
 
   byId("emp-refresh").addEventListener("click", refresh);
 
-  // Busca en el Modulo de Almacen a la persona con el mismo nombre (nombre del
-  // juego o el que se le puso en "Quien mueve el almacen") y copia su Discord.
-  // Solo rellena a quien aun no tiene; no pisa los que ya estan puestos.
-  byId("emp-discord-fill")?.addEventListener("click", async () => {
-    if (!unlocked) {
-      alert("Primero desbloquea con la contrasena.");
-      return;
-    }
-    const alm = almLoad();
-    const byName = new Map();
-    for (const p of almPeople(alm.events, alm.alias)) {
-      if (!p.discord) continue;
-      for (const n of [p.player, alm.alias[p.key]]) {
-        if (n) byName.set(normalizeKeySimple(n), p.discord);
-      }
-    }
-    let filled = 0;
-    let missing = 0;
-    for (const e of employees) {
-      const full = fullName(e);
-      if (getEmployeeDiscord(full)) continue;
-      const id = byName.get(normalizeKeySimple(full));
-      if (id) {
-        setEmployeeDiscord(full, id);
-        filled += 1;
-      } else {
-        missing += 1;
-      }
-    }
-    if (discordStatus) {
-      discordStatus.textContent = byName.size
-        ? `Rellenados: ${filled}. Sin encontrar en el almacén: ${missing}.`
-        : "El almacén no tiene a nadie con Discord todavía (procesa primero el log en Módulo de Almacén).";
-    }
-    renderList();
-    await (onChanged?.());
-  });
   searchInput.addEventListener("input", renderList);
 
   modal.addEventListener("close", () => {

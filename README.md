@@ -48,7 +48,7 @@ En **Gestión de empleados** cada empleado tiene una casilla **Discord** para su
 * Damián Alberto (Jefe) <@ID>: 5000 <@&ID-del-rol>
 ```
 
-El botón **Rellenar Discord desde Almacén** busca a cada empleado por su nombre en el Módulo de Almacén y copia el Discord que sale en el log; solo rellena a quien aún no lo tiene. Los IDs se guardan en el navegador, como el resto de datos.
+Los IDs se guardan en el navegador de cada PC, como el resto de datos.
 
 ### Empleado de la semana
 
@@ -122,9 +122,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 9 · 10 de octubre de 2026
+- Se quita el botón **Rellenar Discord desde Almacén**: el log copiado de Discord no siempre trae el enlace con el Discord de cada persona. Los IDs se ponen a mano en Gestión de empleados.
+
 ### Versión 8 · 10 de octubre de 2026
 - **Gestión de empleados**: nueva casilla **Discord** con el ID de usuario de cada empleado, también al añadir uno nuevo.
-- Botón **Rellenar Discord desde Almacén**, que toma el Discord del log del almacén cuando el nombre coincide.
 - **Copiar seleccionado** y **Copiar todo** etiquetan a cada empleado (`<@ID>`) junto a su nombre.
 
 ### Versión 7 · 10 de octubre de 2026
