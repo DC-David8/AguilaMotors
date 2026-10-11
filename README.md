@@ -61,6 +61,16 @@ Cada empleado tiene también una casilla **IBAN** con la cuenta de su personaje 
 
 Los IBAN se publican en `datos.js` junto con el rango y el Discord.
 
+### Empleados que no cobran
+
+En **Gestión de empleados**, la casilla **No cobra** marca a quien no recibe nómina. Sigue apareciendo con lo que factura, pero:
+
+- En Pagos y en Totales empleados, su pago sale como **No cobra** y no suma al **Total a Pagar**.
+- Al copiar sale `* Nombre (Rango) <@ID>: No cobra`, sin IBAN ni aviso de *IBAN pendiente*.
+- Puede seguir siendo el empleado de la semana si es quien más factura.
+
+Se marca y desmarca cuando haga falta (por ejemplo, si alguien deja de cobrar más adelante) y se publica en `datos.js`.
+
 ### Empleado de la semana
 
 En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* (`<@&ID>`) al copiar, tanto en **Copiar seleccionado** como en **Copiar todo**. Al pegarlo en Discord se ve el rol con su color. Si hay empate, la llevan todos los empatados. El texto solo menciona el rol: asignarlo se sigue haciendo en Discord.
@@ -156,6 +166,12 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 12 · 10 de octubre de 2026
+- **Gestión de empleados**: nueva casilla **No cobra** para quien no recibe nómina.
+- Quien no cobra sale como **No cobra** en Pagos, en Totales empleados y al copiar, sin IBAN ni *IBAN pendiente*, y no suma al Total a Pagar.
+- Los cambios de rango, Discord, IBAN o No cobra actualizan Pagos al momento, sin volver a procesar.
+- «No cobra» se publica en `datos.js`.
 
 ### Versión 11 · 10 de octubre de 2026
 - **Gestión de empleados**: nueva casilla **IBAN** (cuenta del personaje en el banco, como J739745), también al añadir un empleado. Avisa si el formato no es válido.

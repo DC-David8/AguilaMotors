@@ -697,3 +697,7 @@ select.text-input { background: #0f0c09; color: var(--text); }
 @media (max-width: 980px) {
   .form-grid .emp-discord-new, .form-grid .emp-iban-new { grid-column: auto; }
 }
+
+/* Casilla "No cobra" en Gestion de empleados */
+th.center, td.center { text-align: center; }
+.emp-nopay-input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }

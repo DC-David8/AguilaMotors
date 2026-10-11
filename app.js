@@ -794,6 +794,40 @@ function setEmployeeIban(fullNameStr, iban) {
   saveEmployeeIbanMap(map);
 }
 
+// Empleados que no cobran la nomina: no se les pide IBAN y no suman al Total a Pagar.
+const EMPLOYEE_NOPAY_STORAGE_KEY = "aguila_employee_nopay_v1";
+const NO_PAY_TEXT = "No cobra";
+
+function loadEmployeeNoPayMap() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(EMPLOYEE_NOPAY_STORAGE_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveEmployeeNoPayMap(map) {
+  try {
+    localStorage.setItem(EMPLOYEE_NOPAY_STORAGE_KEY, JSON.stringify(map || {}));
+  } catch {
+    // sin almacenamiento
+  }
+}
+
+function isEmployeeNoPay(fullNameStr) {
+  const map = isSharedReadOnly() ? SHARED_DATA.noPay : loadEmployeeNoPayMap();
+  return !!map[normalizeKeySimple(fullNameStr)];
+}
+
+function setEmployeeNoPay(fullNameStr, noPay) {
+  const map = loadEmployeeNoPayMap();
+  const key = normalizeKeySimple(fullNameStr);
+  if (noPay) map[key] = true;
+  else delete map[key];
+  saveEmployeeNoPayMap(map);
+}
+
 // ============================================================================
 // Datos compartidos (datos.js en el repositorio)
 // ----------------------------------------------------------------------------
@@ -892,12 +926,15 @@ function normalizeSharedData(raw) {
       rank: String(e?.rank || "").trim(),
       discord: parseDiscordId(e?.discord) || "",
       iban: parseIban(e?.iban) || "",
+      noPay: e?.noPay === true,
     }))
     .filter((e) => e.name && e.surname);
   const discord = {};
   const iban = {};
+  const noPay = {};
   for (const e of employees) {
     const key = normalizeKeySimple(fullName(e));
+    if (e.noPay) noPay[key] = true;
     if (e.discord) discord[key] = e.discord;
     if (e.iban) iban[key] = e.iban;
   }
@@ -906,6 +943,7 @@ function normalizeSharedData(raw) {
     employees,
     discord,
     iban,
+    noPay,
     customProducts: Array.isArray(raw.customProducts) ? raw.customProducts : [],
     productOverrides: raw.productOverrides && typeof raw.productOverrides === "object" ? raw.productOverrides : {},
   };
@@ -962,6 +1000,7 @@ function fmtStamp(d = new Date()) {
 async function buildSharedDataFile() {
   const map = loadEmployeeDiscordMap();
   const ibanMap = loadEmployeeIbanMap();
+  const noPayMap = loadEmployeeNoPayMap();
   const employees = (await listEmployees())
     .map((e) => ({
       name: String(e.name || "").trim(),
@@ -969,6 +1008,7 @@ async function buildSharedDataFile() {
       rank: String(e.rank || "").trim(),
       discord: map[normalizeKeySimple(fullName(e))] || "",
       iban: ibanMap[normalizeKeySimple(fullName(e))] || "",
+      noPay: !!noPayMap[normalizeKeySimple(fullName(e))],
     }))
     .filter((e) => e.name && e.surname)
     .sort((a, b) => `${a.surname} ${a.name}`.localeCompare(`${b.surname} ${b.name}`, "es", { sensitivity: "base" }));
@@ -991,6 +1031,7 @@ async function importSharedIntoLocal() {
   for (const e of local) await deleteEmployee(e.id, EMPLOYEE_ADMIN_PASSWORD);
   saveEmployeeDiscordMap(SHARED_DATA.discord);
   saveEmployeeIbanMap(SHARED_DATA.iban);
+  saveEmployeeNoPayMap(SHARED_DATA.noPay);
   for (const e of SHARED_DATA.employees) {
     await addEmployee({ name: e.name, surname: e.surname, rank: e.rank }, EMPLOYEE_ADMIN_PASSWORD);
   }
@@ -2017,12 +2058,14 @@ function setupContabilidad() {
     for (const e of employees) {
       rankByName.set(normalizeKeySimple(fullName(e)), e.rank || "");
     }
+    // Quien no cobra sigue apareciendo, pero no suma al Total a Pagar.
+    const pendingCell = (name, amount) => (isEmployeeNoPay(name) ? NO_PAY_TEXT : fmtMoney(amount));
     let totalAPagar = 0;
     for (const [name, total] of invEntries) {
       const rank = rankByName.get(normalizeKeySimple(name)) || "";
       const pct = pctForRank(rank);
       const pendientePago = Math.round(total * pct);
-      totalAPagar += pendientePago;
+      if (!isEmployeeNoPay(name)) totalAPagar += pendientePago;
       const pctText = rank ? (pct ? `${Math.round(pct * 100)}%` : "0% (sin rango)") : "Sin registrar";
       refs.invTable.insertAdjacentHTML(
         "beforeend",
@@ -2030,7 +2073,7 @@ function setupContabilidad() {
           <td>${name}</td>
           <td class="num">${fmtMoney(total)}</td>
           <td class="num">${pctText}</td>
-          <td class="num">${fmtMoney(pendientePago)}</td>
+          <td class="num">${pendingCell(name, pendientePago)}</td>
         </tr>`
       );
     }
@@ -2042,7 +2085,7 @@ function setupContabilidad() {
       const pct = pctForRank(rank);
       const kitsValue = qty * kitPrice;
       const pendientePago = Math.round(kitsValue * pct);
-      totalAPagar += pendientePago;
+      if (!isEmployeeNoPay(name)) totalAPagar += pendientePago;
       const pctText = rank ? (pct ? `${Math.round(pct * 100)}%` : "0% (sin rango)") : "Sin registrar";
       refs.salesTable.insertAdjacentHTML(
         "beforeend",
@@ -2050,7 +2093,7 @@ function setupContabilidad() {
           <td>${name}</td>
           <td class="num">${qty}</td>
           <td class="num">${pctText}</td>
-          <td class="num">${fmtMoney(pendientePago)}</td>
+          <td class="num">${pendingCell(name, pendientePago)}</td>
         </tr>`
       );
     }
@@ -2145,11 +2188,11 @@ function setupContabilidad() {
     downloadCsv("ventas_kits.csv", ["seller", "buyer", "qty", "timestamp"], kitsRows);
   });
 
-  setupEmployeesModal(state);
+  setupEmployeesModal(state, refresh);
   clearState();
 }
 
-function setupEmployeesModal(state) {
+function setupEmployeesModal(state, refreshPagos) {
   const totalsModal = byId("employees-modal");
   const totalsBody = byId("employees-body");
   const adminModal = byId("employees-admin-modal");
@@ -2177,7 +2220,7 @@ function setupEmployeesModal(state) {
       const gross = paid + kitsValue;
       const pct = pctForRank(e.rank);
       const payout = Math.round(gross * pct);
-      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name) };
+      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name), noPay: isEmployeeNoPay(name) };
     });
     totalsRows.sort((a, b) => b.payout - a.payout || a.name.localeCompare(b.name, "es"));
   }
@@ -2192,20 +2235,20 @@ function setupEmployeesModal(state) {
         <td>${row.rank || "-"}</td>
         <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
         <td class="num">${fmtMoney(row.gross)}</td>
-        <td class="num">${fmtMoney(row.payout)}</td>
+        <td class="num">${row.noPay ? `<span class="muted" title="Le corresponderían ${fmtMoney(row.payout)}">${NO_PAY_TEXT}</span>` : fmtMoney(row.payout)}</td>
       `;
       tr.addEventListener("click", () => {
         selectedId = row.id;
         renderTotalsRows();
       });
       tr.addEventListener("dblclick", async () => {
-        const text = String(row.payout);
+        const text = row.noPay ? NO_PAY_TEXT : String(row.payout);
         const ok = await copyText(text);
         if (!ok) openCopyFallback(text);
       });
       totalsBody.appendChild(tr);
     }
-    const bankTotal = totalsRows.reduce((acc, r) => acc + r.payout, 0);
+    const bankTotal = totalsRows.reduce((acc, r) => acc + (r.noPay ? 0 : r.payout), 0);
     byId("employees-bank-total").textContent = `Total a pagar: ${fmtMoney(bankTotal)}`;
   }
 
@@ -2245,7 +2288,9 @@ function setupEmployeesModal(state) {
     if (!row) return;
     const name = labelForCopy(row);
     const pctTxt = row.pct ? `${Math.round(row.pct * 100)}%` : "-";
-    let text = `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)} | ${ibanForCopy(row)}`;
+    let text = row.noPay
+      ? `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | ${NO_PAY_TEXT}`
+      : `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)} | ${ibanForCopy(row)}`;
     if (isEmployeeOfWeek(row)) text += ` | ${EMPLOYEE_OF_WEEK_TAG}`;
 
     const ok = await copyText(text);
@@ -2265,7 +2310,9 @@ function setupEmployeesModal(state) {
       return;
     }
     const lines = totalsRows.map((r) => {
-      let line = `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
+      let line = r.noPay
+        ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
+        : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
       if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
       return line;
     });
@@ -2288,6 +2335,8 @@ function setupEmployeesModal(state) {
 
   setupEmployeesAdminModal({
     onChanged: async () => {
+      // Rango, Discord, IBAN o "No cobra" cambian lo que muestra Pagos.
+      await refreshPagos?.();
       if (totalsModal.open) {
         await buildTotalsRows();
         renderTotalsRows();
@@ -2370,6 +2419,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         <td class="num" data-pct-cell="${String(e.id)}">${pctText}</td>
         <td><input class="text-input emp-discord-input" type="text" inputmode="numeric" placeholder="ID de Discord" title="ID de Discord: clic derecho sobre la persona → Copiar ID de usuario" /></td>
         <td><input class="text-input emp-iban-input" type="text" placeholder="J000000" maxlength="9" title="IBAN del banco del servidor (una letra y 6 números)" /></td>
+        <td class="center"><input class="emp-nopay-input" type="checkbox" title="No cobra la nómina: no se le pide IBAN y no suma al Total a Pagar" /></td>
         <td class="num">
           <button type="button" class="danger" data-del="${String(e.id)}">Eliminar</button>
         </td>
@@ -2393,7 +2443,20 @@ function setupEmployeesAdminModal({ onChanged }) {
       dInput.value = getEmployeeDiscord(full);
       const iInput = tr.querySelector(".emp-iban-input");
       iInput.value = getEmployeeIban(full);
+      const npInput = tr.querySelector(".emp-nopay-input");
+      npInput.checked = isEmployeeNoPay(full);
+      npInput.addEventListener("change", async () => {
+        if (readOnly) return;
+        if (!unlocked) {
+          alert("Primero desbloquea con la contrasena.");
+          npInput.checked = isEmployeeNoPay(full);
+          return;
+        }
+        setEmployeeNoPay(full, npInput.checked);
+        await (onChanged?.());
+      });
       if (readOnly) {
+        npInput.disabled = true;
         select.disabled = true;
         dInput.readOnly = true;
         iInput.readOnly = true;
@@ -2474,6 +2537,7 @@ function setupEmployeesAdminModal({ onChanged }) {
           if (emp) {
             setEmployeeDiscord(fullName(emp), "");
             setEmployeeIban(fullName(emp), "");
+            setEmployeeNoPay(fullName(emp), false);
           }
           await refresh();
           await (onChanged?.());
