@@ -701,3 +701,7 @@ select.text-input { background: #0f0c09; color: var(--text); }
 /* Casilla "No cobra" en Gestion de empleados */
 th.center, td.center { text-align: center; }
 .emp-nopay-input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+/* Largo del concepto para el datafono (40 caracteres) */
+.concept-info { margin: 4px 2px 0; font-size: 0.8rem; color: var(--muted); min-height: 1em; }
+.concept-info.is-over { color: var(--warn); }

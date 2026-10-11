@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=13" />
+  <link rel="stylesheet" href="styles.css?v=14" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=13" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -93,6 +93,7 @@
             <span>Total</span>
             <strong id="ticket-total">$ 0</strong>
           </div>
+          <p class="concept-info" id="ticket-concept-info" role="status"></p>
 
           <div class="actions ticket-actions">
             <button id="btn-undo">Deshacer</button>
@@ -306,7 +307,7 @@
         </div>
       </section>
     </section>
-    <footer class="app-version">Versión 13 · Sin kits de reparación en la Caja</footer>
+    <footer class="app-version">Versión 14 · Concepto para el datáfono y Camiones</footer>
   </main>
 
   <dialog id="add-product-modal">
@@ -366,6 +367,24 @@
           </table>
         </div>
       </section>
+    </form>
+  </dialog>
+
+  <dialog id="charges-modal">
+    <form method="dialog" class="modal-card">
+      <header class="modal-head">
+        <h3>Cobrar en varias veces</h3>
+        <button value="cancel" class="ghost">Cerrar</button>
+      </header>
+      <p class="muted">El concepto no cabe en los 40 caracteres del datáfono, ni abreviado. Pasa estos cobros uno tras otro, cada uno con su total y su concepto.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Cobro</th><th>Concepto</th><th class="num">Total</th><th class="num"></th></tr>
+          </thead>
+          <tbody id="charges-body"></tbody>
+        </table>
+      </div>
     </form>
   </dialog>
 
@@ -505,6 +524,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

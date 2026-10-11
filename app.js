@@ -371,6 +371,7 @@ const PRODUCT_CATEGORIES = [
   { key: "gama_media", label: "Gama Media" },
   { key: "gama_alta", label: "Gama Alta" },
   { key: "gama_vip", label: "Gama VIP" },
+  { key: "camiones", label: "Camiones" },
   { key: "aereos", label: "Aéreos" },
   { key: "full_tuning", label: "Full Tuning" },
   { key: "servicios_taller", label: "Servicios (Taller)" },
@@ -411,6 +412,7 @@ const GAMAS = [
   { key: "gama_media", label: "Gama Media" },
   { key: "gama_alta", label: "Gama Alta" },
   { key: "gama_vip", label: "Gama VIP" },
+  { key: "camiones", label: "Camiones" },
   { key: "aereos", label: "Aéreos" },
 ];
 
@@ -421,7 +423,73 @@ const TUNING_PRICES = {
   gama_media: [950, 950, 950, 950, 950, 750, 950, 950, 1100, 1100, 1100, 1100, 1100, 1100, 20000],
   gama_alta:  [1550, 1550, 1550, 1550, 1550, 1150, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
   gama_vip:   [1550, 1550, 1550, 1550, 1550, 1150, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
+  // Camiones: mismos precios que Gama Alta (su precio de compra es parecido).
+  camiones:   [1550, 1550, 1550, 1550, 1550, 1150, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
   aereos:     [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 10000, 10000, 10000, 10000, 10000, 10000, 50000],
+};
+
+// Abreviaturas para el concepto del datafono (maximo 40 caracteres).
+// Si el concepto completo no cabe, se usa "2xRued+Turbo GA, Rep T".
+const CONCEPT_MAX = 40;
+
+const PIECE_SHORT = {
+  "Pintura": "Pint",
+  "Neones": "Neon",
+  "Cambio de Luces": "Luces",
+  "Ruedas": "Rued",
+  "Humo de Ruedas": "Humo",
+  "Carrocería": "Carr",
+  "Claxon": "Clax",
+  "Tintado de Lunas": "Tint",
+  "Turbo": "Turbo",
+  "Motor": "Motor",
+  "Transmisión": "Trans",
+  "Blindaje": "Blind",
+  "Suspensión": "Susp",
+  "Frenos": "Fren",
+  "Full Tuning": "FT",
+};
+
+const GAMA_SHORT = {
+  motos: "MT",
+  gama_baja: "GB",
+  gama_media: "GM",
+  gama_alta: "GA",
+  gama_vip: "VIP",
+  camiones: "CAM",
+  aereos: "AE",
+};
+
+// [abreviatura, grupo]: el grupo (gama o T = taller, G = grua) se escribe una sola vez al final.
+const SERVICE_SHORT = {
+  "Bayetas (Taller)": ["Bayeta", "T"],
+  "Limpieza (Taller)": ["Limp", "T"],
+  "Reparación (Taller)": ["Rep", "T"],
+  "Reparación + Limpieza (Taller)": ["Rep+Limp", "T"],
+  "Reparación + Repostaje (Taller)": ["Rep+Gas", "T"],
+  "Reparación + Limpieza + Repostaje (Taller)": ["Rep+Limp+Gas", "T"],
+  "Repostaje (Taller)": ["Gas", "T"],
+  "Kit de Desvuelco (Taller)": ["Desvuelco", "T"],
+  "Rueda (Taller)": ["Rueda", "T"],
+  "Bayetas o Limpieza (Grúa)": ["Limp", "G"],
+  "Reparación (Grúa)": ["Rep", "G"],
+  "Reparación + Limpieza (Grúa)": ["Rep+Limp", "G"],
+  "Reparación + Repostaje (Grúa)": ["Rep+Gas", "G"],
+  "Reparación + Limpieza + Repostaje (Grúa)": ["Rep+Limp+Gas", "G"],
+  "Repostaje (Grúa)": ["Gas", "G"],
+  "Kit de Desvuelco (Grúa)": ["Desvuelco", "G"],
+  "Rueda (Grúa)": ["Rueda", "G"],
+  "Servicio de Grúa (desplazamiento)": ["Grua", "G"],
+  "Pintura Camaleónica (primera vez)": ["Camaleon", ""],
+  "Cambio de Color Camaleónico": ["Color cam", ""],
+  "Cambio de Color Camaleónico (Aéreos)": ["Color cam", "AE"],
+  "Instalación de Nitro ⚠": ["Nitro", ""],
+  "Botella de Nitro": ["Bot nitro", ""],
+  "Instalación de Neones RGB": ["Neon RGB", ""],
+  "Mando de Neones RGB": ["Mando RGB", ""],
+  "Compraventa Gama Baja": ["Compra", "GB"],
+  "Compraventa Gama Media": ["Compra", "GM"],
+  "Compraventa Gama Alta": ["Compra", "GA"],
 };
 
 function buildTuningProducts() {
@@ -431,7 +499,13 @@ function buildTuningProducts() {
     TUNING_PIECES.forEach((piece, i) => {
       // El Full Tuning de todas las gamas va junto en su propia pestaña.
       const category = piece === "Full Tuning" ? "full_tuning" : gama.key;
-      out.push({ name: `${piece} (${gama.label})`, price: prices[i], category });
+      out.push({
+        name: `${piece} (${gama.label})`,
+        price: prices[i],
+        category,
+        short: PIECE_SHORT[piece] || piece,
+        group: GAMA_SHORT[gama.key] || "",
+      });
     });
   }
   return out;
@@ -480,7 +554,13 @@ const SERVICE_PRODUCTS = [
   { name: "Compraventa Gama Alta", price: 10000, category: "compraventa" },
 ];
 
-const PRODUCTS = [...buildTuningProducts(), ...SERVICE_PRODUCTS];
+const PRODUCTS = [
+  ...buildTuningProducts(),
+  ...SERVICE_PRODUCTS.map((p) => {
+    const [short, group] = SERVICE_SHORT[p.name] || [p.name, ""];
+    return { ...p, short, group };
+  }),
+];
 
 const RANKS = [
   { label: "Chalán", pct: 0.40 },
@@ -599,12 +679,14 @@ function getAllProducts() {
   const overrides = productOverridesSource();
   const fixedVisible = PRODUCTS.filter((p) => !overrides[normalizeKeySimple(p.name)]?.hidden).map((p) => {
     const ov = overrides[normalizeKeySimple(p.name)];
-    if (!ov) return { name: p.name, price: p.price, image: p.image, category: p.category };
+    if (!ov) return { name: p.name, price: p.price, image: p.image, category: p.category, short: p.short, group: p.group };
     return {
       name: p.name,
       price: ov.price != null ? Number(ov.price) : p.price,
       image: ov.image || p.image,
       category: p.category,
+      short: p.short,
+      group: p.group,
     };
   });
   const custom = customProductsSource().map((p) => ({
@@ -612,6 +694,8 @@ function getAllProducts() {
     price: p.price,
     image: p.image,
     category: p.category,
+    short: p.name,
+    group: "",
   }));
   return [...fixedVisible, ...custom];
 }
@@ -1266,6 +1350,135 @@ function setupCaja() {
   const catNoteEl = byId("cat-note");
   const ticketBody = byId("ticket-body");
   const ticketTotal = byId("ticket-total");
+  const conceptInfo = byId("ticket-concept-info");
+
+  // Lineas del ticket en el orden del catalogo (los nombres que ya no existen, al final).
+  function ticketItems() {
+    const all = getAllProducts();
+    const items = [];
+    const seen = new Set();
+    for (const p of all) {
+      const row = state.cart[p.name];
+      if (row?.qty > 0) {
+        items.push({ name: p.name, qty: row.qty, price: row.price, short: p.short || p.name, group: p.group || "" });
+        seen.add(p.name);
+      }
+    }
+    for (const [name, row] of Object.entries(state.cart)) {
+      if (!seen.has(name) && row?.qty > 0) items.push({ name, qty: row.qty, price: row.price, short: name, group: "" });
+    }
+    return items;
+  }
+
+  const fullConcept = (items) => items.map((it) => `x${it.qty} ${it.name}`).join(" ");
+
+  // "2xRued+Turbo GA, Rep T": cada grupo (gama, taller, grua) se escribe una vez.
+  function shortConcept(items) {
+    const groups = new Map();
+    for (const it of items) {
+      const part = it.qty > 1 ? `${it.qty}x${it.short}` : it.short;
+      if (!groups.has(it.group)) groups.set(it.group, []);
+      groups.get(it.group).push(part);
+    }
+    return [...groups.entries()].map(([g, parts]) => parts.join("+") + (g ? ` ${g}` : "")).join(", ");
+  }
+
+  // Si ni abreviado cabe, se reparte en varios cobros que si caben.
+  function splitIntoCharges(items) {
+    const charges = [];
+    let current = [];
+    for (const it of items) {
+      for (let n = 0; n < it.qty; n++) {
+        const unit = { ...it, qty: 1 };
+        const tryItems = mergeQty([...current, unit]);
+        if (current.length && shortConcept(tryItems).length > CONCEPT_MAX) {
+          charges.push(mergeQty(current));
+          current = [unit];
+        } else {
+          current.push(unit);
+        }
+      }
+    }
+    if (current.length) charges.push(mergeQty(current));
+    return charges.map((list) => ({
+      concept: shortConcept(list),
+      total: list.reduce((a, it) => a + it.price * it.qty, 0),
+    }));
+  }
+
+  function mergeQty(list) {
+    const out = [];
+    for (const it of list) {
+      const prev = out.find((x) => x.name === it.name);
+      if (prev) prev.qty += it.qty;
+      else out.push({ ...it });
+    }
+    return out;
+  }
+
+  // Lo que copia "Copiar concepto": completo si cabe; si no, abreviado; si no, en cobros.
+  function conceptPlan() {
+    const items = ticketItems();
+    if (!items.length) return { kind: "empty" };
+    const full = fullConcept(items);
+    if (full.length <= CONCEPT_MAX) return { kind: "full", text: full };
+    const short = shortConcept(items);
+    if (short.length <= CONCEPT_MAX) return { kind: "short", text: short };
+    return { kind: "split", charges: splitIntoCharges(items) };
+  }
+
+  function renderConceptInfo() {
+    if (!conceptInfo) return;
+    const plan = conceptPlan();
+    conceptInfo.className = "concept-info";
+    if (plan.kind === "empty") {
+      conceptInfo.textContent = "";
+    } else if (plan.kind === "full") {
+      conceptInfo.textContent = `Concepto: ${plan.text.length}/${CONCEPT_MAX} · completo`;
+    } else if (plan.kind === "short") {
+      conceptInfo.textContent = `Concepto: ${plan.text.length}/${CONCEPT_MAX} · abreviado (el completo no cabe en el datáfono)`;
+      conceptInfo.title = plan.text;
+    } else {
+      conceptInfo.classList.add("is-over");
+      conceptInfo.textContent = `No cabe en un cobro: se divide en ${plan.charges.length} cobros al copiar el concepto`;
+    }
+  }
+
+  function openChargesDialog(charges) {
+    const dlg = byId("charges-modal");
+    const body = byId("charges-body");
+    if (!dlg || !body) return;
+    body.innerHTML = "";
+    charges.forEach((c, i) => {
+      const tr = document.createElement("tr");
+      const tdN = document.createElement("td");
+      tdN.textContent = `${i + 1} de ${charges.length}`;
+      const tdC = document.createElement("td");
+      tdC.textContent = c.concept;
+      tdC.title = `${c.concept.length}/${CONCEPT_MAX} caracteres`;
+      const tdT = document.createElement("td");
+      tdT.className = "num";
+      tdT.textContent = fmtMoney(c.total);
+      const tdA = document.createElement("td");
+      tdA.className = "num";
+      const mk = (label, text) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "small";
+        b.textContent = label;
+        b.addEventListener("click", async () => {
+          const ok = await copyText(text);
+          if (!ok) openCopyFallback(text);
+          tr.classList.add("is-selected");
+        });
+        return b;
+      };
+      tdA.append(mk("Copiar total", String(c.total)), document.createTextNode(" "), mk("Copiar concepto", c.concept));
+      tr.append(tdN, tdC, tdT, tdA);
+      body.appendChild(tr);
+    });
+    dlg.showModal();
+  }
 
   function addItemDelta(name, price, delta) {
     const row = state.cart[name];
@@ -1342,6 +1555,7 @@ function setupCaja() {
       ticketBody.appendChild(tr);
     }
     ticketTotal.textContent = fmtMoney(total);
+    renderConceptInfo();
   }
 
   function renderCategoryTabs(allProducts) {
@@ -1432,26 +1646,17 @@ function setupCaja() {
   });
 
   byId("btn-copy-concept").addEventListener("click", async () => {
-    const parts = [];
-    const allProducts = getAllProducts();
-    const inProducts = new Set(allProducts.map((p) => p.name));
-
-    for (const p of allProducts) {
-      const row = state.cart[p.name];
-      if (row?.qty > 0) parts.push(`x${row.qty} ${p.name}`);
-    }
-
-    for (const [name, row] of Object.entries(state.cart)) {
-      if (!inProducts.has(name) && row?.qty > 0) parts.push(`x${row.qty} ${name}`);
-    }
-
-    const concept = parts.join(" ").trim();
-    if (!concept) {
+    const plan = conceptPlan();
+    if (plan.kind === "empty") {
       alert("El ticket esta vacio.");
       return;
     }
-    const ok = await copyText(concept);
-    if (!ok) openCopyFallback(concept);
+    if (plan.kind === "split") {
+      openChargesDialog(plan.charges);
+      return;
+    }
+    const ok = await copyText(plan.text);
+    if (!ok) openCopyFallback(plan.text);
   });
 
   setupProductsAdminModal(renderProductGrid);

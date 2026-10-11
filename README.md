@@ -8,7 +8,7 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 
 ## Qué hace
 
-1. **Módulo de Caja** · Catálogo de 118 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** (`x2 Ruedas (Gama Baja) x1 Turbo (Gama Alta)…`) para pegarlo en la factura del juego.
+1. **Módulo de Caja** · Catálogo de 133 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** para pasarlo por el datáfono (máximo 40 caracteres, ver *Concepto para el datáfono*).
 2. **Módulo de Pagos** · Se pega el texto de Discord con las facturas (datáfono TPV y el sistema de facturas antiguo) y las ventas de kits. Calcula el total cobrado por cada empleado, su comisión según el rango y el **Total a Pagar** a toda la plantilla. Se puede exportar a CSV.
 3. **Módulo de Almacén** · Se pega el log de inventario de Discord (METER / SACAR) y muestra las existencias, quién mete y quién saca cada artículo (con su Discord) y el historial completo. Avisa cuando un artículo baja del mínimo.
 
@@ -16,8 +16,10 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 
 | Pestaña | Contenido |
 |---|---|
-| Motos, Gama Baja, Gama Media, Gama Alta, Gama VIP, Aéreos | 14 piezas de tuning por gama: pintura, neones, luces, ruedas, humo, carrocería, claxon, tintado, turbo, motor, transmisión, blindaje, suspensión y frenos |
+| Motos, Gama Baja, Gama Media, Gama Alta, Gama VIP, Camiones, Aéreos | 14 piezas de tuning por gama: pintura, neones, luces, ruedas, humo, carrocería, claxon, tintado, turbo, motor, transmisión, blindaje, suspensión y frenos |
 | Full Tuning | El Full Tuning de cada gama, de $10.000 a $50.000 |
+
+Los **Camiones** tienen los mismos precios que la Gama Alta, porque su precio de compra es parecido.
 | Servicios (Taller) / Servicios (Grúa) | Reparaciones, limpiezas, repostajes, kits de desvuelco y ruedas, dentro y fuera del taller. Los kits de reparación no están: se venden desde el menú de kits del juego y se cuentan en Pagos → Venta de Kits |
 | Camaleónica | Pintura camaleónica y cambios de color |
 | Nitro | Instalación y botella. Venta restringida: la Caja muestra un aviso |
@@ -25,6 +27,27 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 | Compraventa | Cambio de papeles por gama |
 
 Desde **Gestión de Productos** (con contraseña) se pueden agregar productos nuevos con su icono, cambiar precios e imágenes y ocultar o restaurar los fijos.
+
+## Concepto para el datáfono
+
+El datáfono solo acepta **40 caracteres** de concepto. Debajo del total del ticket se ve cuántos ocupa, y **Copiar concepto** elige solo:
+
+1. **Completo**, si cabe: `x1 Turbo (Gama Alta)`.
+2. **Abreviado**, si el completo no cabe. La gama o el lugar se escribe una vez al final: `Neon+Turbo+FT GA`, `4xRued+Turbo GB, Rep T`.
+3. **En varios cobros**, si ni abreviado cabe: se abre una ventana con cada cobro (total y concepto) para pasarlos por el datáfono uno tras otro.
+
+| Abreviatura | Significa |
+|---|---|
+| MT, GB, GM, GA, VIP, CAM, AE | Motos, Gama Baja, Media, Alta, VIP, Camiones, Aéreos |
+| T / G | Taller / Grúa |
+| Pint, Neon, Luces, Rued, Humo, Carr, Clax, Tint | Pintura, Neones, Cambio de Luces, Ruedas, Humo de Ruedas, Carrocería, Claxon, Tintado de Lunas |
+| Turbo, Motor, Trans, Blind, Susp, Fren, FT | Turbo, Motor, Transmisión, Blindaje, Suspensión, Frenos, Full Tuning |
+| Rep, Limp, Gas, Bayeta, Desvuelco, Rueda, Grua | Reparación, Limpieza, Repostaje, Bayetas, Kit de Desvuelco, Rueda, Servicio de Grúa |
+| Camaleon, Color cam | Pintura Camaleónica, Cambio de Color Camaleónico |
+| Nitro, Bot nitro, Neon RGB, Mando RGB, Compra | Instalación de Nitro, Botella de Nitro, Instalación de Neones RGB, Mando de Neones RGB, Compraventa |
+| `2x` delante | Cantidad (si es más de 1) |
+
+Los productos agregados desde Gestión de Productos usan su nombre completo. Las abreviaturas se cambian en `app.js` → `PIECE_SHORT`, `GAMA_SHORT` y `SERVICE_SHORT`.
 
 ## Comisiones por rango
 
@@ -166,6 +189,11 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 14 · 11 de octubre de 2026
+- **Concepto para el datáfono** (máximo 40 caracteres): se copia completo si cabe; si no, abreviado (`Neon+Turbo+FT GA`); y si ni así cabe, se reparte en varios cobros con su total y concepto.
+- Debajo del total del ticket se ve cuántos caracteres ocupa el concepto.
+- Nueva pestaña **Camiones** con los mismos precios que la Gama Alta, y su Full Tuning ($40.000) en la pestaña Full Tuning. La Caja queda con 133 productos.
 
 ### Versión 13 · 11 de octubre de 2026
 - Se quitan **Kit de Reparación (Taller)** y **Kit de Reparación (Grúa)** de la Caja: nunca se cobran por datáfono, se venden desde el menú de kits del juego («Vender a») y se cuentan en Pagos → Venta de Kits. La Caja queda con 118 productos.
