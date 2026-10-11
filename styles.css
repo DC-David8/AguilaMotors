@@ -684,3 +684,11 @@ select.text-input { background: #0f0c09; color: var(--text); }
 .form-grid .emp-discord-new { grid-column: 1 / -1; }
 .emp-discord-input { min-width: 170px; font-variant-numeric: tabular-nums; }
 .emp-discord-input.is-bad { border-color: #ff9a7a; }
+
+/* Datos compartidos (Modulo de Pagos) */
+.shared-box { margin: 12px 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 12px; }
+.shared-box h3 { margin: 0 0 4px; font-size: 0.95rem; }
+.shared-box p { margin: 0 0 6px; }
+.emp-readonly-note { color: var(--accent-2); }
+
+[hidden] { display: none !important; }

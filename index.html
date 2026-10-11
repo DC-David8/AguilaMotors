@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=9" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=10" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -144,6 +144,18 @@
           <div class="actions">
             <button id="conta-employees">Totales empleados</button>
             <button id="conta-manage-employees">Gestion empleados</button>
+          </div>
+
+          <div class="shared-box">
+            <h3>Datos compartidos</h3>
+            <p class="muted" id="shared-status"></p>
+            <div class="actions">
+              <button type="button" id="shared-editor" class="ghost small">Soy el encargado</button>
+              <button type="button" id="shared-export" hidden>Exportar datos (datos.js)</button>
+              <button type="button" id="shared-copy" class="ghost" hidden>Copiar datos</button>
+              <button type="button" id="shared-import" class="ghost" hidden>Cargar los publicados en esta PC</button>
+              <button type="button" id="shared-exit" class="ghost" hidden>Salir del modo encargado</button>
+            </div>
           </div>
 
           <p class="muted" id="conta-loaded">Sin datos</p>
@@ -294,7 +306,7 @@
         </div>
       </section>
     </section>
-    <footer class="app-version">Versión 9 · Etiquetas de Discord por empleado</footer>
+    <footer class="app-version">Versión 10 · Datos compartidos</footer>
   </main>
 
   <dialog id="add-product-modal">
@@ -421,6 +433,8 @@
         </div>
       </section>
 
+      <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
+
       <h4>Empleados</h4>
       <div class="form-row">
         <input id="emp-search" class="text-input" type="text" placeholder="Buscar por nombre, apellido o rango..." />
@@ -488,6 +502,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

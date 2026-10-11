@@ -77,6 +77,29 @@ Las existencias salen solo del log del almacén: la Caja no las descuenta al ven
 
 > Es una web estática: la contraseña evita miradas casuales, pero no es seguridad real. Quien sepa abrir el código fuente puede leerla.
 
+## Datos compartidos (empleados y productos)
+
+El encargado publica los empleados (con rango y Discord) y los productos para que todos vean lo mismo. Los jefes de taller solo los ven: no pueden cambiarlos.
+
+**Cómo funciona**
+
+- Si en el repositorio hay un archivo `datos.js`, la página lo carga sola al abrirse (siempre la última versión). Gestión de empleados queda en solo lectura y Gestión de Productos no se abre.
+- Si no hay `datos.js`, cada PC usa sus propios datos como antes.
+- El programa de escritorio carga `datos.js` de la web publicada; si no hay internet, usa el de su carpeta.
+
+**Publicar cambios (encargado)**
+
+1. En **Módulo de Pagos → Datos compartidos**, pulsa **Soy el encargado** y escribe la contraseña del encargado. Esa PC queda en modo encargado.
+2. Edita empleados, rangos, Discord y productos como siempre (son los datos de tu PC).
+3. Pulsa **Exportar datos (datos.js)**.
+4. Sube el archivo al repositorio con **Add file → Upload files**, con el nombre exacto `datos.js` (reemplaza al anterior). En uno o dos minutos todos lo ven.
+
+En una PC nueva, después de entrar en modo encargado, **Cargar los publicados en esta PC** copia lo publicado para seguir editando desde ahí.
+
+**Contraseña del encargado:** en el código solo está su huella SHA-256 (`app.js` → `EDITOR_PASSWORD_SHA256`). Para cambiarla, calcula la huella de la nueva (`echo -n "NuevaContraseña" | sha256sum`) y sustitúyela.
+
+> El repositorio es público: los nombres de los empleados y sus IDs de Discord de `datos.js` los puede ver cualquiera que lo busque.
+
 ## Dónde se guardan los datos
 
 Los empleados, los productos agregados o editados y el almacén se guardan **en el navegador de cada PC**, no en este repositorio. Por eso:
@@ -103,6 +126,7 @@ La misma página funciona dentro del programa de escritorio (pywebview, `.exe`),
 ├── styles.css               Tema negro y naranja
 ├── aguila_motors_logo.png   Logo del taller
 ├── favicon.ico              Icono de la pestaña
+├── datos.js                 Empleados y productos publicados por el encargado (se genera desde la página)
 ├── manifest.webmanifest     Nombre e iconos de la app en la pantalla de Inicio
 └── icons/                   Icono del iPhone/Android y pantallas de arranque del iPhone
 ```
@@ -121,6 +145,12 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 10 · 10 de octubre de 2026
+- **Datos compartidos**: el encargado exporta `datos.js` con empleados (rango y Discord) y productos y lo sube al repositorio; la página lo carga sola para todos.
+- Con datos publicados, los jefes de taller ven los empleados y productos en solo lectura (Gestión de empleados y Gestión de Productos bloqueadas).
+- **Modo encargado** con contraseña propia, para editar, exportar y cargar lo publicado en una PC nueva.
+- El programa de escritorio carga los datos publicados de la web, o los de su carpeta sin internet.
 
 ### Versión 9 · 10 de octubre de 2026
 - Se quita el botón **Rellenar Discord desde Almacén**: el log copiado de Discord no siempre trae el enlace con el Discord de cada persona. Los IDs se ponen a mano en Gestión de empleados.

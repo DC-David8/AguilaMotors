@@ -597,7 +597,7 @@ function setFixedProductHidden(originalName, hidden, password) {
 // Todos los productos disponibles en la Caja: los fijos visibles (con sus
 // ajustes aplicados) + los agregados desde la app.
 function getAllProducts() {
-  const overrides = loadProductOverridesLocal();
+  const overrides = productOverridesSource();
   const fixedVisible = PRODUCTS.filter((p) => !overrides[normalizeKeySimple(p.name)]?.hidden).map((p) => {
     const ov = overrides[normalizeKeySimple(p.name)];
     if (!ov) return { name: p.name, price: p.price, image: p.image, category: p.category };
@@ -608,7 +608,7 @@ function getAllProducts() {
       category: p.category,
     };
   });
-  const custom = loadCustomProductsLocal().map((p) => ({
+  const custom = customProductsSource().map((p) => ({
     name: p.name,
     price: p.price,
     image: p.image,
@@ -620,7 +620,7 @@ function getAllProducts() {
 // Lista combinada para la tabla de "Editar / Quitar": incluye tambien los
 // fijos ocultos (para poder restaurarlos) y trae el origen/id de cada fila.
 function listProductsForAdmin() {
-  const overrides = loadProductOverridesLocal();
+  const overrides = productOverridesSource();
   const fixed = PRODUCTS.map((p) => {
     const key = normalizeKeySimple(p.name);
     const ov = overrides[key] || {};
@@ -634,7 +634,7 @@ function listProductsForAdmin() {
       hidden: !!ov.hidden,
     };
   });
-  const custom = loadCustomProductsLocal().map((p) => ({
+  const custom = customProductsSource().map((p) => ({
     source: "custom",
     id: p.id,
     name: p.name,
@@ -740,7 +740,8 @@ function parseDiscordId(raw) {
 }
 
 function getEmployeeDiscord(fullNameStr) {
-  return loadEmployeeDiscordMap()[normalizeKeySimple(fullNameStr)] || "";
+  const map = isSharedReadOnly() ? SHARED_DATA.discord : loadEmployeeDiscordMap();
+  return map[normalizeKeySimple(fullNameStr)] || "";
 }
 
 function setEmployeeDiscord(fullNameStr, id) {
@@ -749,6 +750,283 @@ function setEmployeeDiscord(fullNameStr, id) {
   if (id) map[key] = id;
   else delete map[key];
   saveEmployeeDiscordMap(map);
+}
+
+// ============================================================================
+// Datos compartidos (datos.js en el repositorio)
+// ----------------------------------------------------------------------------
+// El encargado edita en su PC (modo encargado) y exporta datos.js. Al subirlo
+// al repositorio, todos los que abren la pagina cargan esos empleados (con
+// rango y Discord) y productos, en solo lectura. Sin datos.js publicado, cada
+// PC sigue usando sus propios datos como siempre.
+// ============================================================================
+
+const SHARED_DATA_FILE = "datos.js";
+const SHARED_DATA_LIVE_URL = "https://dc-david8.github.io/AguilaMotors/" + SHARED_DATA_FILE;
+// Huella SHA-256 de la contrasena del encargado (la contrasena no esta en el codigo).
+const EDITOR_PASSWORD_SHA256 = "6cd247cdd58ad88f2bf53d07ed2845c17375143c377648c4b26a981d2f7906b8";
+const EDITOR_STORAGE_KEY = "aguila_editor_v1";
+
+let SHARED_DATA = null;
+
+function isEditorMode() {
+  try {
+    return localStorage.getItem(EDITOR_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setEditorMode(on) {
+  try {
+    if (on) localStorage.setItem(EDITOR_STORAGE_KEY, "1");
+    else localStorage.removeItem(EDITOR_STORAGE_KEY);
+  } catch {
+    // sin almacenamiento
+  }
+}
+
+// Hay datos publicados y quien mira no es el encargado: todo lo compartido es de solo lectura.
+function isSharedReadOnly() {
+  return !!SHARED_DATA && !isEditorMode();
+}
+
+// SHA-256 en JavaScript puro: crypto.subtle no existe en paginas abiertas como
+// archivo (programa de escritorio) ni fuera de https.
+function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(String(text));
+  const K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const len = bytes.length;
+  const total = Math.ceil((len + 9) / 64) * 64;
+  const msg = new Uint8Array(total);
+  msg.set(bytes);
+  msg[len] = 0x80;
+  const bits = len * 8;
+  const dv = new DataView(msg.buffer);
+  dv.setUint32(total - 8, Math.floor(bits / 0x100000000));
+  dv.setUint32(total - 4, bits >>> 0);
+  const w = new Uint32Array(64);
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let off = 0; off < total; off += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + i * 4);
+    for (let i = 16; i < 64; i++) {
+      const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[i] + w[i]) >>> 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+  }
+  return H.map((x) => x.toString(16).padStart(8, "0")).join("");
+}
+
+function normalizeSharedData(raw) {
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.employees)) return null;
+  const employees = raw.employees
+    .map((e, i) => ({
+      id: `shared-${i}`,
+      name: String(e?.name || "").trim(),
+      surname: String(e?.surname || "").trim(),
+      rank: String(e?.rank || "").trim(),
+      discord: parseDiscordId(e?.discord) || "",
+    }))
+    .filter((e) => e.name && e.surname);
+  const discord = {};
+  for (const e of employees) if (e.discord) discord[normalizeKeySimple(fullName(e))] = e.discord;
+  return {
+    publishedAt: String(raw.publishedAt || ""),
+    employees,
+    discord,
+    customProducts: Array.isArray(raw.customProducts) ? raw.customProducts : [],
+    productOverrides: raw.productOverrides && typeof raw.productOverrides === "object" ? raw.productOverrides : {},
+  };
+}
+
+function loadScriptOnce(src, timeoutMs) {
+  return new Promise((resolve) => {
+    const s = document.createElement("script");
+    const done = (ok) => {
+      clearTimeout(timer);
+      s.onload = s.onerror = null;
+      resolve(ok);
+    };
+    const timer = setTimeout(() => done(false), timeoutMs);
+    s.onload = () => done(true);
+    s.onerror = () => done(false);
+    s.src = src;
+    document.head.appendChild(s);
+  });
+}
+
+// Se carga siempre la ultima version publicada (el ?t= evita la cache). En la
+// web se pide al mismo sitio; en el programa de escritorio se pide primero a la
+// web publicada y, si no hay internet, al datos.js de la carpeta.
+async function loadSharedData() {
+  const t = Date.now();
+  const onPublishedSite = /^https?:$/.test(location.protocol) && /github\.io$/i.test(location.hostname);
+  const sources = onPublishedSite ? [SHARED_DATA_FILE] : [SHARED_DATA_LIVE_URL, SHARED_DATA_FILE];
+  for (const src of sources) {
+    window.AGUILA_DATOS = undefined;
+    const ok = await loadScriptOnce(`${src}?t=${t}`, 5000);
+    if (ok && window.AGUILA_DATOS) {
+      SHARED_DATA = normalizeSharedData(window.AGUILA_DATOS);
+      if (SHARED_DATA) return;
+    }
+  }
+  SHARED_DATA = null;
+}
+
+function customProductsSource() {
+  return isSharedReadOnly() ? SHARED_DATA.customProducts : loadCustomProductsLocal();
+}
+
+function productOverridesSource() {
+  return isSharedReadOnly() ? SHARED_DATA.productOverrides : loadProductOverridesLocal();
+}
+
+function fmtStamp(d = new Date()) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// Arma datos.js con los datos de ESTA PC (los que edita el encargado).
+async function buildSharedDataFile() {
+  const map = loadEmployeeDiscordMap();
+  const employees = (await listEmployees())
+    .map((e) => ({
+      name: String(e.name || "").trim(),
+      surname: String(e.surname || "").trim(),
+      rank: String(e.rank || "").trim(),
+      discord: map[normalizeKeySimple(fullName(e))] || "",
+    }))
+    .filter((e) => e.name && e.surname)
+    .sort((a, b) => `${a.surname} ${a.name}`.localeCompare(`${b.surname} ${b.name}`, "es", { sensitivity: "base" }));
+  const data = {
+    publishedAt: fmtStamp(),
+    employees,
+    customProducts: loadCustomProductsLocal(),
+    productOverrides: loadProductOverridesLocal(),
+  };
+  const text =
+    "// Datos compartidos de Aguila Motors. Se generan desde la pagina\n" +
+    "// (Modulo de Pagos → Datos compartidos → Exportar datos). No editar a mano.\n" +
+    "window.AGUILA_DATOS = " + JSON.stringify(data, null, 1) + ";\n";
+  return { data, text };
+}
+
+// Copia lo publicado a esta PC (para el encargado en una PC nueva o en el programa de escritorio).
+async function importSharedIntoLocal() {
+  const local = await listEmployees();
+  for (const e of local) await deleteEmployee(e.id, EMPLOYEE_ADMIN_PASSWORD);
+  const map = {};
+  for (const e of SHARED_DATA.employees) {
+    await addEmployee({ name: e.name, surname: e.surname, rank: e.rank }, EMPLOYEE_ADMIN_PASSWORD);
+    if (e.discord) map[normalizeKeySimple(fullName(e))] = e.discord;
+  }
+  saveEmployeeDiscordMap(map);
+  saveCustomProductsLocal(SHARED_DATA.customProducts);
+  saveProductOverridesLocal(SHARED_DATA.productOverrides);
+}
+
+function setupSharedData() {
+  const statusEl = byId("shared-status");
+  if (!statusEl) return;
+  const btnEditor = byId("shared-editor");
+  const btnExport = byId("shared-export");
+  const btnCopy = byId("shared-copy");
+  const btnImport = byId("shared-import");
+  const btnExit = byId("shared-exit");
+
+  const editor = isEditorMode();
+  btnEditor.hidden = editor;
+  btnExport.hidden = !editor;
+  btnCopy.hidden = !editor;
+  btnExit.hidden = !editor;
+  btnImport.hidden = !(editor && SHARED_DATA);
+
+  const when = SHARED_DATA?.publishedAt ? ` el ${SHARED_DATA.publishedAt}` : "";
+  if (editor) {
+    statusEl.textContent =
+      "Modo encargado: editas los datos de esta PC. Para que los demás los vean, exporta datos.js y súbelo al repositorio." +
+      (SHARED_DATA ? ` Última publicación${when}.` : " Todavía no hay datos publicados.");
+  } else if (SHARED_DATA) {
+    statusEl.textContent = `Empleados y productos publicados por el encargado${when}. Aquí solo se pueden ver.`;
+  } else {
+    statusEl.textContent = "Todavía no hay datos publicados: cada PC usa sus propios empleados y productos.";
+  }
+
+  btnEditor.addEventListener("click", async () => {
+    const pass = window.prompt("Contraseña del encargado:");
+    if (pass == null) return;
+    if (sha256Hex(pass) !== EDITOR_PASSWORD_SHA256) {
+      alert("Contraseña incorrecta.");
+      return;
+    }
+    setEditorMode(true);
+    location.reload();
+  });
+
+  btnExit.addEventListener("click", () => {
+    if (!window.confirm("¿Salir del modo encargado en esta PC? Verás los datos publicados en solo lectura.")) return;
+    setEditorMode(false);
+    location.reload();
+  });
+
+  btnExport.addEventListener("click", async () => {
+    const { data, text } = await buildSharedDataFile();
+    if (!data.employees.length && !window.confirm("No hay empleados en esta PC. ¿Exportar igualmente?")) return;
+    const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = SHARED_DATA_FILE;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    statusEl.textContent =
+      `Exportado: ${data.employees.length} empleados y ${data.customProducts.length} productos agregados. ` +
+      "Sube el archivo al repositorio con el nombre datos.js (si el navegador lo guardó como «datos (1).js», cámbiale el nombre).";
+  });
+
+  btnCopy.addEventListener("click", async () => {
+    const { text } = await buildSharedDataFile();
+    const ok = await copyText(text);
+    if (!ok) openCopyFallback(text);
+    else statusEl.textContent = "Datos copiados. Pégalos en un archivo datos.js o mándamelos para subirlos.";
+  });
+
+  btnImport.addEventListener("click", async () => {
+    if (!window.confirm("Esto reemplaza los empleados, Discord y productos de esta PC por los publicados. ¿Continuar?")) return;
+    statusEl.textContent = "Cargando los datos publicados en esta PC…";
+    btnImport.disabled = true;
+    try {
+      await importSharedIntoLocal();
+      location.reload();
+    } catch (e) {
+      alert(String(e?.message || e || "No se pudo cargar."));
+      btnImport.disabled = false;
+    }
+  });
 }
 const EMPLOYEE_STORAGE_KEY = "aguila_employees_v1";
 
@@ -791,6 +1069,7 @@ async function waitPyApi(maxMs = 2500) {
 }
 
 async function listEmployees() {
+  if (isSharedReadOnly()) return SHARED_DATA.employees.map((e) => ({ ...e }));
   const api = await waitPyApi();
   if (api && typeof api.emp_list === "function") {
     try {
@@ -1311,6 +1590,10 @@ function setupProductsAdminModal(onProductsChanged) {
   cancelEditBtn?.addEventListener("click", () => exitEditMode());
 
   btnOpen.addEventListener("click", async () => {
+    if (isSharedReadOnly()) {
+      alert("Los productos los gestiona el encargado. Aquí se ven los publicados y no se pueden cambiar.");
+      return;
+    }
     const ok = await showAccessModal({
       sectionLabel: "Gestión de Productos",
       requiredPassword: PRODUCT_ADMIN_PASSWORD,
@@ -1992,6 +2275,18 @@ function setupEmployeesAdminModal({ onChanged }) {
   let adminPass = "";
   let employees = [];
 
+  // Con datos publicados y sin modo encargado, la lista solo se puede ver.
+  const readOnly = isSharedReadOnly();
+  const roNote = byId("emp-readonly-note");
+  if (readOnly) {
+    nameInput?.closest(".admin-block")?.setAttribute("hidden", "");
+    passInput?.closest(".admin-block")?.setAttribute("hidden", "");
+    if (roNote) {
+      roNote.hidden = false;
+      roNote.textContent = `Empleados publicados por el encargado${SHARED_DATA.publishedAt ? " el " + SHARED_DATA.publishedAt : ""}. Aquí solo se pueden ver.`;
+    }
+  }
+
   function setStatus(text, ok = false) {
     status.textContent = text;
     status.style.color = ok ? "var(--ok)" : "var(--muted)";
@@ -2042,6 +2337,11 @@ function setupEmployeesAdminModal({ onChanged }) {
 
       const dInput = tr.querySelector(".emp-discord-input");
       dInput.value = getEmployeeDiscord(full);
+      if (readOnly) {
+        select.disabled = true;
+        dInput.readOnly = true;
+        tr.querySelector("button[data-del]")?.remove();
+      }
       dInput.addEventListener("change", async () => {
         if (!unlocked) {
           alert("Primero desbloquea con la contrasena.");
@@ -2749,9 +3049,17 @@ function setupAlmacen() {
 
 setupCopyFallbackModal();
 setupTabs();
-setupCaja();
-setupContabilidad();
-setupAlmacen();
+// Primero los datos publicados (si los hay); luego se arma la pagina con ellos.
+loadSharedData()
+  .catch(() => {
+    SHARED_DATA = null;
+  })
+  .finally(() => {
+    setupCaja();
+    setupContabilidad();
+    setupSharedData();
+    setupAlmacen();
+  });
 
 // Al abrir desde la pantalla de Inicio, el logo se queda un momento y se desvanece.
 (function hideAppSplash() {
