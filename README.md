@@ -8,7 +8,7 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 
 ## Qué hace
 
-1. **Módulo de Caja** · Catálogo de 120 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** (`x2 Ruedas (Gama Baja) x1 Turbo (Gama Alta)…`) para pegarlo en la factura del juego.
+1. **Módulo de Caja** · Catálogo de 118 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** (`x2 Ruedas (Gama Baja) x1 Turbo (Gama Alta)…`) para pegarlo en la factura del juego.
 2. **Módulo de Pagos** · Se pega el texto de Discord con las facturas (datáfono TPV y el sistema de facturas antiguo) y las ventas de kits. Calcula el total cobrado por cada empleado, su comisión según el rango y el **Total a Pagar** a toda la plantilla. Se puede exportar a CSV.
 3. **Módulo de Almacén** · Se pega el log de inventario de Discord (METER / SACAR) y muestra las existencias, quién mete y quién saca cada artículo (con su Discord) y el historial completo. Avisa cuando un artículo baja del mínimo.
 
@@ -18,7 +18,7 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 |---|---|
 | Motos, Gama Baja, Gama Media, Gama Alta, Gama VIP, Aéreos | 14 piezas de tuning por gama: pintura, neones, luces, ruedas, humo, carrocería, claxon, tintado, turbo, motor, transmisión, blindaje, suspensión y frenos |
 | Full Tuning | El Full Tuning de cada gama, de $10.000 a $50.000 |
-| Servicios (Taller) / Servicios (Grúa) | Reparaciones, limpiezas, repostajes, kits y ruedas, dentro y fuera del taller |
+| Servicios (Taller) / Servicios (Grúa) | Reparaciones, limpiezas, repostajes, kits de desvuelco y ruedas, dentro y fuera del taller. Los kits de reparación no están: se venden desde el menú de kits del juego y se cuentan en Pagos → Venta de Kits |
 | Camaleónica | Pintura camaleónica y cambios de color |
 | Nitro | Instalación y botella. Venta restringida: la Caja muestra un aviso |
 | Neones RGB | Instalación y mando |
@@ -166,6 +166,9 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 13 · 11 de octubre de 2026
+- Se quitan **Kit de Reparación (Taller)** y **Kit de Reparación (Grúa)** de la Caja: nunca se cobran por datáfono, se venden desde el menú de kits del juego («Vender a») y se cuentan en Pagos → Venta de Kits. La Caja queda con 118 productos.
 
 ### Versión 12 · 10 de octubre de 2026
 - **Gestión de empleados**: nueva casilla **No cobra** para quien no recibe nómina.

@@ -438,8 +438,8 @@ function buildTuningProducts() {
 }
 
 const SERVICE_PRODUCTS = [
-  // Servicios dentro del taller
-  { name: "Kit de Reparación (Taller)", price: 800, category: "servicios_taller" },
+  // Servicios dentro del taller. Los kits de reparacion no estan aqui: se venden
+  // desde el menu de kits del juego (no por datafono) y se cuentan en Pagos → Venta de Kits.
   { name: "Bayetas (Taller)", price: 400, category: "servicios_taller" },
   { name: "Limpieza (Taller)", price: 400, category: "servicios_taller" },
   { name: "Reparación (Taller)", price: 800, category: "servicios_taller" },
@@ -451,7 +451,6 @@ const SERVICE_PRODUCTS = [
   { name: "Rueda (Taller)", price: 500, category: "servicios_taller" },
 
   // Servicios fuera del taller (grua)
-  { name: "Kit de Reparación (Grúa)", price: 800, category: "servicios_grua" },
   { name: "Bayetas o Limpieza (Grúa)", price: 400, category: "servicios_grua" },
   { name: "Reparación (Grúa)", price: 800, category: "servicios_grua" },
   { name: "Reparación + Limpieza (Grúa)", price: 1100, category: "servicios_grua" },
