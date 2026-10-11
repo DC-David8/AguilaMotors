@@ -40,6 +40,12 @@ Se aplican igual a las facturas y a las ventas de kits. El rango de cada emplead
 
 Los porcentajes se cambian en `app.js` → `RANKS`.
 
+### Empleado de la semana
+
+En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* (`<@&ID>`) al copiar, tanto en **Copiar seleccionado** como en **Copiar todo**. Al pegarlo en Discord se ve el rol con su color. Si hay empate, la llevan todos los empatados. El texto solo menciona el rol: asignarlo se sigue haciendo en Discord.
+
+El rol se cambia en `app.js` → `EMPLOYEE_OF_WEEK_ROLE_ID` (ID del rol: con el modo desarrollador de Discord, clic derecho sobre el rol → *Copiar ID del rol*).
+
 ## Almacén
 
 Artículos con control de existencias y aviso de mínimo:
@@ -105,6 +111,10 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 7 · 10 de octubre de 2026
+- En **Totales empleados**, el empleado que más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* en lugar del 🏆.
+- La etiqueta sale en **Copiar seleccionado** (cuando la persona elegida es la que más cobra) y en **Copiar todo**.
 
 ### Versión 6 · 9 de octubre de 2026
 - Icono de Aguila Motors al añadir la web a la pantalla de Inicio del iPhone (y Android), con el nombre «Aguila Motors».

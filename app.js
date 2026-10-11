@@ -703,6 +703,11 @@ const ACCESS_PASSWORDS = {
 const BACKEND_LEGACY_PASSWORD = "0000";
 
 const EMPLOYEE_ADMIN_PASSWORD = ACCESS_PASSWORDS["tab-conta"];
+
+// Rol de Discord "Empleado de la semana". Al pegarlo en Discord, <@&ID> se ve
+// como la etiqueta del rol. Para cambiar de rol, cambia solo el numero.
+const EMPLOYEE_OF_WEEK_ROLE_ID = "1263156546519433333";
+const EMPLOYEE_OF_WEEK_TAG = `<@&${EMPLOYEE_OF_WEEK_ROLE_ID}>`;
 const EMPLOYEE_STORAGE_KEY = "aguila_employees_v1";
 
 function loadEmployeesLocal() {
@@ -1845,12 +1850,19 @@ function setupEmployeesModal(state) {
     openTotalsModal().catch(() => alert("No se pudieron cargar los empleados."));
   });
 
+  // Quien mas cobra en la lista es el empleado de la semana (si hay empate, todos).
+  function isEmployeeOfWeek(row) {
+    const maxPayout = Math.max(0, ...totalsRows.map((r) => r.payout));
+    return maxPayout > 0 && row.payout === maxPayout;
+  }
+
   byId("employees-copy-sel").addEventListener("click", async () => {
     const row = totalsRows.find((r) => r.id === selectedId);
     if (!row) return;
     const name = row.rank ? `${row.name} (${row.rank})` : row.name;
     const pctTxt = row.pct ? `${Math.round(row.pct * 100)}%` : "-";
-    const text = `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)}`;
+    let text = `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)}`;
+    if (isEmployeeOfWeek(row)) text += ` | ${EMPLOYEE_OF_WEEK_TAG}`;
 
     const ok = await copyText(text);
     if (!ok) openCopyFallback(text);
@@ -1868,13 +1880,10 @@ function setupEmployeesModal(state) {
     if (!totalsRows.length) {
       return;
     }
-    const maxPayout = Math.max(0, ...totalsRows.map((r) => r.payout));
     const lines = totalsRows.map((r) => {
       const name = r.rank ? `${r.name} (${r.rank})` : r.name;
       let line = `* ${name}: ${fmtMoneyPlain(r.payout)}`;
-      if (r.payout === maxPayout && maxPayout > 0) {
-        line += " 🏆";
-      }
+      if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
       return line;
     });
     const text = lines.join("\n");
