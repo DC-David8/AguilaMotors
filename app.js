@@ -376,6 +376,7 @@ const PRODUCT_CATEGORIES = [
   { key: "full_tuning", label: "Full Tuning" },
   { key: "servicios_taller", label: "Servicios (Taller)" },
   { key: "servicios_grua", label: "Servicios (Grúa)" },
+  { key: "tienda", label: "Tienda" },
   { key: "camaleonica", label: "Camaleónica" },
   { key: "nitro", label: "Nitro" },
   { key: "neones", label: "Neones RGB" },
@@ -462,24 +463,22 @@ const GAMA_SHORT = {
 
 // [abreviatura, grupo]: el grupo (gama o T = taller, G = grua) se escribe una sola vez al final.
 const SERVICE_SHORT = {
-  "Bayetas (Taller)": ["Bayeta", "T"],
   "Limpieza (Taller)": ["Limp", "T"],
   "Reparación (Taller)": ["Rep", "T"],
   "Reparación + Limpieza (Taller)": ["Rep+Limp", "T"],
   "Reparación + Repostaje (Taller)": ["Rep+Gas", "T"],
   "Reparación + Limpieza + Repostaje (Taller)": ["Rep+Limp+Gas", "T"],
   "Repostaje (Taller)": ["Gas", "T"],
-  "Kit de Desvuelco (Taller)": ["Desvuelco", "T"],
-  "Rueda (Taller)": ["Rueda", "T"],
   "Bayetas o Limpieza (Grúa)": ["Limp", "G"],
   "Reparación (Grúa)": ["Rep", "G"],
   "Reparación + Limpieza (Grúa)": ["Rep+Limp", "G"],
   "Reparación + Repostaje (Grúa)": ["Rep+Gas", "G"],
   "Reparación + Limpieza + Repostaje (Grúa)": ["Rep+Limp+Gas", "G"],
   "Repostaje (Grúa)": ["Gas", "G"],
-  "Kit de Desvuelco (Grúa)": ["Desvuelco", "G"],
-  "Rueda (Grúa)": ["Rueda", "G"],
   "Servicio de Grúa (desplazamiento)": ["Grua", "G"],
+  "Kit de Desvuelco": ["Desvuelco", ""],
+  "Rueda": ["Rueda", ""],
+  "Bayetas": ["Bayeta", ""],
   "Pintura Camaleónica (primera vez)": ["Camaleon", ""],
   "Cambio de Color Camaleónico": ["Color cam", ""],
   "Cambio de Color Camaleónico (Aéreos)": ["Color cam", "AE"],
@@ -514,15 +513,12 @@ function buildTuningProducts() {
 const SERVICE_PRODUCTS = [
   // Servicios dentro del taller. Los kits de reparacion no estan aqui: se venden
   // desde el menu de kits del juego (no por datafono) y se cuentan en Pagos → Venta de Kits.
-  { name: "Bayetas (Taller)", price: 400, category: "servicios_taller" },
   { name: "Limpieza (Taller)", price: 400, category: "servicios_taller" },
   { name: "Reparación (Taller)", price: 800, category: "servicios_taller" },
   { name: "Reparación + Limpieza (Taller)", price: 1000, category: "servicios_taller" },
   { name: "Reparación + Repostaje (Taller)", price: 1200, category: "servicios_taller" },
   { name: "Reparación + Limpieza + Repostaje (Taller)", price: 1250, category: "servicios_taller" },
   { name: "Repostaje (Taller)", price: 300, category: "servicios_taller" },
-  { name: "Kit de Desvuelco (Taller)", price: 1500, category: "servicios_taller" },
-  { name: "Rueda (Taller)", price: 500, category: "servicios_taller" },
 
   // Servicios fuera del taller (grua)
   { name: "Bayetas o Limpieza (Grúa)", price: 400, category: "servicios_grua" },
@@ -531,9 +527,14 @@ const SERVICE_PRODUCTS = [
   { name: "Reparación + Repostaje (Grúa)", price: 1300, category: "servicios_grua" },
   { name: "Reparación + Limpieza + Repostaje (Grúa)", price: 1350, category: "servicios_grua" },
   { name: "Repostaje (Grúa)", price: 350, category: "servicios_grua" },
-  { name: "Kit de Desvuelco (Grúa)", price: 1500, category: "servicios_grua" },
-  { name: "Rueda (Grúa)", price: 500, category: "servicios_grua" },
   { name: "Servicio de Grúa (desplazamiento)", price: 500, category: "servicios_grua" },
+
+  // Tienda junto al taller: productos que se compran a precio de taller y se
+  // revenden aqui (los mismos que controla el Modulo de Almacen).
+  { name: "Kit de Desvuelco", price: 1500, category: "tienda" },
+  { name: "Rueda", price: 500, category: "tienda" },
+  { name: "Mando de Neones RGB", price: 2000, category: "tienda" },
+  { name: "Bayetas", price: 400, category: "tienda" },
 
   // Pintura camaleonica
   { name: "Pintura Camaleónica (primera vez)", price: 20000, category: "camaleonica" },
@@ -546,7 +547,6 @@ const SERVICE_PRODUCTS = [
 
   // Neones RGB
   { name: "Instalación de Neones RGB", price: 10000, category: "neones" },
-  { name: "Mando de Neones RGB", price: 2000, category: "neones" },
 
   // Compraventa (cambio de papeles)
   { name: "Compraventa Gama Baja", price: 2500, category: "compraventa" },

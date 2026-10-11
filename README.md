@@ -8,7 +8,7 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 
 ## Qué hace
 
-1. **Módulo de Caja** · Catálogo de 133 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** para pasarlo por el datáfono (máximo 40 caracteres, ver *Concepto para el datáfono*).
+1. **Módulo de Caja** · Catálogo de 131 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** para pasarlo por el datáfono (máximo 40 caracteres, ver *Concepto para el datáfono*).
 2. **Módulo de Pagos** · Se pega el texto de Discord con las facturas (datáfono TPV y el sistema de facturas antiguo) y las ventas de kits. Calcula el total cobrado por cada empleado, su comisión según el rango y el **Total a Pagar** a toda la plantilla. Se puede exportar a CSV.
 3. **Módulo de Almacén** · Se pega el log de inventario de Discord (METER / SACAR) y muestra las existencias, quién mete y quién saca cada artículo (con su Discord) y el historial completo. Avisa cuando un artículo baja del mínimo.
 
@@ -20,10 +20,11 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 | Full Tuning | El Full Tuning de cada gama, de $10.000 a $50.000 |
 
 Los **Camiones** tienen los mismos precios que la Gama Alta, porque su precio de compra es parecido.
-| Servicios (Taller) / Servicios (Grúa) | Reparaciones, limpiezas, repostajes, kits de desvuelco y ruedas, dentro y fuera del taller. Los kits de reparación no están: se venden desde el menú de kits del juego y se cuentan en Pagos → Venta de Kits |
+| Servicios (Taller) / Servicios (Grúa) | Reparaciones, limpiezas y repostajes, dentro y fuera del taller. Los kits de reparación no están: se venden desde el menú de kits del juego y se cuentan en Pagos → Venta de Kits |
+| Tienda | La tienda junto al taller: Kit de Desvuelco ($1.500), Rueda ($500), Mando de Neones RGB ($2.000) y Bayetas ($400). Se compran a precio de taller y se revenden aquí |
 | Camaleónica | Pintura camaleónica y cambios de color |
 | Nitro | Instalación y botella. Venta restringida: la Caja muestra un aviso |
-| Neones RGB | Instalación y mando |
+| Neones RGB | Instalación (el mando está en Tienda) |
 | Compraventa | Cambio de papeles por gama |
 
 Desde **Gestión de Productos** (con contraseña) se pueden agregar productos nuevos con su icono, cambiar precios e imágenes y ocultar o restaurar los fijos.
@@ -42,9 +43,10 @@ El datáfono solo acepta **40 caracteres** de concepto. Debajo del total del tic
 | T / G | Taller / Grúa |
 | Pint, Neon, Luces, Rued, Humo, Carr, Clax, Tint | Pintura, Neones, Cambio de Luces, Ruedas, Humo de Ruedas, Carrocería, Claxon, Tintado de Lunas |
 | Turbo, Motor, Trans, Blind, Susp, Fren, FT | Turbo, Motor, Transmisión, Blindaje, Suspensión, Frenos, Full Tuning |
-| Rep, Limp, Gas, Bayeta, Desvuelco, Rueda, Grua | Reparación, Limpieza, Repostaje, Bayetas, Kit de Desvuelco, Rueda, Servicio de Grúa |
+| Rep, Limp, Gas, Grua | Reparación, Limpieza, Repostaje, Servicio de Grúa |
+| Desvuelco, Rueda, Mando RGB, Bayeta | Productos de la Tienda |
 | Camaleon, Color cam | Pintura Camaleónica, Cambio de Color Camaleónico |
-| Nitro, Bot nitro, Neon RGB, Mando RGB, Compra | Instalación de Nitro, Botella de Nitro, Instalación de Neones RGB, Mando de Neones RGB, Compraventa |
+| Nitro, Bot nitro, Neon RGB, Compra | Instalación de Nitro, Botella de Nitro, Instalación de Neones RGB, Compraventa |
 | `2x` delante | Cantidad (si es más de 1) |
 
 Los productos agregados desde Gestión de Productos usan su nombre completo. Las abreviaturas se cambian en `app.js` → `PIECE_SHORT`, `GAMA_SHORT` y `SERVICE_SHORT`.
@@ -111,7 +113,7 @@ Artículos con control de existencias y aviso de mínimo:
 | Kits de Desvuelco | 10 |
 | Ruedas | 8 |
 
-El mínimo se puede cambiar desde la propia tarjeta del artículo, y con **Conteo real** se corrigen las existencias si no cuadran con el juego. El resto de artículos (tickets del datáfono, megáfono…) aparecen en *Otros artículos*. Solo se cuentan los movimientos del almacén del taller (`mecanico_storage_aguilamotor`).
+El mínimo se puede cambiar desde la propia tarjeta del artículo, y con **Conteo real** se corrigen las existencias si no cuadran con el juego. El resto de artículos (tickets del datáfono, megáfono…) aparecen en *Otros artículos*. Solo se cuentan los movimientos del almacén del taller (`mecanico_storage_aguilamotor`). Si el almacén pasa a la tienda y en el log sale con otro nombre, hay que cambiarlo en `app.js` → `ALM_INVENTORY`.
 
 Las existencias salen solo del log del almacén: la Caja no las descuenta al vender, porque el mecánico ya saca el artículo del almacén antes de usarlo.
 
@@ -189,6 +191,10 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 15 · 11 de octubre de 2026
+- Nueva pestaña **Tienda** con los productos de la tienda junto al taller: Kit de Desvuelco, Rueda, Mando de Neones RGB y Bayetas, con los mismos precios.
+- Se quitan de Servicios (Taller), Servicios (Grúa) y Neones RGB. «Bayetas o Limpieza (Grúa)» se queda en Grúa porque es un servicio de limpieza en la calle. La Caja queda con 131 productos.
 
 ### Versión 14 · 11 de octubre de 2026
 - **Concepto para el datáfono** (máximo 40 caracteres): se copia completo si cabe; si no, abreviado (`Neon+Turbo+FT GA`); y si ni así cabe, se reparte en varios cobros con su total y concepto.
