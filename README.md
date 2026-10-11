@@ -154,6 +154,16 @@ Los empleados, los productos agregados o editados y el almacén se guardan **en 
 - En incógnito la página sale vacía (y se borra al cerrar).
 - Cada PC y cada navegador tiene sus propios datos. El almacén se puede pasar de uno a otro con **Copiar respaldo** / **Restaurar respaldo**.
 
+## Vista para móvil
+
+En pantallas pequeñas (móvil o app de la pantalla de Inicio) la página cambia sola; en PC se ve igual que siempre:
+
+- Cabecera compacta con un botón **☰** que abre un menú lateral con las secciones (Caja, Pagos, Almacén) y las categorías de productos.
+- El botón **Categoría ▾** encima de la lista abre ese mismo menú en las categorías.
+- Los productos se ven en **lista**: icono pequeño, nombre y precio en una fila, y un contador (×2) en los que ya están en el ticket.
+- Una barra abajo muestra cuántos productos y el total del ticket; al tocarla baja hasta el ticket.
+- En el ticket del móvil no sale la columna Precio (el subtotal ya lo incluye) ni el logo grande.
+
 ## Como app en el iPhone
 
 En Safari, abre la web → botón **Compartir** → **Añadir a pantalla de inicio**. Queda con el icono de Aguila Motors y, al abrirla, muestra el logo mientras carga y se abre a pantalla completa, sin la barra de Safari. En Android (Chrome) es **Menú → Añadir a pantalla de inicio**.
@@ -191,6 +201,10 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 16 · 11 de octubre de 2026
+- **Vista para móvil**: menú oculto (☰) con secciones y categorías, productos en lista con iconos pequeños y contador de unidades, y barra del ticket abajo con el total.
+- En PC la página se ve igual que antes.
 
 ### Versión 15 · 11 de octubre de 2026
 - Nueva pestaña **Tienda** con los productos de la tienda junto al taller: Kit de Desvuelco, Rueda, Mando de Neones RGB y Bayetas, con los mismos precios.

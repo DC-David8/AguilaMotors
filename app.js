@@ -1556,6 +1556,20 @@ function setupCaja() {
     }
     ticketTotal.textContent = fmtMoney(total);
     renderConceptInfo();
+    renderQtyBadges();
+    const units = Object.values(state.cart).reduce((a, r) => a + (r.qty || 0), 0);
+    document.dispatchEvent(new CustomEvent("aguila-ticket", { detail: { units, total } }));
+  }
+
+  // Cuantas unidades de cada producto hay en el ticket (se ve en el movil).
+  function renderQtyBadges() {
+    productGrid.querySelectorAll(".product-btn").forEach((btn) => {
+      const qty = state.cart[btn.dataset.name]?.qty || 0;
+      const badge = btn.querySelector(".qty-badge");
+      if (!badge) return;
+      badge.textContent = qty ? `×${qty}` : "";
+      btn.classList.toggle("in-ticket", qty > 0);
+    });
   }
 
   function renderCategoryTabs(allProducts) {
@@ -1595,10 +1609,12 @@ function setupCaja() {
       const button = document.createElement("button");
       button.className = "product-btn";
       button.type = "button";
+      button.dataset.name = product.name;
       button.innerHTML = `
         <img src="${getProductIcon(product)}" alt="${product.name}" />
         <strong>${product.name}</strong>
         <small>${fmtMoney(product.price)}</small>
+        <span class="qty-badge"></span>
       `;
       button.addEventListener("click", () => addItemDelta(product.name, product.price, +1));
       button.addEventListener("contextmenu", (ev) => {
@@ -1607,6 +1623,7 @@ function setupCaja() {
       });
       productGrid.appendChild(button);
     }
+    renderQtyBadges();
   }
   renderProductGrid();
 
@@ -3411,7 +3428,112 @@ loadSharedData()
     setupContabilidad();
     setupSharedData();
     setupAlmacen();
+    setupMobileNav();
   });
+
+// ============================================================================
+// Vista movil: menu lateral (secciones y categorias), lista de productos y
+// barra del ticket abajo. En PC estos elementos no se muestran.
+// ============================================================================
+function setupMobileNav() {
+  const drawer = byId("m-drawer");
+  const menuBtn = byId("m-menu-btn");
+  if (!drawer || !menuBtn) return;
+  const sectionsEl = byId("m-nav-sections");
+  const catsEl = byId("m-nav-cats");
+  const catsTitle = byId("m-nav-cats-title");
+  const catLabel = byId("m-cat-label");
+  const cajaPanel = byId("tab-caja");
+
+  const isCaja = () => cajaPanel.classList.contains("is-active");
+
+  function navButton(label, active, onClick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "m-nav-item" + (active ? " is-active" : "");
+    b.textContent = label;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function build() {
+    sectionsEl.textContent = "";
+    document.querySelectorAll("nav.tabs .tab").forEach((tab) => {
+      sectionsEl.appendChild(
+        navButton(tab.textContent.trim(), tab.classList.contains("is-active"), () => {
+          close();
+          tab.click(); // misma logica (y contrasena) que en PC
+        })
+      );
+    });
+    catsEl.textContent = "";
+    const showCats = isCaja();
+    catsTitle.hidden = !showCats;
+    catsEl.hidden = !showCats;
+    if (showCats) {
+      document.querySelectorAll("#cat-tabs .cat-tab").forEach((ct) => {
+        catsEl.appendChild(
+          navButton(ct.textContent.trim(), ct.classList.contains("is-active"), () => {
+            ct.click();
+            close();
+            byId("product-grid")?.scrollIntoView({ block: "start", behavior: "smooth" });
+          })
+        );
+      });
+    }
+  }
+
+  function open(focusCats) {
+    build();
+    drawer.hidden = false;
+    menuBtn.setAttribute("aria-expanded", "true");
+    document.body.classList.add("m-drawer-open");
+    requestAnimationFrame(() => drawer.classList.add("is-open"));
+    if (focusCats && !catsEl.hidden) setTimeout(() => catsTitle.scrollIntoView({ block: "start" }), 50);
+  }
+
+  function close() {
+    drawer.classList.remove("is-open");
+    menuBtn.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("m-drawer-open");
+    setTimeout(() => {
+      if (!drawer.classList.contains("is-open")) drawer.hidden = true;
+    }, 220);
+  }
+
+  menuBtn.addEventListener("click", () => (drawer.hidden ? open(false) : close()));
+  byId("m-cat-btn")?.addEventListener("click", () => open(true));
+  drawer.addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-close]")) close();
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && !drawer.hidden) close();
+  });
+
+  // Nombre de la categoria activa en el boton "Categoria ▾".
+  const syncCat = () => {
+    const active = document.querySelector("#cat-tabs .cat-tab.is-active");
+    if (catLabel) catLabel.textContent = active ? active.textContent.trim() : "";
+  };
+  new MutationObserver(syncCat).observe(byId("cat-tabs"), { childList: true, subtree: true, attributes: true });
+  syncCat();
+
+  // La barra del ticket solo se ve en la Caja.
+  const syncSection = () => document.body.classList.toggle("is-caja", isCaja());
+  new MutationObserver(syncSection).observe(cajaPanel, { attributes: true, attributeFilter: ["class"] });
+  syncSection();
+
+  const bar = byId("m-ticket-bar");
+  bar?.addEventListener("click", () => {
+    document.querySelector("#tab-caja .ticket-card")?.scrollIntoView({ block: "start", behavior: "smooth" });
+  });
+  document.addEventListener("aguila-ticket", (ev) => {
+    const { units, total } = ev.detail || {};
+    byId("m-ticket-count").textContent = units ? `${units} ${units === 1 ? "producto" : "productos"}` : "Vacío";
+    byId("m-ticket-total").textContent = fmtMoney(total);
+    bar?.classList.toggle("has-items", units > 0);
+  });
+}
 
 // Al abrir desde la pantalla de Inicio, el logo se queda un momento y se desvanece.
 (function hideAppSplash() {

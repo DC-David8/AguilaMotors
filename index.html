@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="styles.css?v=16" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=15" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=16" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -52,6 +52,7 @@
           <p>Taller en Servicio</p>
         </div>
       </div>
+      <button type="button" class="m-menu-btn" id="m-menu-btn" aria-label="Abrir menú" aria-expanded="false">☰</button>
     </header>
 
     <nav class="tabs" aria-label="Secciones">
@@ -68,6 +69,11 @@
             <button type="button" id="btn-add-product" class="ghost small">Gestión de Productos</button>
           </div>
           <div id="cat-tabs" class="cat-tabs"></div>
+          <button type="button" class="m-cat-btn" id="m-cat-btn">
+            <span class="muted">Categoría</span>
+            <strong id="m-cat-label"></strong>
+            <span aria-hidden="true">▾</span>
+          </button>
           <p class="muted" id="cat-note"></p>
           <div id="product-grid" class="product-grid"></div>
         </section>
@@ -307,8 +313,30 @@
         </div>
       </section>
     </section>
-    <footer class="app-version">Versión 15 · Pestaña Tienda</footer>
+    <button type="button" class="m-ticket-bar" id="m-ticket-bar" aria-label="Ver el ticket">
+      <span class="m-ticket-label">Ticket</span>
+      <span class="m-ticket-count" id="m-ticket-count">Vacío</span>
+      <strong id="m-ticket-total">$ 0</strong>
+    </button>
+
+    <footer class="app-version">Versión 16 · Vista para móvil</footer>
   </main>
+
+  <!-- Menu lateral del movil (en PC no se muestra) -->
+  <div class="m-drawer" id="m-drawer" hidden>
+    <div class="m-drawer-backdrop" data-close="1"></div>
+    <nav class="m-drawer-panel" aria-label="Menú">
+      <div class="m-drawer-head">
+        <img src="aguila_motors_logo.png" alt="" />
+        <strong>Aguila Motors</strong>
+        <button type="button" class="ghost small" data-close="1" aria-label="Cerrar menú">✕</button>
+      </div>
+      <h3>Secciones</h3>
+      <div class="m-nav-list" id="m-nav-sections"></div>
+      <h3 id="m-nav-cats-title">Categorías</h3>
+      <div class="m-nav-list" id="m-nav-cats"></div>
+    </nav>
+  </div>
 
   <dialog id="add-product-modal">
     <form method="dialog" class="modal-card">
@@ -524,6 +552,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
