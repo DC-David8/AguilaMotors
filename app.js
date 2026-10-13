@@ -2189,9 +2189,13 @@ function processText(rawText) {
     qty: kitsSales.reduce((a, s) => a + (s.qty || 0), 0),
   };
   const kitsBySeller = {};
+  // Kits que el vendedor se vendio a si mismo (Vendedor y Comprador son la misma persona).
+  const kitsSelfBySeller = {};
   for (const s of kitsSales) {
     if (!s.seller) continue;
     kitsBySeller[s.seller] = (kitsBySeller[s.seller] || 0) + (s.qty || 0);
+    s.self = !!s.buyer && normalizeKeySimple(s.buyer) === normalizeKeySimple(s.seller);
+    if (s.self) kitsSelfBySeller[s.seller] = (kitsSelfBySeller[s.seller] || 0) + (s.qty || 0);
   }
 
   return {
@@ -2203,6 +2207,7 @@ function processText(rawText) {
     kitsSales,
     kitsSummary,
     kitsBySeller,
+    kitsSelfBySeller,
     ignoredOtherBusiness,
   };
 }
@@ -2229,6 +2234,7 @@ function setupContabilidad() {
     invByIssuerPaid: {},
     invByIssuerPending: {},
     kitsBySeller: {},
+    kitsSelfBySeller: {},
     ignoredOtherBusiness: 0,
   };
 
@@ -2239,6 +2245,7 @@ function setupContabilidad() {
     kitsLine2: byId("kits-line2"),
     kitsLine3: byId("kits-line3"),
     kitPrice: byId("kit-price"),
+    kitsSelf: byId("kits-line-self"),
     loaded: byId("conta-loaded"),
     invTable: byId("inv-table"),
     salesTable: byId("sales-table"),
@@ -2265,6 +2272,13 @@ function setupContabilidad() {
     refs.invLine1.textContent = `Total: ${invSummary.count} | ${fmtMoney(invSummary.total)}`;
     refs.kitsLine1.textContent = `Ventas: ${kitsSummary.count}`;
     refs.kitsLine2.textContent = `Unidades: ${kitsSummary.qty}`;
+    const selfQty = Object.values(state.kitsSelfBySeller).reduce((a, n) => a + n, 0);
+    if (refs.kitsSelf) {
+      refs.kitsSelf.textContent = kitsQty
+        ? `A sí mismos: ${selfQty} de ${kitsQty} (${Math.round((selfQty / kitsQty) * 100)}%)`
+        : "A sí mismos: -";
+      refs.kitsSelf.classList.toggle("warn", kitsQty > 0 && selfQty / kitsQty >= 0.5);
+    }
     refs.kitsLine3.textContent = `Total: ${fmtMoney(kitsSummary.total)}`;
 
     refs.invTable.innerHTML = "";
@@ -2301,6 +2315,13 @@ function setupContabilidad() {
 
     refs.salesTable.innerHTML = "";
     const kitEntries = Object.entries(state.kitsBySeller).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"));
+    // "9 (75%)": kits que se vendio a si mismo; en naranja si es la mitad o mas.
+    const selfCell = (name, qty) => {
+      const n = state.kitsSelfBySeller[name] || 0;
+      if (!n) return "0";
+      const pct = Math.round((n / qty) * 100);
+      return `<span class="${pct >= 50 ? "warn" : ""}">${n} (${pct}%)</span>`;
+    };
     for (const [name, qty] of kitEntries) {
       const rank = rankByName.get(normalizeKeySimple(name)) || "";
       const pct = pctForRank(rank);
@@ -2313,6 +2334,7 @@ function setupContabilidad() {
         `<tr>
           <td>${name}</td>
           <td class="num">${qty}</td>
+          <td class="num">${selfCell(name, qty)}</td>
           <td class="num">${pctText}</td>
           <td class="num">${pendingCell(name, pendientePago)}</td>
         </tr>`
@@ -2337,6 +2359,7 @@ function setupContabilidad() {
     state.invByIssuerPaid = {};
     state.invByIssuerPending = {};
     state.kitsBySeller = {};
+    state.kitsSelfBySeller = {};
     state.ignoredOtherBusiness = 0;
     refresh();
   }
@@ -2354,6 +2377,7 @@ function setupContabilidad() {
     state.invByIssuerPaid = out.invByIssuerPaid;
     state.invByIssuerPending = out.invByIssuerPending;
     state.kitsBySeller = out.kitsBySeller;
+    state.kitsSelfBySeller = out.kitsSelfBySeller || {};
     state.ignoredOtherBusiness = out.ignoredOtherBusiness || 0;
     refresh();
   }
@@ -2437,11 +2461,12 @@ function setupEmployeesModal(state, refreshPagos) {
       const name = fullName(e);
       const paid = sumByNormalizedName(state.invByIssuerPaid, name);
       const kitsUnits = sumByNormalizedName(state.kitsBySeller, name);
+      const kitsSelf = sumByNormalizedName(state.kitsSelfBySeller, name);
       const kitsValue = kitsUnits * kitPrice;
       const gross = paid + kitsValue;
       const pct = pctForRank(e.rank);
       const payout = Math.round(gross * pct);
-      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name), noPay: isEmployeeNoPay(name) };
+      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name), noPay: isEmployeeNoPay(name), kitsUnits, kitsSelf };
     });
     totalsRows.sort((a, b) => b.payout - a.payout || a.name.localeCompare(b.name, "es"));
   }
@@ -2452,7 +2477,7 @@ function setupEmployeesModal(state, refreshPagos) {
       const tr = document.createElement("tr");
       if (row.id === selectedId) tr.classList.add("is-selected");
       tr.innerHTML = `
-        <td>${row.name}</td>
+        <td>${row.name}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
         <td>${row.rank || "-"}</td>
         <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
         <td class="num">${fmtMoney(row.gross)}</td>

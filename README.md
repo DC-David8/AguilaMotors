@@ -96,6 +96,16 @@ En **Gestión de empleados**, la casilla **No cobra** marca a quien no recibe n�
 
 Se marca y desmarca cuando haga falta (por ejemplo, si alguien deja de cobrar más adelante) y se publica en `datos.js`.
 
+### Kits vendidos a sí mismo
+
+En el log de **Venta de kits**, cuando *Vendedor* y *Comprador* son la misma persona, el kit se cuenta como vendido **a sí mismo**. Se siguen pagando como cualquier kit, pero se señalan:
+
+- **Venta de Kits** (resumen): «A sí mismos: 20 de 35 (57%)».
+- **Kits por empleado**: columna **A sí mismo** con cuántos y qué porcentaje de sus kits.
+- **Totales empleados**: debajo del nombre, «Kits a sí mismo: 9 de 12».
+
+Sale en naranja cuando es la mitad o más. No aparece en el texto que se copia a Discord.
+
 ### Empleado de la semana
 
 En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* (`<@&ID>`) al copiar, tanto en **Copiar seleccionado** como en **Copiar todo**. Al pegarlo en Discord se ve el rol con su color. Si hay empate, la llevan todos los empatados. El texto solo menciona el rol: asignarlo se sigue haciendo en Discord.
@@ -201,6 +211,9 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 17 · 12 de octubre de 2026
+- **Kits vendidos a sí mismo**: si en el log de Venta de kits el Vendedor y el Comprador son la misma persona, se cuenta aparte. Sale en el resumen de Venta de Kits, en una columna nueva de Kits por empleado y en Totales empleados, en naranja si es la mitad o más. Se siguen pagando igual.
 
 ### Versión 16 · 11 de octubre de 2026
 - **Vista para móvil**: menú oculto (☰) con secciones y categorías, productos en lista con iconos pequeños y contador de unidades, y barra del ticket abajo con el total.

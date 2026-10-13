@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=17" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=16" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=17" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -140,6 +140,7 @@
               <h3>Venta de Kits</h3>
               <p id="kits-line1">Ventas: -</p>
               <p id="kits-line2">Unidades: -</p>
+              <p id="kits-line-self" title="Kits en los que Vendedor y Comprador son la misma persona">A sí mismos: -</p>
               <div class="form-row kit-price-row">
                 <label for="kit-price">Precio por kit ($)</label>
                 <input id="kit-price" class="text-input" type="number" min="0" step="1" value="800" />
@@ -189,6 +190,7 @@
                 <tr>
                   <th>Empleado</th>
                   <th class="num">Unidades</th>
+                  <th class="num" title="Kits que se vendió a sí mismo">A sí mismo</th>
                   <th class="num">% según rango</th>
                   <th class="num">Pendiente de Pago</th>
                 </tr>
@@ -319,7 +321,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 16 · Vista para móvil</footer>
+    <footer class="app-version">Versión 17 · Kits vendidos a sí mismo</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -552,6 +554,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>
