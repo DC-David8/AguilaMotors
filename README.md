@@ -129,9 +129,11 @@ Las existencias salen solo del log del almacén: la Caja no las descuenta al ven
 
 ## Acceso con contraseña
 
-**Módulo de Pagos**, **Módulo de Almacén** y **Gestión de Productos** piden la misma contraseña. Se cambia en `app.js` → `ACCESS_PASSWORDS` y `PRODUCT_ADMIN_PASSWORD`.
+**Módulo de Pagos**, **Módulo de Almacén**, **Gestión de Productos** y **Gestión de empleados** piden la misma contraseña de acceso. En el código **no está escrita**: solo se guarda su huella SHA-256 (`app.js` → `ACCESS_PASSWORD_SHA256`), igual que la del encargado. Quien abra el código ve una cadena de letras y números de la que no se puede sacar la contraseña.
 
-> Es una web estática: la contraseña evita miradas casuales, pero no es seguridad real. Quien sepa abrir el código fuente puede leerla.
+**Cambiarla:** calcula la huella de la nueva (en una terminal: `echo -n "NuevaContraseña" | sha256sum`) y sustitúyela en `ACCESS_PASSWORD_SHA256`.
+
+> Es una web estática: la contraseña evita miradas casuales, pero no es seguridad real.
 
 ## Datos compartidos (empleados y productos)
 
@@ -211,6 +213,10 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 18 · 12 de octubre de 2026
+- **Contraseña de acceso nueva** (Pagos, Almacén, Gestión de Productos y Gestión de empleados). La anterior deja de funcionar.
+- Ya no está escrita en el código: solo se guarda su huella SHA-256, como la del encargado.
 
 ### Versión 17 · 12 de octubre de 2026
 - **Kits vendidos a sí mismo**: si en el log de Venta de kits el Vendedor y el Comprador son la misma persona, se cuenta aparte. Sale en el resumen de Venta de Kits, en una columna nueva de Kits por empleado y en Totales empleados, en naranja si es la mitad o más. Se siguen pagando igual.
