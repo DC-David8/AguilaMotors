@@ -210,9 +210,12 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 - **Precio por kit** en Pagos: se cambia en la propia página (por defecto $800).
 - **Logo**: reemplaza `aguila_motors_logo.png` manteniendo el nombre. Los iconos y pantallas de arranque de `icons/` se generan a partir de él, así que si cambia el logo hay que generarlos de nuevo.
 
-Al publicar un cambio, sube el número de versión en `index.html`: el pie de página y el `?v=` de `styles.css` y `app.js`. Así los navegadores cargan la versión nueva sin Ctrl+F5.
+Al publicar un cambio, sube el número de versión en `index.html`: el pie de página (formato «Versión N - Aguila Motors») y el `?v=` de `styles.css`, `app.js` y el icono. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 19 · 12 de octubre de 2026
+- El pie de página solo muestra la versión y el taller: «Versión 19 - Aguila Motors». Lo que cambia en cada versión queda en esta bitácora.
 
 ### Versión 18 · 12 de octubre de 2026
 - **Contraseña de acceso nueva** (Pagos, Almacén, Gestión de Productos y Gestión de empleados). La anterior deja de funcionar.
