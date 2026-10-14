@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=20" />
+  <link rel="stylesheet" href="styles.css?v=21" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=21" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -58,7 +58,6 @@
     <nav class="tabs" aria-label="Secciones">
       <button class="tab is-active" data-tab-target="tab-caja">Módulo de Caja</button>
       <button class="tab" data-tab-target="tab-conta">Módulo de Pagos</button>
-      <button class="tab" data-tab-target="tab-almacen">Módulo de Almacén</button>
     </nav>
 
     <section id="tab-caja" class="tab-panel is-active">
@@ -216,116 +215,13 @@
       </div>
     </section>
 
-    <section id="tab-almacen" class="tab-panel">
-      <section class="card">
-        <h2>Existencias del almacén</h2>
-        <div class="alm-cards" id="alm-cards"></div>
-      </section>
-
-      <div class="split alm-split">
-        <section class="card">
-          <h2>Log de inventario (Discord)</h2>
-          <textarea id="alm-input" rows="8" placeholder="Pega aqui el log del almacen (METER / SACAR) y pulsa Procesar"></textarea>
-          <div class="form-row alm-date-row">
-            <label for="alm-refdate" class="muted">Fecha de hoy (para &quot;ayer&quot; / &quot;hoy&quot;)</label>
-            <input id="alm-refdate" class="text-input" type="date" />
-          </div>
-          <div class="actions">
-            <button id="alm-paste">Pegar + Procesar</button>
-            <button id="alm-process">Procesar</button>
-            <button id="alm-clear-input" class="ghost">Limpiar texto</button>
-          </div>
-          <p class="muted" id="alm-status" role="status"></p>
-
-          <h3>Movimiento manual</h3>
-          <div class="form-row alm-manual">
-            <select id="alm-m-action" class="text-input">
-              <option value="METER">Entrada (metió)</option>
-              <option value="SACAR">Salida (sacó)</option>
-            </select>
-            <select id="alm-m-item" class="text-input"></select>
-            <input id="alm-m-qty" class="text-input" type="number" min="1" step="1" placeholder="Cantidad" />
-            <input id="alm-m-who" class="text-input" type="text" placeholder="Quién (nombre)" />
-            <button type="button" id="alm-m-add">Agregar</button>
-          </div>
-
-          <details class="alm-backup">
-            <summary>Respaldo, exportar y reiniciar</summary>
-            <div class="actions">
-              <button type="button" id="alm-export" class="ghost">Exportar historial (CSV)</button>
-              <button type="button" id="alm-backup-copy" class="ghost">Copiar respaldo</button>
-              <button type="button" id="alm-reset" class="ghost">Reiniciar almacén</button>
-            </div>
-            <textarea id="alm-backup-text" rows="3" placeholder="Para restaurar: pega aqui el respaldo copiado antes"></textarea>
-            <div class="actions"><button type="button" id="alm-backup-restore" class="ghost">Restaurar respaldo</button></div>
-          </details>
-        </section>
-
-        <section class="card">
-          <h2>Otros artículos</h2>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Artículo</th><th class="num">Cantidad</th></tr></thead>
-              <tbody id="alm-others-body"></tbody>
-            </table>
-          </div>
-          <p class="muted">Tickets del datáfono, megáfono, etc. No llevan alerta de mínimo.</p>
-        </section>
-      </div>
-
-      <section class="card">
-        <h2>Quién mueve el almacén</h2>
-        <p class="muted">Cada celda muestra +metido / −sacado. Escribe un nombre en la primera columna para reconocer a cada persona; el Discord sale del enlace del log.</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Persona</th>
-                <th>Discord</th>
-                <th class="num">Bayetas</th>
-                <th class="num">Mandos de Neón</th>
-                <th class="num">Kits Desvuelco</th>
-                <th class="num">Ruedas</th>
-                <th class="num">Otros</th>
-              </tr>
-            </thead>
-            <tbody id="alm-people-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-head-row">
-          <h2>Historial</h2>
-          <span class="muted" id="alm-hist-count"></span>
-        </div>
-        <div class="form-row alm-filters">
-          <select id="alm-f-item" class="text-input"></select>
-          <select id="alm-f-person" class="text-input"></select>
-          <select id="alm-f-action" class="text-input">
-            <option value="">Todas las acciones</option>
-            <option value="METER">Metió</option>
-            <option value="SACAR">Sacó</option>
-            <option value="AJUSTE">Ajustes</option>
-          </select>
-        </div>
-        <div class="table-wrap" style="max-height: 46vh;">
-          <table>
-            <thead>
-              <tr><th>Fecha</th><th>Persona</th><th>Artículo</th><th>Acción</th><th class="num">Cant.</th><th class="num"></th></tr>
-            </thead>
-            <tbody id="alm-hist-body"></tbody>
-          </table>
-        </div>
-      </section>
-    </section>
     <button type="button" class="m-ticket-bar" id="m-ticket-bar" aria-label="Ver el ticket">
       <span class="m-ticket-label">Ticket</span>
       <span class="m-ticket-count" id="m-ticket-count">Vacío</span>
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 20 - Aguila Motors</footer>
+    <footer class="app-version">Versión 21 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -558,6 +454,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

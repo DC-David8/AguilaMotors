@@ -1,6 +1,6 @@
 # Caja Aguila Motors · Taller mecánico
 
-Herramienta web para el rol del servidor: los mecánicos del taller **Aguila Motors** cobran los trabajos desde la Caja, el encargado calcula lo que hay que pagar a cada empleado según su rango y lleva el control del almacén a partir de los logs de Discord.
+Herramienta web para el rol del servidor: los mecánicos del taller **Aguila Motors** cobran los trabajos desde la Caja, el encargado calcula lo que hay que pagar a cada empleado según su rango a partir de los logs de Discord.
 
 **Web:** https://dc-david8.github.io/AguilaMotors/
 
@@ -10,7 +10,6 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 
 1. **Módulo de Caja** · Catálogo de 131 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** para pasarlo por el datáfono (máximo 40 caracteres, ver *Concepto para el datáfono*).
 2. **Módulo de Pagos** · Se pega el texto de Discord con las facturas (datáfono TPV y el sistema de facturas antiguo) y las ventas de kits. Calcula el total cobrado por cada empleado, su comisión según el rango y el **Total a Pagar** a toda la plantilla. Se puede exportar a CSV.
-3. **Módulo de Almacén** · Se pega el log de inventario de Discord (METER / SACAR) y muestra las existencias, quién mete y quién saca cada artículo (con su Discord) y el historial completo. Avisa cuando un artículo baja del mínimo.
 
 ## Catálogo de la Caja
 
@@ -112,24 +111,17 @@ En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord 
 
 El rol se cambia en `app.js` → `EMPLOYEE_OF_WEEK_ROLE_ID` (ID del rol: con el modo desarrollador de Discord, clic derecho sobre el rol → *Copiar ID del rol*).
 
-## Almacén
+## Ideas guardadas
 
-Artículos con control de existencias y aviso de mínimo:
+### Módulo de Almacén (retirado en la versión 21)
 
-| Artículo | Avisar en |
-|---|---|
-| Bayetas | 100 |
-| Mandos de Neón | 10 |
-| Kits de Desvuelco | 10 |
-| Ruedas | 8 |
+Leía el log de inventario de Discord (METER / SACAR) y mostraba las existencias de Bayetas, Mandos de Neón, Kits de Desvuelco y Ruedas con aviso de mínimo, quién mete y quién saca cada artículo (con su Discord) y el historial. Se retiró porque el texto copiado de Discord no trae bien el enlace con el Discord de cada persona, y sin eso no servía.
 
-El mínimo se puede cambiar desde la propia tarjeta del artículo, y con **Conteo real** se corrigen las existencias si no cuadran con el juego. El resto de artículos (tickets del datáfono, megáfono…) aparecen en *Otros artículos*. Solo se cuentan los movimientos del almacén del taller (`mecanico_storage_aguilamotor`). Si el almacén pasa a la tienda y en el log sale con otro nombre, hay que cambiarlo en `app.js` → `ALM_INVENTORY`.
-
-Las existencias salen solo del log del almacén: la Caja no las descuenta al vender, porque el mecánico ya saca el artículo del almacén antes de usarlo.
+Está guardado completo, tal como funcionaba en la versión 20, en la rama **`idea-almacen`** del repositorio. Si algún día mejoran el log (o se lee con un bot de Discord), se puede recuperar desde ahí.
 
 ## Acceso con contraseña
 
-**Módulo de Pagos**, **Módulo de Almacén**, **Gestión de Productos** y **Gestión de empleados** piden la misma contraseña de acceso. En el código **no está escrita**: solo se guarda su huella SHA-256 (`app.js` → `ACCESS_PASSWORD_SHA256`), igual que la del encargado. Quien abra el código ve una cadena de letras y números de la que no se puede sacar la contraseña.
+**Módulo de Pagos**, **Gestión de Productos** y **Gestión de empleados** piden la misma contraseña de acceso. En el código **no está escrita**: solo se guarda su huella SHA-256 (`app.js` → `ACCESS_PASSWORD_SHA256`), igual que la del encargado. Quien abra el código ve una cadena de letras y números de la que no se puede sacar la contraseña.
 
 **Cambiarla:** calcula la huella de la nueva (en una terminal: `echo -n "NuevaContraseña" | sha256sum`) y sustitúyela en `ACCESS_PASSWORD_SHA256`.
 
@@ -160,17 +152,17 @@ En una PC nueva, después de entrar en modo encargado, **Cargar los publicados e
 
 ## Dónde se guardan los datos
 
-Los empleados, los productos agregados o editados y el almacén se guardan **en el navegador de cada PC**, no en este repositorio. Por eso:
+Los empleados y los productos agregados o editados se guardan **en el navegador de cada PC**, no en este repositorio. Por eso:
 
 - Subir archivos nuevos a GitHub **no borra** los datos.
 - En incógnito la página sale vacía (y se borra al cerrar).
-- Cada PC y cada navegador tiene sus propios datos. El almacén se puede pasar de uno a otro con **Copiar respaldo** / **Restaurar respaldo**.
+- Cada PC y cada navegador tiene sus propios datos (los empleados y productos compartidos se publican con `datos.js`).
 
 ## Vista para móvil
 
 En pantallas pequeñas (móvil o app de la pantalla de Inicio) la página cambia sola; en PC se ve igual que siempre:
 
-- Cabecera compacta con un botón **☰** que abre un menú lateral con las secciones (Caja, Pagos, Almacén) y las categorías de productos.
+- Cabecera compacta con un botón **☰** que abre un menú lateral con las secciones (Caja y Pagos) y las categorías de productos.
 - El botón **Categoría ▾** encima de la lista abre ese mismo menú en las categorías.
 - Los productos se ven en **lista**: icono pequeño, nombre y precio en una fila, y un contador (×2) en los que ya están en el ticket.
 - Una barra abajo muestra cuántos productos y el total del ticket; al tocarla baja hasta el ticket.
@@ -180,7 +172,7 @@ En pantallas pequeñas (móvil o app de la pantalla de Inicio) la página cambia
 
 En Safari, abre la web → botón **Compartir** → **Añadir a pantalla de inicio**. Queda con el icono de Aguila Motors y, al abrirla, muestra el logo mientras carga y se abre a pantalla completa, sin la barra de Safari. En Android (Chrome) es **Menú → Añadir a pantalla de inicio**.
 
-> La app de la pantalla de Inicio guarda sus datos aparte de Safari: los empleados y el almacén que tengas en Safari no aparecen en ella, y al borrarla del Inicio se borran los suyos.
+> La app de la pantalla de Inicio guarda sus datos aparte de Safari: los empleados que tengas en Safari no aparecen en ella, y al borrarla del Inicio se borran los suyos.
 
 ## Programa de escritorio
 
@@ -189,8 +181,8 @@ La misma página funciona dentro del programa de escritorio (pywebview, `.exe`),
 ## Estructura
 
 ```
-├── index.html               Página: pestañas de Caja, Pagos y Almacén, y ventanas
-├── app.js                   Catálogo, ticket, lectura de Discord, comisiones y almacén
+├── index.html               Página: pestañas de Caja y Pagos, y ventanas
+├── app.js                   Catálogo, ticket, lectura de Discord y comisiones
 ├── styles.css               Tema negro y naranja
 ├── aguila_motors_logo.png   Logo del taller
 ├── favicon.ico              Icono de la pestaña
@@ -206,13 +198,16 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 - **Precios del tuning**: `app.js` → `TUNING_PRICES` (una fila por gama, en el orden de `TUNING_PIECES`).
 - **Servicios, camaleónica, nitro, neones y compraventa**: `app.js` → `SERVICE_PRODUCTS`.
 - **Pestañas de la Caja**: `app.js` → `PRODUCT_CATEGORIES`.
-- **Artículos del almacén y sus mínimos**: `app.js` → `ALM_TRACKED`.
 - **Precio por kit** en Pagos: se cambia en la propia página (por defecto $800).
 - **Logo**: reemplaza `aguila_motors_logo.png` manteniendo el nombre. Los iconos y pantallas de arranque de `icons/` se generan a partir de él, así que si cambia el logo hay que generarlos de nuevo.
 
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página (formato «Versión N - Aguila Motors») y el `?v=` de `styles.css`, `app.js` y el icono. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 21 · 13 de octubre de 2026
+- Se retira el **Módulo de Almacén**: el log copiado de Discord no trae bien quién mueve el almacén. Queda guardado en la rama `idea-almacen` (ver *Ideas guardadas*).
+- La página queda con **Módulo de Caja** y **Módulo de Pagos**.
 
 ### Versión 20 · 13 de octubre de 2026
 - **Estilo «taller industrial»**: franja de peligro negra y naranja bajo la cabecera, nombre con degradado metálico, tarjetas con tornillos y títulos con barra naranja, pestañas con brillo y fondo con textura de chapa. Se aplica a Caja, Pagos y Almacén.
