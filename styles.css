@@ -870,3 +870,197 @@ th.center, td.center { text-align: center; }
   }
   .m-nav-item.is-active { background: #2a1d10; border-color: rgba(249, 125, 2, 0.5); color: var(--accent-2); }
 }
+
+/* ==========================================================================
+   Version 20: estilo "taller industrial", iconos, ticket de recibo y aviso
+   ========================================================================== */
+html, body {
+  background:
+    radial-gradient(900px 600px at 10% -10%, rgba(249, 125, 2, 0.22), transparent 60%),
+    radial-gradient(800px 700px at 100% 110%, rgba(249, 125, 2, 0.12), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cg fill='%23ffffff' fill-opacity='.035'%3E%3Cpath d='M4 10l6-6 2 2-6 6zM18 24l6-6 2 2-6 6z'/%3E%3C/g%3E%3C/svg%3E"),
+    #070708;
+}
+
+/* Cabecera: nombre metalico y franja de peligro */
+.topbar { position: relative; padding-bottom: 18px; }
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(-45deg, #f97d02 0 14px, #111 14px 28px);
+  box-shadow: 0 0 18px rgba(249, 125, 2, 0.35);
+}
+.topbar h1 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 900;
+  background: linear-gradient(180deg, #fff 0%, #ffd2a0 55%, #f97d02 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.topbar p { text-transform: uppercase; letter-spacing: 0.25em; font-size: 0.78rem; color: #f9a65a; }
+.topbar-logo { filter: drop-shadow(0 0 14px rgba(249, 125, 2, 0.6)); }
+
+/* Pestanas y tarjetas */
+.tab { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.82rem; }
+.tab.is-active { box-shadow: 0 0 0 1px #ffb15c, 0 0 22px rgba(249, 125, 2, 0.55); }
+.cat-tab.is-active { box-shadow: 0 0 14px rgba(249, 125, 2, 0.5); }
+.card { position: relative; border-color: #3a2c1d; background: linear-gradient(180deg, #17120d 0%, #0f0c09 100%); }
+.card::before, .card::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #9a8a78, #3a2e22);
+  box-shadow: inset 0 0 1px #000;
+  pointer-events: none;
+}
+.card::before { left: 10px; }
+.card::after { right: 10px; }
+.card h2 { text-transform: uppercase; letter-spacing: 0.06em; }
+.card h2::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 1.1em;
+  margin-right: 10px;
+  vertical-align: -3px;
+  border-radius: 2px;
+  background: linear-gradient(#ffb15c, #f97d02);
+}
+
+/* Ticket como recibo de papel */
+.receipt {
+  position: relative;
+  margin: 6px 0 16px;
+  padding: 16px 14px 20px;
+  color: #2a2118;
+  border-radius: 4px;
+  background: #f4ecdf;
+  font-family: "Courier New", ui-monospace, monospace;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.55);
+}
+.receipt::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 10px;
+  background:
+    linear-gradient(-45deg, transparent 6px, #f4ecdf 0) 0 0 / 12px 10px,
+    linear-gradient(45deg, transparent 6px, #f4ecdf 0) 0 0 / 12px 10px;
+}
+.receipt-head { text-align: center; border-bottom: 2px dashed #b9a88f; padding-bottom: 10px; margin-bottom: 8px; }
+.receipt-head img { width: 60px; filter: grayscale(1) contrast(1.2) brightness(0.55); }
+.receipt-head b { display: block; letter-spacing: 0.25em; font-size: 0.95rem; }
+.receipt-head span { font-size: 0.72rem; color: #6d5e4b; }
+.receipt .table-wrap { border: 0; margin: 0; background: transparent; }
+.receipt table { font-family: inherit; color: inherit; }
+.receipt th { background: transparent !important; color: #6d5e4b !important; border-bottom: 1px dashed #b9a88f !important; font-size: 0.72rem; text-transform: uppercase; }
+.receipt td { border-bottom: 1px dotted #d5c8b4 !important; color: #2a2118 !important; font-size: 0.85rem; }
+.receipt tbody tr.is-selected td { background: #e9dcc6 !important; }
+.receipt .qty-input { background: #fff8ee; color: #2a2118; border-color: #cbb99f; }
+.receipt-total { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px dashed #b9a88f; margin-top: 10px; padding-top: 10px; font-weight: 900; font-size: 1.15rem; }
+.receipt-total strong { font-size: 1.35rem; color: #1a1209; }
+.receipt-foot { text-align: center; font-size: 0.7rem; color: #6d5e4b; margin-top: 10px; letter-spacing: 0.1em; }
+.ticket-actions button { text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.04em; }
+#btn-copy-total, #btn-copy-concept { box-shadow: 0 0 16px rgba(249, 125, 2, 0.45); }
+
+/* Aviso al anadir un producto */
+.add-toast {
+  position: fixed;
+  right: 26px;
+  bottom: 26px;
+  z-index: 300;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #1c150f;
+  border: 1px solid #f97d02;
+  box-shadow: 0 0 24px rgba(249, 125, 2, 0.35);
+  color: #f6efe6;
+  font-size: 0.9rem;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.add-toast b { color: #ffb15c; }
+.add-toast.is-visible { opacity: 1; transform: translateY(0); }
+
+/* Solo PC: cabecera grande y tarjetas de producto */
+@media (min-width: 701px) {
+  .topbar h1 { font-size: 2.1rem; }
+  .topbar-logo { width: 72px; height: 72px; }
+  .tab { padding: 11px 18px; }
+  .card h2 { font-size: 1.15rem; }
+  .product-btn {
+    position: relative;
+    min-height: 150px;
+    padding: 12px;
+    overflow: hidden;
+    border-color: #2e241a;
+    background: linear-gradient(160deg, #1d1610 0%, #110d0a 100%);
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+  .product-btn img { height: 64px; margin: 4px 0 6px; }
+  .product-btn strong { font-size: 0.86rem; line-height: 1.25; }
+  .product-btn small {
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: #1a0f04;
+    background: linear-gradient(90deg, #f97d02, #ffb15c);
+  }
+  .product-btn::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #f97d02, transparent);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .product-btn:hover { transform: translateY(-3px); border-color: #f97d02; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 0 18px rgba(249, 125, 2, 0.25); }
+  .product-btn:hover::after { opacity: 1; }
+  .product-btn .qty-badge {
+    display: inline-block;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f97d02;
+    color: #1a0f04;
+    font-weight: 900;
+    font-size: 0.78rem;
+  }
+  .product-btn .qty-badge:empty { display: none; }
+  .product-btn.in-ticket { border-color: #f97d02; }
+}
+
+/* Movil: franja mas fina, sin aviso flotante (ya esta la barra del ticket) */
+@media (max-width: 700px) {
+  .topbar { padding-bottom: 12px; }
+  .topbar::after { height: 4px; border-radius: 0; }
+  .add-toast { display: none; }
+  .card::before, .card::after { top: 7px; width: 5px; height: 5px; }
+  .card::before { left: 7px; }
+  .card::after { right: 7px; }
+}

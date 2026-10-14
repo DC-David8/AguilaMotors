@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=19" />
+  <link rel="stylesheet" href="styles.css?v=20" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=19" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -80,6 +80,12 @@
 
         <section class="card ticket-card">
           <h2>Ticket</h2>
+          <div class="receipt">
+            <div class="receipt-head">
+              <img src="aguila_motors_logo.png" alt="" />
+              <b>AGUILA MOTORS</b>
+              <span id="receipt-date"></span>
+            </div>
           <div class="table-wrap ticket-table-wrap">
             <table>
               <thead>
@@ -95,9 +101,11 @@
             </table>
           </div>
 
-          <div class="kpi-line">
-            <span>Total</span>
-            <strong id="ticket-total">$ 0</strong>
+            <div class="receipt-total">
+              <span>TOTAL</span>
+              <strong id="ticket-total">$ 0</strong>
+            </div>
+            <div class="receipt-foot">¡GRACIAS POR SU VISITA!</div>
           </div>
           <p class="concept-info" id="ticket-concept-info" role="status"></p>
 
@@ -107,10 +115,6 @@
             <button id="btn-clear">Limpiar</button>
             <button id="btn-copy-total">Copiar total</button>
             <button id="btn-copy-concept">Copiar concepto</button>
-          </div>
-
-          <div class="ticket-logo">
-            <img src="aguila_motors_logo.png" alt="Aguila Motors" />
           </div>
         </section>
       </div>
@@ -321,7 +325,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 19 - Aguila Motors</footer>
+    <footer class="app-version">Versión 20 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -554,6 +558,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=19"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

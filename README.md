@@ -214,6 +214,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 20 · 13 de octubre de 2026
+- **Estilo «taller industrial»**: franja de peligro negra y naranja bajo la cabecera, nombre con degradado metálico, tarjetas con tornillos y títulos con barra naranja, pestañas con brillo y fondo con textura de chapa. Se aplica a Caja, Pagos y Almacén.
+- **Iconos de verdad** en los productos (rueda, turbo, frenos, blindaje, suspensión, repostaje…) en lugar de las iniciales, con el precio en una etiqueta naranja. En PC la tarjeta se eleva y brilla al pasar el ratón.
+- **Ticket como recibo de papel**, con logo, fecha y hora, total grande y borde dentado.
+- **Aviso al añadir** un producto en PC («✔ Añadido … · $»).
+
 ### Versión 19 · 12 de octubre de 2026
 - El pie de página solo muestra la versión y el taller: «Versión 19 - Aguila Motors». Lo que cambia en cada versión queda en esta bitácora.
 

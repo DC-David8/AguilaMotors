@@ -762,10 +762,53 @@ function generatePlaceholderIcon(name) {
 }
 
 const _placeholderIconCache = new Map();
+// Iconos de linea para cada pieza o servicio (en vez de las iniciales).
+const PRODUCT_ICON_PATHS = {
+    pintura: '<path d="M9 3h6v4H9z"/><path d="M8 7h8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/><path d="M15 4h3M18 2v4"/>',
+    neon: '<path d="M4 16c2-4 4-4 6 0s4 4 6 0 4-4 4-4"/><path d="M4 10c2-4 4-4 6 0s4 4 6 0"/>',
+    luces: '<path d="M10 6a6 6 0 0 0 0 12h3V6z"/><path d="M16 8h5M16 12h5M16 16h5"/>',
+    rueda: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',
+    humo: '<path d="M7 18a4 4 0 1 1 1-7.9A5 5 0 0 1 17.6 9 3.5 3.5 0 1 1 18 18z"/>',
+    carroceria: '<path d="M3 15l2-5h14l2 5v3H3z"/><path d="M7 10l2-3h6l2 3"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/>',
+    claxon: '<path d="M4 10h4l7-5v14l-7-5H4z"/><path d="M18 9a4 4 0 0 1 0 6"/>',
+    tintado: '<path d="M4 6h16v12H4z"/><path d="M4 18L14 6M10 18l10-12"/>',
+    turbo: '<circle cx="12" cy="12" r="8"/><path d="M12 12c0-3 3-4 5-2M12 12c3 0 4 3 2 5M12 12c0 3-3 4-5 2M12 12c-3 0-4-3-2-5"/>',
+    motor: '<path d="M4 9h3l2-2h6v3h2l2-2h1v8h-1l-2-2h-2v3H8l-2-2H4z"/>',
+    transmision: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/><circle cx="12" cy="12" r="7"/>',
+    blindaje: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    suspension: '<path d="M8 3h8M8 21h8M8 5l8 2-8 2 8 2-8 2 8 2-8 2 8 2"/>',
+    frenos: '<circle cx="11" cy="12" r="8"/><circle cx="11" cy="12" r="2"/><path d="M17 6a9 9 0 0 1 0 12"/>',
+    ft: '<path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z"/>',
+    reparacion: '<path d="M14 6a4 4 0 0 0 5 5l-9 9a2 2 0 0 1-3-3l9-9a4 4 0 0 0 5-5l-2 2-2-2z"/>',
+    limpieza: '<path d="M12 3c3 4 6 7 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z"/>',
+    gas: '<path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M5 10h10M15 8l3 3v6a1.5 1.5 0 0 0 3 0V9l-3-3"/>',
+    grua: '<path d="M4 20h16M6 20V8l10-4v4"/><path d="M16 8v5a2 2 0 1 1-2 2"/>',
+    mando: '<rect x="8" y="3" width="8" height="18" rx="3"/><circle cx="12" cy="8" r="1.5"/><path d="M10 13h4M10 16h4"/>',
+    bayeta: '<path d="M4 8l8-4 8 4-8 12z"/><path d="M8 9l4 6 4-6"/>',
+    nitro: '<rect x="8" y="6" width="8" height="15" rx="3"/><path d="M10 6V3h4v3M12 10v6M9 13h6"/>',
+    camaleon: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/>',
+    compra: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>',
+    desvuelco: '<path d="M4 14l2-4h12l2 4v2H4z"/><path d="M8 6a6 6 0 0 1 9 1M17 3v4h-4"/>',
+  };
+
+const PRODUCT_ICON_KEYWORDS = [["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["nitro","nitro"],["compraventa","compra"],["desvuelco","desvuelco"]];
+
+function productIconKey(name) {
+  const n = String(name || "").toLowerCase();
+  for (const [word, key] of PRODUCT_ICON_KEYWORDS) if (n.includes(word)) return key;
+  return "reparacion";
+}
+
+function buildProductIconSvg(name) {
+  const d = PRODUCT_ICON_PATHS[productIconKey(name)];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf94"/><stop offset="1" stop-color="#f97d02"/></linearGradient><radialGradient id="b"><stop offset="0" stop-color="#3a2410"/><stop offset="1" stop-color="#140e09"/></radialGradient></defs><rect x="-6" y="-6" width="36" height="36" rx="9" fill="url(#b)"/><g fill="none" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
 function getProductIcon(product) {
   if (product.image) return product.image;
   if (_placeholderIconCache.has(product.name)) return _placeholderIconCache.get(product.name);
-  const icon = generatePlaceholderIcon(product.name);
+  const icon = buildProductIconSvg(product.name);
   _placeholderIconCache.set(product.name, icon);
   return icon;
 }
@@ -1495,7 +1538,29 @@ function setupCaja() {
     dlg.showModal();
   }
 
+  // Aviso breve abajo a la derecha al anadir un producto (solo en PC).
+  let toastTimer = null;
+  function showAddedToast(name, price) {
+    let el = byId("add-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "add-toast";
+      el.className = "add-toast";
+      el.setAttribute("role", "status");
+      document.body.appendChild(el);
+    }
+    el.innerHTML = "";
+    el.append("✔ Añadido ");
+    const b = document.createElement("b");
+    b.textContent = name;
+    el.append(b, ` · ${fmtMoney(price)}`);
+    el.classList.add("is-visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("is-visible"), 1600);
+  }
+
   function addItemDelta(name, price, delta) {
+    if (delta > 0) showAddedToast(name, price);
     const row = state.cart[name];
     if (!row) {
       if (delta > 0) state.cart[name] = { price, qty: delta };
@@ -1570,6 +1635,12 @@ function setupCaja() {
       ticketBody.appendChild(tr);
     }
     ticketTotal.textContent = fmtMoney(total);
+    const receiptDate = byId("receipt-date");
+    if (receiptDate) {
+      const d = new Date();
+      const p2 = (n) => String(n).padStart(2, "0");
+      receiptDate.textContent = `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+    }
     renderConceptInfo();
     renderQtyBadges();
     const units = Object.values(state.cart).reduce((a, r) => a + (r.qty || 0), 0);
@@ -1815,7 +1886,7 @@ function setupProductsAdminModal(onProductsChanged) {
       const tdImg = document.createElement("td");
       const img = document.createElement("img");
       img.className = "prod-thumb";
-      img.src = row.image || generatePlaceholderIcon(row.name);
+      img.src = getProductIcon(row);
       img.alt = row.name;
       tdImg.appendChild(img);
 
