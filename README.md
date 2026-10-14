@@ -9,7 +9,7 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 ## Qué hace
 
 1. **Módulo de Caja** · Catálogo de 131 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** para pasarlo por el datáfono (máximo 40 caracteres, ver *Concepto para el datáfono*).
-2. **Módulo de Pagos** · Se pega el texto de Discord con las facturas (datáfono TPV y el sistema de facturas antiguo) y las ventas de kits. Calcula el total cobrado por cada empleado, su comisión según el rango y el **Total a Pagar** a toda la plantilla. Se puede exportar a CSV.
+2. **Módulo de Pagos** · Se pega el texto de Discord con las facturas (datáfono TPV y el sistema de facturas antiguo) y las ventas de kits. Muestra cuatro tarjetas de resumen (Facturado, Total a pagar, Kits vendidos y Empleado de la semana) y un **ranking** con una fila por empleado: rango en color, barra de lo que facturó, lo que hay que pagarle y avisos (*Sin IBAN*, *No cobra*, *kits a sí mismo*). **Copiar para Discord** copia la lista de pagas sin abrir más ventanas. Las tablas de facturas y kits por separado siguen en *Ver detalle*. Se puede exportar a CSV.
 
 ## Catálogo de la Caja
 
@@ -204,6 +204,13 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página (formato «Versión N - Aguila Motors») y el `?v=` de `styles.css`, `app.js` y el icono. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 22 · 13 de octubre de 2026
+- **Módulo de Pagos renovado**: tarjetas de resumen (Facturado, Total a pagar, Kits vendidos con cuántos a sí mismos, Empleado de la semana).
+- **Ranking de la semana** en lugar de las dos tablas: una fila por empleado con facturas y kits juntos, iniciales, 🏆 al primero, rango en color, barra de lo facturado, IBAN y lo que hay que pagarle. Avisos de *Sin IBAN*, *No cobra*, *Sin registrar* y *kits a sí mismo*.
+- Barra naranja con el **Total a Pagar** y cuántos empleados cobran.
+- Botón **Copiar para Discord** en el propio panel (mismo texto que *Copiar todo* de Totales empleados).
+- Texto de Discord con estilo de terminal y guía de 3 pasos. Las tablas antiguas siguen en *Ver detalle*.
 
 ### Versión 21 · 13 de octubre de 2026
 - Se retira el **Módulo de Almacén**: el log copiado de Discord no trae bien quién mueve el almacén. Queda guardado en la rama `idea-almacen` (ver *Ideas guardadas*).

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=21" />
+  <link rel="stylesheet" href="styles.css?v=22" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=21" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=22" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -123,39 +123,63 @@
       <div class="split">
         <section class="card">
           <h2>Texto de Discord</h2>
-          <textarea id="conta-input" rows="14" placeholder="Pega aqui el texto y pulsa Procesar"></textarea>
+          <textarea id="conta-input" class="terminal-input" rows="14" placeholder="Pega aqui el texto y pulsa Procesar"></textarea>
           <div class="actions">
             <button id="conta-paste">Pegar + Procesar</button>
             <button id="conta-process">Procesar</button>
             <button id="conta-clear">Limpiar</button>
             <button id="conta-export">Exportar CSV</button>
           </div>
+          <div class="pg-steps">
+            <div class="pg-step"><b>1</b>Copia los mensajes del canal de facturas y de kits en Discord</div>
+            <div class="pg-step"><b>2</b>Pulsa <strong>Pegar + Procesar</strong></div>
+            <div class="pg-step"><b>3</b>Revisa el ranking y pulsa <strong>Copiar para Discord</strong></div>
+          </div>
         </section>
 
         <section class="card">
           <h2>Resumen</h2>
-          <div class="summary-grid">
-            <article class="mini-card">
-              <h3>Facturas</h3>
-              <p id="inv-line1">Total: -</p>
-            </article>
-            <article class="mini-card">
-              <h3>Venta de Kits</h3>
-              <p id="kits-line1">Ventas: -</p>
-              <p id="kits-line2">Unidades: -</p>
-              <p id="kits-line-self" title="Kits en los que Vendedor y Comprador son la misma persona">A sí mismos: -</p>
-              <div class="form-row kit-price-row">
-                <label for="kit-price">Precio por kit ($)</label>
-                <input id="kit-price" class="text-input" type="number" min="0" step="1" value="800" />
-              </div>
-              <p id="kits-line3">Total: -</p>
-            </article>
+          <div class="pg-kpis">
+            <div class="pg-kpi">
+              <div class="lbl"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Facturado</div>
+              <div class="val" id="pg-kpi-fact">$ 0</div>
+              <div class="sub" id="pg-kpi-fact-sub">Sin datos</div>
+            </div>
+            <div class="pg-kpi hl">
+              <div class="lbl"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Total a pagar</div>
+              <div class="val" id="pg-kpi-pay">$ 0</div>
+              <div class="sub">Comisiones según rango</div>
+            </div>
+            <div class="pg-kpi">
+              <div class="lbl"><svg class="ic" viewBox="0 0 24 24"><path d="M14 6a4 4 0 0 0 5 5l-9 9a2 2 0 0 1-3-3l9-9a4 4 0 0 0 5-5l-2 2-2-2z"/></svg>Kits vendidos</div>
+              <div class="val" id="pg-kpi-kits">0</div>
+              <div class="sub" id="pg-kpi-kits-sub">-</div>
+            </div>
+            <div class="pg-kpi">
+              <div class="lbl"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z"/></svg>Empleado de la semana</div>
+              <div class="val pg-kpi-name" id="pg-kpi-top">-</div>
+              <div class="sub" id="pg-kpi-top-sub">-</div>
+            </div>
           </div>
 
-          <div class="actions">
-            <button id="conta-employees">Totales empleados</button>
-            <button id="conta-manage-employees">Gestion empleados</button>
+          <div class="pg-sec">
+            <h3>Ranking de la semana</h3>
+            <label class="pg-kitprice" for="kit-price">Precio por kit ($) <input id="kit-price" class="text-input" type="number" min="0" step="1" value="800" /></label>
           </div>
+          <div class="pg-list" id="pg-ranking">
+            <p class="muted pg-empty">Pega el texto de Discord y pulsa Procesar para ver el ranking.</p>
+          </div>
+
+          <div class="pg-total">
+            <span id="pg-total-label">TOTAL A PAGAR</span>
+            <b id="conta-total-a-pagar">$ 0</b>
+          </div>
+          <div class="pg-actions">
+            <button type="button" id="pg-copy-discord">Copiar para Discord</button>
+            <button type="button" id="conta-employees" class="ghost">Totales empleados</button>
+            <button type="button" id="conta-manage-employees" class="ghost">Gestión de empleados</button>
+          </div>
+          <p class="muted pg-copied" id="pg-copy-status" role="status"></p>
 
           <div class="shared-box">
             <h3>Datos compartidos</h3>
@@ -169,48 +193,60 @@
             </div>
           </div>
 
-          <p class="muted" id="conta-loaded">Sin datos</p>
+          <details class="pg-detail">
+            <summary>Ver detalle (facturas y kits por separado)</summary>
+            <div class="summary-grid">
+              <article class="mini-card">
+                <h3>Facturas</h3>
+                <p id="inv-line1">Total: -</p>
+              </article>
+              <article class="mini-card">
+                <h3>Venta de Kits</h3>
+                <p id="kits-line1">Ventas: -</p>
+                <p id="kits-line2">Unidades: -</p>
+                <p id="kits-line-self" title="Kits en los que Vendedor y Comprador son la misma persona">A sí mismos: -</p>
+                <p id="kits-line3">Total: -</p>
+              </article>
+            </div>
 
-          <h3>Facturas por empleado</h3>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Empleado</th>
-                  <th class="num">Total</th>
-                  <th class="num">% según rango</th>
-                  <th class="num">Pendiente de Pago</th>
-                </tr>
-              </thead>
-              <tbody id="inv-table"></tbody>
-            </table>
-          </div>
+            <h3>Facturas por empleado</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Empleado</th>
+                    <th class="num">Total</th>
+                    <th class="num">% según rango</th>
+                    <th class="num">Pendiente de Pago</th>
+                  </tr>
+                </thead>
+                <tbody id="inv-table"></tbody>
+              </table>
+            </div>
 
-          <h3>Kits por empleado</h3>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Empleado</th>
-                  <th class="num">Unidades</th>
-                  <th class="num" title="Kits que se vendió a sí mismo">A sí mismo</th>
-                  <th class="num">% según rango</th>
-                  <th class="num">Pendiente de Pago</th>
-                </tr>
-              </thead>
-              <tbody id="sales-table"></tbody>
-            </table>
-          </div>
+            <h3>Kits por empleado</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Empleado</th>
+                    <th class="num">Unidades</th>
+                    <th class="num" title="Kits que se vendió a sí mismo">A sí mismo</th>
+                    <th class="num">% según rango</th>
+                    <th class="num">Pendiente de Pago</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-table"></tbody>
+              </table>
+            </div>
 
-          <div class="kpi-line">
-            <span>Total general</span>
-            <strong id="conta-total-general">$ 0</strong>
-          </div>
-          <div class="kpi-line">
-            <span>Total a Pagar (todos los empleados)</span>
-            <strong id="conta-total-a-pagar">$ 0</strong>
-          </div>
-          <p class="muted" id="conta-footer">Facturas: 0 | Kits: 0</p>
+            <div class="kpi-line">
+              <span>Total general</span>
+              <strong id="conta-total-general">$ 0</strong>
+            </div>
+            <p class="muted" id="conta-loaded">Sin datos</p>
+            <p class="muted" id="conta-footer">Facturas: 0 | Kits: 0</p>
+          </details>
         </section>
       </div>
     </section>
@@ -221,7 +257,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 21 - Aguila Motors</footer>
+    <footer class="app-version">Versión 22 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -454,6 +490,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=22"></script>
 </body>
 </html>

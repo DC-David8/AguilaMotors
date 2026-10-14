@@ -2341,6 +2341,105 @@ function setupContabilidad() {
 
   if (refs.kitPrice) refs.kitPrice.value = getKitPrice();
 
+  // Ranking de la semana: una fila por persona con facturas + kits, su rango,
+  // lo que hay que pagarle y avisos (sin IBAN, no cobra, kits a si mismo).
+  const RANK_BADGE = { jefe: "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };
+
+  function renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar }) {
+    const list = byId("pg-ranking");
+    if (!list) return;
+    const byKey = new Map();
+    const row = (name) => {
+      const key = normalizeKeySimple(name);
+      if (!byKey.has(key)) byKey.set(key, { name, fact: 0, kits: 0, self: 0 });
+      return byKey.get(key);
+    };
+    for (const [name, total] of Object.entries(state.invByIssuerPaid)) row(name).fact += Number(total || 0);
+    for (const [name, qty] of Object.entries(state.kitsBySeller)) {
+      const r = row(name);
+      r.kits += qty;
+      r.self += state.kitsSelfBySeller[name] || 0;
+    }
+    const empByKey = new Map(employees.map((e) => [normalizeKeySimple(fullName(e)), e]));
+    const rows = [...byKey.entries()].map(([key, r]) => {
+      const e = empByKey.get(key);
+      const name = e ? fullName(e) : r.name;
+      const total = r.fact + r.kits * kitPrice;
+      const pct = e ? pctForRank(e.rank) : 0;
+      const payout = Math.round(total * pct);
+      return { ...r, name, emp: e, rank: e?.rank || "", total, payout, noPay: isEmployeeNoPay(name), iban: getEmployeeIban(name) };
+    });
+    rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es"));
+
+    const maxTotal = Math.max(1, ...rows.map((r) => r.total));
+    const maxPayout = Math.max(0, ...rows.map((r) => r.payout));
+    const top = rows.find((r) => maxPayout > 0 && r.payout === maxPayout);
+    const kitsQty = kitsSummary.qty || 0;
+    const selfQty = rows.reduce((a, r) => a + r.self, 0);
+    const paying = rows.filter((r) => !r.noPay && r.payout > 0).length;
+
+    byId("pg-kpi-fact").textContent = fmtMoney(invSummary.total + kitsSummary.total);
+    byId("pg-kpi-fact-sub").textContent = rows.length ? `${invSummary.count} facturas · ${rows.length} ${rows.length === 1 ? "persona" : "personas"}` : "Sin datos";
+    byId("pg-kpi-pay").textContent = fmtMoney(totalAPagar);
+    byId("pg-kpi-kits").textContent = String(kitsQty);
+    const kitsSub = byId("pg-kpi-kits-sub");
+    kitsSub.textContent = kitsQty ? `${selfQty} a sí mismos (${Math.round((selfQty / kitsQty) * 100)}%)` : "-";
+    kitsSub.classList.toggle("warn", kitsQty > 0 && selfQty / kitsQty >= 0.5);
+    byId("pg-kpi-top").textContent = top ? top.name : "-";
+    byId("pg-kpi-top").title = top ? top.name : "";
+    byId("pg-kpi-top-sub").textContent = top ? `${fmtMoney(top.total)} facturados` : "-";
+    byId("pg-total-label").textContent = paying ? `TOTAL A PAGAR · ${paying} ${paying === 1 ? "empleado" : "empleados"}` : "TOTAL A PAGAR";
+
+    list.textContent = "";
+    if (!rows.length) {
+      const p = document.createElement("p");
+      p.className = "muted pg-empty";
+      p.textContent = "Pega el texto de Discord y pulsa Procesar para ver el ranking.";
+      list.appendChild(p);
+      return;
+    }
+    const el = (tag, cls, text) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    for (const r of rows) {
+      const card = el("div", "pg-row" + (r === top ? " first" : ""));
+      const initials = r.name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+      const av = el("div", "pg-av" + (r.noPay ? " np" : ""), initials);
+      if (r === top) av.appendChild(el("span", "crown", "🏆"));
+
+      const mid = el("div", "pg-mid");
+      const nameRow = el("div", "pg-name");
+      nameRow.appendChild(el("span", "", r.name));
+      if (r.rank) nameRow.appendChild(el("span", "pg-badge " + (RANK_BADGE[normalizeKeySimple(r.rank)] || ""), r.rank));
+      else nameRow.appendChild(el("span", "pg-badge w-nopay", "Sin registrar"));
+      if (r.emp && r.noPay) nameRow.appendChild(el("span", "pg-badge w-nopay", "No cobra"));
+      else if (r.emp && !r.iban) nameRow.appendChild(el("span", "pg-badge w-iban", "⚠ Sin IBAN"));
+      if (r.kits && r.self / r.kits >= 0.5) nameRow.appendChild(el("span", "pg-badge w-self", `${r.self}/${r.kits} kits a sí mismo`));
+      const bar = el("div", "pg-bar");
+      const fill = el("i");
+      fill.style.width = `${Math.max(2, Math.round((r.total / maxTotal) * 100))}%`;
+      bar.appendChild(fill);
+      const meta = [`${fmtMoney(r.total)} facturados`];
+      if (r.kits) meta.push(`${r.kits} ${r.kits === 1 ? "kit" : "kits"}`);
+      if (r.iban) meta.push(`IBAN ${r.iban}`);
+      mid.append(nameRow, bar, el("div", "pg-meta", meta.join(" · ")));
+
+      const amt = el("div", "pg-amt");
+      if (r.noPay) {
+        amt.append(el("small", "", "No cobra"), el("b", "pg-dash", "—"));
+      } else if (!r.emp) {
+        amt.append(el("small", "", "Sin rango"), el("b", "pg-dash", "$ 0"));
+      } else {
+        amt.append(el("small", "", "A pagar"), el("b", "pay", fmtMoney(r.payout)));
+      }
+      card.append(av, mid, amt);
+      list.appendChild(card);
+    }
+  }
+
   async function refresh() {
     const invSummary = {
       count: Object.keys(state.invoices).length,
@@ -2435,6 +2534,7 @@ function setupContabilidad() {
     }
     refs.footer.textContent = footerText;
     refs.loaded.textContent = invSummary.count || kitsSummary.count ? "Datos cargados" : "Sin datos";
+    renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar });
   }
 
   function clearState() {
@@ -2636,21 +2736,48 @@ function setupEmployeesModal(state, refreshPagos) {
     renderTotalsRows();
   });
 
+  // Texto para el canal de pagas (el mismo de "Copiar todo").
+  function discordPayText() {
+    return totalsRows
+      .map((r) => {
+        let line = r.noPay
+          ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
+          : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
+        if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
+        return line;
+      })
+      .join("\n");
+  }
+
   byId("employees-copy-all").addEventListener("click", async () => {
     if (!totalsRows.length) {
       return;
     }
-    const lines = totalsRows.map((r) => {
-      let line = r.noPay
-        ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
-        : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
-      if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
-      return line;
-    });
-    const text = lines.join("\n");
-
+    const text = discordPayText();
     const ok = await copyText(text);
     if (!ok) openCopyFallback(text);
+  });
+
+  // Boton del panel de Pagos: arma los totales sin abrir la ventana y copia.
+  byId("pg-copy-discord")?.addEventListener("click", async () => {
+    const status = byId("pg-copy-status");
+    try {
+      await buildTotalsRows();
+    } catch {
+      alert("No se pudieron cargar los empleados.");
+      return;
+    }
+    if (!totalsRows.length) {
+      alert("No hay empleados en la lista. Entra en 'Gestión de empleados' para añadirlos.");
+      return;
+    }
+    const text = discordPayText();
+    const ok = await copyText(text);
+    if (!ok) openCopyFallback(text);
+    if (status) {
+      status.textContent = ok ? `✔ Copiado: ${totalsRows.length} empleados. Pégalo en el canal de pagas.` : "";
+      setTimeout(() => (status.textContent = ""), 4000);
+    }
   });
 
   function openAdminModal() {
