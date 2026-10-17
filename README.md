@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 24 · 16 de octubre de 2026
+- Iconos en las pestañas: **caja registradora** en Caja, **dólar** en Pagos y **ruleta** en Sorteo (también en el menú del móvil).
+
 ### Versión 23 · 16 de octubre de 2026
 - Nuevo **Módulo de Sorteo** con contraseña de acceso: lee las facturas del datáfono y solo cuenta las que tienen comprador, llevan «sorteo» en el concepto y no son venta a sí mismo. Muestra las descartadas con el motivo.
 - Boletos por monto o por factura, fechas del sorteo y opción de dejar fuera a los empleados.

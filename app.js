@@ -3677,12 +3677,13 @@ function setupMobileNav() {
   function build() {
     sectionsEl.textContent = "";
     document.querySelectorAll("nav.tabs .tab").forEach((tab) => {
-      sectionsEl.appendChild(
-        navButton(tab.textContent.trim(), tab.classList.contains("is-active"), () => {
-          close();
-          tab.click(); // misma logica (y contrasena) que en PC
-        })
-      );
+      const item = navButton(tab.textContent.trim(), tab.classList.contains("is-active"), () => {
+        close();
+        tab.click(); // misma logica (y contrasena) que en PC
+      });
+      const icon = tab.querySelector(".tab-ic");
+      if (icon) item.prepend(icon.cloneNode(true));
+      sectionsEl.appendChild(item);
     });
     catsEl.textContent = "";
     const showCats = isCaja();

@@ -1218,3 +1218,11 @@ html, body {
   .sx-reel li { font-size: 1.05rem; }
   .sx-reel li.win { font-size: 1.3rem; }
 }
+
+/* Iconos de las pestanas (caja registradora, dolar, ruleta) */
+.tab-ic { width: 18px; height: 18px; margin-right: 8px; vertical-align: -4px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tab-ic .tab-ic-ball, .tab-ic-ball { fill: currentColor; stroke: none; }
+.tab:not(.is-active) .tab-ic { stroke: #ffb15c; }
+.tab:not(.is-active) .tab-ic .tab-ic-ball { fill: #ffb15c; }
+.m-nav-item .tab-ic { stroke: #ffb15c; }
+.m-nav-item .tab-ic .tab-ic-ball { fill: #ffb15c; }
