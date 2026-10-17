@@ -11,6 +11,8 @@ La versión que estás usando aparece al final de la página. Si no ves los últ
 1. **Módulo de Caja** · Catálogo de 131 productos y servicios por pestañas. Se pulsa un producto para sumarlo al ticket (clic derecho para restar), se ajustan las cantidades y se copia el **total** o el **concepto** para pasarlo por el datáfono (máximo 40 caracteres, ver *Concepto para el datáfono*).
 2. **Módulo de Pagos** · Se pega el texto de Discord con las facturas (datáfono TPV y el sistema de facturas antiguo) y las ventas de kits. Muestra cuatro tarjetas de resumen (Facturado, Total a pagar, Kits vendidos y Empleado de la semana) y un **ranking** con una fila por empleado: rango en color, barra de lo que facturó, lo que hay que pagarle y avisos (*Sin IBAN*, *No cobra*, *kits a sí mismo*). **Copiar para Discord** copia la lista de pagas sin abrir más ventanas. Las tablas de facturas y kits por separado siguen en *Ver detalle*. Se puede exportar a CSV.
 
+3. **Módulo de Sorteo** · Se pegan las facturas del datáfono del sorteo, se cuentan los boletos de cada comprador y se sortean los premios en directo con una «tragaperras» de nombres. Ver *Sorteo*.
+
 ## Catálogo de la Caja
 
 | Pestaña | Contenido |
@@ -111,6 +113,26 @@ En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord 
 
 El rol se cambia en `app.js` → `EMPLOYEE_OF_WEEK_ROLE_ID` (ID del rol: con el modo desarrollador de Discord, clic derecho sobre el rol → *Copiar ID del rol*).
 
+## Sorteo
+
+Pestaña **🎟️ Módulo de Sorteo** (pide la contraseña de acceso, la misma de Pagos). Tiene dos pasos:
+
+**1 · Participantes.** Se pegan las facturas del datáfono y cada una se revisa con tres reglas:
+
+1. Tiene **nombre del comprador** (*Cliente*).
+2. El **concepto** lleva la palabra **«sorteo»** (da igual mayúsculas o tildes).
+3. **No es venta a sí mismo** (el Cliente no es el Cobrador).
+
+Las que no cumplen salen en *Facturas descartadas* con el motivo. Ajustes:
+
+- **Boletos:** según el monto (1 boleto cada X $, por defecto $1.000) o 1 por factura.
+- **Fechas** desde / hasta (opcional).
+- **Los empleados del taller no participan** (opcional).
+
+**Copiar lista sellada para Discord** publica la lista de boletos con su **huella** (SHA-256) antes de sortear, para que todos puedan comprobar después que no se cambió.
+
+**2 · Sorteo en vivo.** Se añaden los premios en orden (con icono) y se sortean uno a uno: cada boleto es una opción, con azar seguro del navegador. Con *Un premio por persona* quien gana sale del bombo. El anuncio para Discord se va escribiendo solo; se puede copiar entero, copiar solo el último ganador o exportar a CSV. Los resultados quedan guardados en el navegador aunque se recargue la página; **Nuevo sorteo** los borra.
+
 ## Ideas guardadas
 
 ### Módulo de Almacén (retirado en la versión 21)
@@ -204,6 +226,11 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página (formato «Versión N - Aguila Motors») y el `?v=` de `styles.css`, `app.js` y el icono. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 23 · 16 de octubre de 2026
+- Nuevo **Módulo de Sorteo** con contraseña de acceso: lee las facturas del datáfono y solo cuenta las que tienen comprador, llevan «sorteo» en el concepto y no son venta a sí mismo. Muestra las descartadas con el motivo.
+- Boletos por monto o por factura, fechas del sorteo y opción de dejar fuera a los empleados.
+- Sorteo en vivo premio a premio con tragaperras de nombres, confeti, un premio por persona, lista sellada con huella y anuncio para Discord que se escribe solo.
 
 ### Versión 22 · 13 de octubre de 2026
 - **Módulo de Pagos renovado**: tarjetas de resumen (Facturado, Total a pagar, Kits vendidos con cuántos a sí mismos, Empleado de la semana).

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=22" />
+  <link rel="stylesheet" href="styles.css?v=23" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=22" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=23" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -58,6 +58,7 @@
     <nav class="tabs" aria-label="Secciones">
       <button class="tab is-active" data-tab-target="tab-caja">Módulo de Caja</button>
       <button class="tab" data-tab-target="tab-conta">Módulo de Pagos</button>
+      <button class="tab" data-tab-target="tab-sorteo">🎟️ Módulo de Sorteo</button>
     </nav>
 
     <section id="tab-caja" class="tab-panel is-active">
@@ -251,13 +252,127 @@
       </div>
     </section>
 
+    <section id="tab-sorteo" class="tab-panel">
+      <nav class="sx-subtabs" aria-label="Pasos del sorteo">
+        <button type="button" class="sx-subtab is-active" data-sx="sx-part">1 · Participantes</button>
+        <button type="button" class="sx-subtab" data-sx="sx-live">2 · Sorteo en vivo</button>
+      </nav>
+
+      <!-- Paso 1: participantes -->
+      <div id="sx-part" class="sx-pane is-active">
+        <div class="split">
+          <section class="card">
+            <h2>Facturas del sorteo</h2>
+            <textarea id="sx-input" class="terminal-input" rows="10" placeholder="Pega aqui las facturas del datáfono del sorteo y pulsa Procesar"></textarea>
+            <div class="actions">
+              <button type="button" id="sx-paste">Pegar + Procesar</button>
+              <button type="button" id="sx-process">Procesar</button>
+              <button type="button" id="sx-clear" class="ghost">Limpiar</button>
+            </div>
+
+            <h3>Reglas de validez</h3>
+            <div class="sx-rules">
+              <div class="sx-rule"><span class="sx-ok">✔</span> La factura tiene <b>nombre del comprador</b> (Cliente)</div>
+              <div class="sx-rule"><span class="sx-ok">✔</span> El concepto lleva la palabra <b>«sorteo»</b></div>
+              <div class="sx-rule"><span class="sx-ok">✔</span> <b>No es venta a sí mismo</b> (Cliente distinto del Cobrador)</div>
+            </div>
+
+            <h3>Ajustes</h3>
+            <div class="sx-set">
+              <label>Boletos
+                <select id="sx-mode" class="text-input">
+                  <option value="amount">Según el monto de la factura</option>
+                  <option value="invoice">1 boleto por factura</option>
+                </select>
+              </label>
+              <label id="sx-price-wrap">Precio del boleto ($)
+                <input id="sx-price" class="text-input" type="number" min="1" step="1" value="1000" />
+              </label>
+              <label>Desde (opcional)
+                <input id="sx-from" class="text-input" type="date" />
+              </label>
+              <label>Hasta (opcional)
+                <input id="sx-to" class="text-input" type="date" />
+              </label>
+            </div>
+            <label class="sx-check"><input type="checkbox" id="sx-no-staff" /> Los empleados del taller no participan</label>
+          </section>
+
+          <section class="card">
+            <h2>Participantes</h2>
+            <div class="sx-kpis">
+              <div class="sx-kpi"><div class="lbl">Facturas válidas</div><div class="val" id="sx-k-valid">0</div></div>
+              <div class="sx-kpi hl"><div class="lbl">Boletos</div><div class="val" id="sx-k-tickets">0</div></div>
+              <div class="sx-kpi"><div class="lbl">Participantes</div><div class="val" id="sx-k-people">0</div></div>
+              <div class="sx-kpi bad"><div class="lbl">Descartadas</div><div class="val" id="sx-k-bad">0</div></div>
+            </div>
+            <div class="sx-h"><h3>Boletos por persona</h3><span id="sx-rule-note"></span></div>
+            <div id="sx-people"><p class="muted pg-empty">Pega las facturas del sorteo y pulsa Procesar.</p></div>
+            <div class="sx-h"><h3>Facturas descartadas</h3><span>No entran en el sorteo</span></div>
+            <div id="sx-bad"><p class="muted">Ninguna.</p></div>
+            <div class="pg-actions">
+              <button type="button" id="sx-go-live">Ir al sorteo en vivo →</button>
+              <button type="button" id="sx-copy-seal" class="ghost">Copiar lista sellada para Discord</button>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Paso 2: sorteo en vivo -->
+      <div id="sx-live" class="sx-pane">
+        <div class="sx-combo">
+          <section class="card">
+            <h2>Premios y ganadores</h2>
+            <div class="sx-prog"><span id="sx-prog-text">0 de 0 premios sorteados</span><span id="sx-pool-text"></span></div>
+            <div class="sx-progbar"><i id="sx-prog-bar"></i></div>
+            <div id="sx-prizes"></div>
+            <div class="sx-add">
+              <select id="sx-new-icon" class="text-input" aria-label="Icono del premio"></select>
+              <input id="sx-new-name" class="text-input" type="text" placeholder="Nuevo premio (ej. Coche VIP)" />
+              <button type="button" id="sx-add-prize">Añadir</button>
+            </div>
+            <label class="sx-check"><input type="checkbox" id="sx-one-each" checked /> Un premio por persona (quien gana sale del bombo)</label>
+          </section>
+
+          <div>
+            <section class="card">
+              <div class="sx-stage">
+                <div class="sx-confetti" id="sx-confetti"></div>
+                <span class="sx-tag" id="sx-stage-tag">SORTEO</span>
+                <h2 id="sx-stage-title">Añade los premios</h2>
+                <div class="sx-reel"><div class="sx-reel-line"></div><ul id="sx-reel"></ul></div>
+                <div class="sx-odds" id="sx-odds"></div>
+                <div class="sx-btns">
+                  <button type="button" id="sx-draw" class="sx-go">🎰 Sortear</button>
+                  <button type="button" id="sx-reset" class="ghost">Nuevo sorteo</button>
+                </div>
+                <div class="sx-seal" id="sx-seal"></div>
+              </div>
+            </section>
+            <div class="sx-under">
+              <section class="card">
+                <h2>Anuncio para Discord</h2>
+                <pre class="sx-discord" id="sx-discord"></pre>
+              </section>
+              <div class="sx-side">
+                <button type="button" id="sx-copy-all">📋 Copiar anuncio</button>
+                <button type="button" id="sx-copy-last" class="ghost">Copiar solo el último ganador</button>
+                <button type="button" id="sx-export" class="ghost">Exportar CSV</button>
+                <p class="sx-note" id="sx-copy-status">El anuncio se va escribiendo solo con cada premio que sale.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <button type="button" class="m-ticket-bar" id="m-ticket-bar" aria-label="Ver el ticket">
       <span class="m-ticket-label">Ticket</span>
       <span class="m-ticket-count" id="m-ticket-count">Vacío</span>
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 22 - Aguila Motors</footer>
+    <footer class="app-version">Versión 23 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -490,6 +605,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=22"></script>
+  <script src="app.js?v=23"></script>
 </body>
 </html>
