@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 25 · 17 de octubre de 2026
+- **Copiar todo** (Totales por empleado) añade al final el **total a retirar de la cuenta de la empresa**, sumando solo a los empleados que quedan en la lista y no marcados como "No cobra". El botón de copiar del panel de Pagos también lo incluye.
+
 ### Versión 24 · 16 de octubre de 2026
 - Iconos en las pestañas: **caja registradora** en Caja, **dólar** en Pagos y **ruleta** en Sorteo (también en el menú del móvil).
 

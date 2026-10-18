@@ -2679,8 +2679,7 @@ function setupEmployeesModal(state, refreshPagos) {
       });
       totalsBody.appendChild(tr);
     }
-    const bankTotal = totalsRows.reduce((acc, r) => acc + (r.noPay ? 0 : r.payout), 0);
-    byId("employees-bank-total").textContent = `Total a pagar: ${fmtMoney(bankTotal)}`;
+    byId("employees-bank-total").textContent = `Total a retirar: ${fmtMoney(bankTotalOf(totalsRows))}`;
   }
 
   async function openTotalsModal() {
@@ -2736,9 +2735,14 @@ function setupEmployeesModal(state, refreshPagos) {
     renderTotalsRows();
   });
 
+  // Suma solo a quien sigue en la lista y cobra (los "No cobra" no cuentan).
+  function bankTotalOf(rows) {
+    return rows.reduce((acc, r) => acc + (r.noPay ? 0 : r.payout), 0);
+  }
+
   // Texto para el canal de pagas (el mismo de "Copiar todo").
   function discordPayText() {
-    return totalsRows
+    const lines = totalsRows
       .map((r) => {
         let line = r.noPay
           ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
@@ -2747,6 +2751,9 @@ function setupEmployeesModal(state, refreshPagos) {
         return line;
       })
       .join("\n");
+    const paying = totalsRows.filter((r) => !r.noPay && r.payout > 0).length;
+    const total = `**Total a retirar de la cuenta de la empresa: ${fmtMoney(bankTotalOf(totalsRows))}** (${paying} ${paying === 1 ? "empleado" : "empleados"} a pagar)`;
+    return `${lines}\n\n${total}`;
   }
 
   byId("employees-copy-all").addEventListener("click", async () => {
@@ -2775,7 +2782,7 @@ function setupEmployeesModal(state, refreshPagos) {
     const ok = await copyText(text);
     if (!ok) openCopyFallback(text);
     if (status) {
-      status.textContent = ok ? `✔ Copiado: ${totalsRows.length} empleados. Pégalo en el canal de pagas.` : "";
+      status.textContent = ok ? `✔ Copiado: ${totalsRows.length} empleados · Total a retirar ${fmtMoney(bankTotalOf(totalsRows))}. Pégalo en el canal de pagas.` : "";
       setTimeout(() => (status.textContent = ""), 4000);
     }
   });
