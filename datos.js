@@ -1,7 +1,7 @@
 // Datos compartidos de Aguila Motors. Se generan desde la pagina
 // (Modulo de Pagos → Datos compartidos → Exportar datos). No editar a mano.
 window.AGUILA_DATOS = {
- "publishedAt": "11/10/2026 23:38",
+ "publishedAt": "17/10/2026 22:43",
  "employees": [
   {
    "name": "Damián",
@@ -20,6 +20,14 @@ window.AGUILA_DATOS = {
    "noPay": true
   },
   {
+   "name": "Mauricio",
+   "surname": "Colmenero",
+   "rank": "Chalán",
+   "discord": "818564675615719477",
+   "iban": "J643814",
+   "noPay": false
+  },
+  {
    "name": "Gxbo",
    "surname": "Dead",
    "rank": "Mecánico",
@@ -33,12 +41,12 @@ window.AGUILA_DATOS = {
    "rank": "Jefe",
    "discord": "696575473580376115",
    "iban": "J739745",
-   "noPay": false
+   "noPay": true
   },
   {
    "name": "Pepe",
    "surname": "Flores",
-   "rank": "Chalán",
+   "rank": "Mecánico",
    "discord": "767488989086220328",
    "iban": "J897643",
    "noPay": false
@@ -46,7 +54,7 @@ window.AGUILA_DATOS = {
   {
    "name": "Sico",
    "surname": "García",
-   "rank": "Mecánico",
+   "rank": "Experimentado",
    "discord": "1010942234830569492",
    "iban": "J873709",
    "noPay": false
@@ -56,7 +64,7 @@ window.AGUILA_DATOS = {
    "surname": "Grata",
    "rank": "Chalán",
    "discord": "386449864285880321",
-   "iban": "",
+   "iban": "J647574",
    "noPay": false
   },
   {
@@ -68,35 +76,11 @@ window.AGUILA_DATOS = {
    "noPay": false
   },
   {
-   "name": "Cristina",
-   "surname": "Morrison",
+   "name": "Nayara",
+   "surname": "Palomita",
    "rank": "Mecánico",
-   "discord": "1325088210807816262",
-   "iban": "J793531",
-   "noPay": false
-  },
-  {
-   "name": "Will",
-   "surname": "Morrison",
-   "rank": "Mecánico",
-   "discord": "1223442142270066731",
-   "iban": "J722283",
-   "noPay": false
-  },
-  {
-   "name": "Cheto",
-   "surname": "Norway",
-   "rank": "Chalán",
-   "discord": "684831606099410976",
-   "iban": "",
-   "noPay": false
-  },
-  {
-   "name": "Mateo",
-   "surname": "Restrepo",
-   "rank": "Mecánico",
-   "discord": "388811238097813515",
-   "iban": "J611195",
+   "discord": "1107019368652603473",
+   "iban": "J369794",
    "noPay": false
   },
   {
@@ -108,10 +92,10 @@ window.AGUILA_DATOS = {
    "noPay": false
   },
   {
-   "name": "rodolfo",
-   "surname": "robles",
-   "rank": "Mecánico",
-   "discord": "1173775535013367891",
+   "name": "Rodolfo",
+   "surname": "Robles",
+   "rank": "Experimentado",
+   "discord": "818564675615719477",
    "iban": "J560795",
    "noPay": false
   },
@@ -121,7 +105,7 @@ window.AGUILA_DATOS = {
    "rank": "Jefe",
    "discord": "708792005060329564",
    "iban": "J000160",
-   "noPay": false
+   "noPay": true
   }
  ],
  "customProducts": [],
