@@ -1,7 +1,7 @@
 // Datos compartidos de Aguila Motors. Se generan desde la pagina
 // (Modulo de Pagos → Datos compartidos → Exportar datos). No editar a mano.
 window.AGUILA_DATOS = {
- "publishedAt": "17/10/2026 22:43",
+ "publishedAt": "17/10/2026 22:46",
  "employees": [
   {
    "name": "Damián",
@@ -95,7 +95,7 @@ window.AGUILA_DATOS = {
    "name": "Rodolfo",
    "surname": "Robles",
    "rank": "Experimentado",
-   "discord": "818564675615719477",
+   "discord": "1173775535013367891",
    "iban": "J560795",
    "noPay": false
   },
