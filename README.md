@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 40 · 19 de octubre de 2026
+- **Copiar para Discord** (panel de Pagos) deja fuera de la lista a los marcados como **No cobra**: se pega el log y se copia directamente.
+
 ### Versión 39 · 19 de octubre de 2026
 - Tarjeta de sesión arriba a la derecha con la **foto de perfil de Discord**, el **nombre registrado en la plantilla** y el **rango** (con su color y el nombre personalizado). Cada uno recibe solo sus datos (función `mi_perfil`).
 - En el móvil, **Cerrar sesión** pasa al menú ☰ para que la cabecera no se descoloque.

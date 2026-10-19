@@ -2835,8 +2835,8 @@ function setupEmployeesModal(state, refreshPagos) {
   }
 
   // Texto para el canal de pagas (el mismo de "Copiar todo").
-  function discordPayText() {
-    const lines = totalsRows
+  function discordPayText(rows = totalsRows) {
+    const lines = rows
       .map((r) => {
         let line = r.noPay
           ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
@@ -2845,8 +2845,8 @@ function setupEmployeesModal(state, refreshPagos) {
         return line;
       })
       .join("\n");
-    const paying = totalsRows.filter((r) => !r.noPay && r.payout > 0).length;
-    const total = `**Total a retirar de la cuenta de la empresa: ${fmtMoney(bankTotalOf(totalsRows))}** (${paying} ${paying === 1 ? "empleado" : "empleados"} a pagar)`;
+    const paying = rows.filter((r) => !r.noPay && r.payout > 0).length;
+    const total = `**Total a retirar de la cuenta de la empresa: ${fmtMoney(bankTotalOf(rows))}** (${paying} ${paying === 1 ? "empleado" : "empleados"} a pagar)`;
     return `${lines}\n\n${total}`;
   }
 
@@ -2872,11 +2872,22 @@ function setupEmployeesModal(state, refreshPagos) {
       alert("No hay empleados en la lista. Entra en 'Gestión de empleados' para añadirlos.");
       return;
     }
-    const text = discordPayText();
+    // Los marcados como "No cobra" no salen en el mensaje de pagas.
+    const rows = totalsRows.filter((r) => !r.noPay);
+    const skipped = totalsRows.length - rows.length;
+    if (!rows.length) {
+      alert("Todos los empleados están marcados como «No cobra»: no hay nada que copiar.");
+      return;
+    }
+    const text = discordPayText(rows);
     const ok = await copyText(text);
     if (!ok) openCopyFallback(text);
     if (status) {
-      status.textContent = ok ? `✔ Copiado: ${totalsRows.length} empleados · Total a retirar ${fmtMoney(bankTotalOf(totalsRows))}. Pégalo en el canal de pagas.` : "";
+      status.textContent = ok
+        ? `✔ Copiado: ${rows.length} empleados · Total a retirar ${fmtMoney(bankTotalOf(rows))}` +
+          (skipped ? ` · ${skipped} «No cobra» fuera de la lista` : "") +
+          ". Pégalo en el canal de pagas."
+        : "";
       setTimeout(() => (status.textContent = ""), 4000);
     }
   });
