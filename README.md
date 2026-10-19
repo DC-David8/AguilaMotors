@@ -227,6 +227,15 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 26 · 18 de octubre de 2026
+- Nueva pestaña **Compraventa** (con contraseña de acceso). Lee el log «Transacción de vehículo»: mediador, dueño, comprador, precio, vehículo + matrícula y empresa. `society_aguilamotor` se muestra como **Aguila Motors**.
+  - **Compra:** la sociedad es la compradora; el dinero sale de la caja de la sociedad y el vehículo entra al **almacén**.
+  - **Venta:** la sociedad es la dueña; el dinero entra y el vehículo sale del almacén.
+  - **Traspaso:** entre dos personas con un mecánico de mediador.
+  - Almacén con tarjetas, **foto del vehículo** (se comprime sola), matrícula, a quién se compró, precio, mediador y fecha. Historial con buscador y filtro por tipo.
+  - Pegar el mismo log dos veces no duplica nada.
+  - Se publica para todos con **datos.js** (Datos compartidos → Exportar datos): va el historial completo y solo las fotos de lo que está en el almacén.
+
 ### Versión 25 · 17 de octubre de 2026
 - **Copiar todo** (Totales por empleado) añade al final el **total a retirar de la cuenta de la empresa**, sumando solo a los empleados que quedan en la lista y no marcados como "No cobra". El botón de copiar del panel de Pagos también lo incluye.
 

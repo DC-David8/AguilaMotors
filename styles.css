@@ -1226,3 +1226,50 @@ html, body {
 .tab:not(.is-active) .tab-ic .tab-ic-ball { fill: #ffb15c; }
 .m-nav-item .tab-ic { stroke: #ffb15c; }
 .m-nav-item .tab-ic .tab-ic-ball { fill: #ffb15c; }
+
+/* Modulo de Compraventa (v26) */
+.cv-mode { margin: -4px 0 12px; }
+.cv-search { max-width: 280px; }
+.cv-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.cv-filters select { width: auto; }
+.cv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 10px; }
+.cv-car { border: 1px solid #3a2c1d; border-radius: 14px; overflow: hidden; background: linear-gradient(180deg, #1b140d, #100c08); display: flex; flex-direction: column; }
+.cv-pic { position: relative; aspect-ratio: 16 / 10; background: repeating-linear-gradient(135deg, #15100b 0 10px, #120d09 10px 20px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--muted); font-size: 0.75rem; }
+.cv-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
+.cv-pic svg { width: 46%; fill: none; stroke: #6b4a28; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.cv-plate { position: absolute; left: 10px; bottom: 10px; background: #f4f1ea; color: #111; font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 800; letter-spacing: 0.12em; font-size: 0.82rem; padding: 3px 8px; border-radius: 4px; border: 2px solid #1a3d8f; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
+.cv-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.cv-body h4 { margin: 0; font-size: 1.05rem; letter-spacing: 0.04em; color: #ffb15c; }
+.cv-body dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; font-size: 0.85rem; }
+.cv-body dt { color: var(--muted); }
+.cv-body dd { margin: 0; text-align: right; font-weight: 700; overflow-wrap: anywhere; }
+.cv-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+.cv-acts button { flex: 1; padding: 7px 10px; font-size: 0.8rem; }
+.cv-empty { text-align: center; padding: 18px 0 6px; }
+.cv-table td { vertical-align: middle; }
+.cv-date { white-space: nowrap; color: var(--muted); font-size: 0.85rem; }
+.cv-plate-sm { display: inline-block; margin-left: 8px; background: #f4f1ea; color: #111; font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.08em; padding: 1px 6px; border-radius: 3px; }
+.cv-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.cv-compra { background: rgba(255, 112, 90, 0.15); color: #ff9b8a; border: 1px solid rgba(255, 112, 90, 0.4); }
+.cv-venta { background: rgba(80, 220, 140, 0.13); color: #7fe0a8; border: 1px solid rgba(80, 220, 140, 0.4); }
+.cv-traspaso { background: rgba(255, 177, 92, 0.12); color: #ffb15c; border: 1px solid rgba(255, 177, 92, 0.35); }
+.cv-money-compra { color: #ff9b8a; }
+.cv-money-venta { color: #7fe0a8; }
+.cv-soc { color: #ffb15c; font-weight: 800; }
+.cv-view { max-width: min(92vw, 900px); padding: 12px; border: 1px solid #3a2c1d; border-radius: 14px; background: #0f0c09; color: var(--text); }
+.cv-view::backdrop { background: rgba(0, 0, 0, 0.75); }
+.cv-view img { display: block; max-width: 100%; max-height: 75vh; border-radius: 8px; }
+.cv-view p { margin: 10px 0; font-weight: 800; letter-spacing: 0.06em; color: #ffb15c; }
+@media (max-width: 700px) {
+  .cv-search { max-width: none; width: 100%; }
+  .cv-filters { width: 100%; }
+  .cv-filters .cv-search { flex: 1; min-width: 0; }
+  .cv-grid { grid-template-columns: 1fr; }
+  .cv-table th:nth-child(6), .cv-table td:nth-child(6) { display: none; }
+}
+.cv-filters { flex-wrap: nowrap; align-items: center; }
+.cv-filters .cv-search { width: 220px; }
+@media (max-width: 700px) {
+  #tab-cv .card-head-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .cv-filters .cv-search { width: auto; }
+}

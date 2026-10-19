@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=26" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=25" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=26" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -59,6 +59,7 @@
       <button class="tab is-active" data-tab-target="tab-caja"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18v-6H3z"/><path d="M5 15V9h14v6"/><path d="M8 9V4h8v5"/><path d="M10 6.5h4"/><path d="M6.5 18h3M12 18h5.5"/></svg>Módulo de Caja</button>
       <button class="tab" data-tab-target="tab-conta"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M15.2 9.3c0-1.4-1.4-2.3-3.2-2.3s-3.2.9-3.2 2.3c0 3.2 6.4 1.6 6.4 4.8 0 1.4-1.4 2.4-3.2 2.4s-3.2-1-3.2-2.4M12 5v14"/></svg>Módulo de Pagos</button>
       <button class="tab" data-tab-target="tab-sorteo"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.8 2.8M15.9 15.9l2.8 2.8M18.7 5.3l-2.8 2.8M8.1 15.9l-2.8 2.8"/><circle cx="16.3" cy="8.9" r="1.1" class="tab-ic-ball"/></svg>Módulo de Sorteo</button>
+      <button class="tab" data-tab-target="tab-cv"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16v-3l2-5c.4-1 1.2-1.5 2.2-1.5h9.6c1 0 1.8.5 2.2 1.5l2 5v3"/><path d="M3 13h18M2.5 16h19"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/><path d="M9 4.5l3-2 3 2"/></svg>Compraventa</button>
     </nav>
 
     <section id="tab-caja" class="tab-panel is-active">
@@ -366,13 +367,93 @@
       </div>
     </section>
 
+    <section id="tab-cv" class="tab-panel">
+      <div class="pg-kpis cv-kpis">
+        <div class="pg-kpi hl"><div class="lbl">🚗 En almacén</div><div class="val" id="cv-kpi-stock">0</div><div class="sub" id="cv-kpi-stock-sub">-</div></div>
+        <div class="pg-kpi"><div class="lbl">⬇️ Compras</div><div class="val" id="cv-kpi-buy">$ 0</div><div class="sub" id="cv-kpi-buy-sub">-</div></div>
+        <div class="pg-kpi"><div class="lbl">⬆️ Ventas</div><div class="val" id="cv-kpi-sell">$ 0</div><div class="sub" id="cv-kpi-sell-sub">-</div></div>
+        <div class="pg-kpi"><div class="lbl">⚖️ Balance</div><div class="val" id="cv-kpi-bal">$ 0</div><div class="sub" id="cv-kpi-bal-sub">-</div></div>
+      </div>
+      <p class="muted cv-mode" id="cv-mode"></p>
+
+      <nav class="sx-subtabs" aria-label="Secciones de compraventa">
+        <button type="button" class="sx-subtab is-active" data-cv="cv-p-stock">Almacén</button>
+        <button type="button" class="sx-subtab" data-cv="cv-p-hist">Historial</button>
+        <button type="button" class="sx-subtab" data-cv="cv-p-log" id="cv-tab-log">Procesar log</button>
+      </nav>
+
+      <div id="cv-p-stock" class="sx-pane is-active">
+        <section class="card">
+          <div class="card-head-row">
+            <h2>Almacén de la compraventa</h2>
+            <input id="cv-stock-q" class="text-input cv-search" type="search" placeholder="Buscar modelo, matrícula o persona" />
+          </div>
+          <p class="muted">Vehículos que compró la empresa y todavía no se han vendido.</p>
+          <div class="cv-grid" id="cv-stock"></div>
+          <p class="muted cv-empty" id="cv-stock-empty" hidden></p>
+          <input type="file" id="cv-file" accept="image/*" hidden />
+        </section>
+      </div>
+
+      <div id="cv-p-hist" class="sx-pane">
+        <section class="card">
+          <div class="card-head-row">
+            <h2>Historial de transacciones</h2>
+            <div class="cv-filters">
+              <select id="cv-hist-kind" class="text-input">
+                <option value="">Todas</option>
+                <option value="compra">Compras</option>
+                <option value="venta">Ventas</option>
+                <option value="traspaso">Traspasos</option>
+              </select>
+              <input id="cv-hist-q" class="text-input cv-search" type="search" placeholder="Buscar" />
+            </div>
+          </div>
+          <div class="table-wrap cv-table">
+            <table>
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Vehículo</th><th>Dueño</th><th>Comprador</th><th>Mediador</th><th class="num">Precio</th></tr></thead>
+              <tbody id="cv-hist"></tbody>
+            </table>
+          </div>
+          <p class="muted cv-empty" id="cv-hist-empty" hidden>No hay transacciones.</p>
+        </section>
+      </div>
+
+      <div id="cv-p-log" class="sx-pane">
+        <section class="card">
+          <h2>Procesar el log de compraventa</h2>
+          <textarea id="cv-input" class="terminal-input" rows="12" placeholder="Pega aquí los mensajes de «Transacción de vehículo» del canal de compraventa y pulsa Procesar"></textarea>
+          <div class="actions">
+            <button type="button" id="cv-paste">Pegar + Procesar</button>
+            <button type="button" id="cv-process">Procesar</button>
+            <button type="button" id="cv-reset" class="ghost danger">Borrar historial</button>
+          </div>
+          <p class="muted" id="cv-status" role="status"></p>
+          <div class="sx-rules">
+            <div class="sx-rule"><span class="sx-ok">⬇️</span> <b>Compra:</b> el comprador es la sociedad (society_aguilamotor). El dinero sale de la caja de la sociedad y el vehículo entra al almacén.</div>
+            <div class="sx-rule"><span class="sx-ok">⬆️</span> <b>Venta:</b> el dueño es la sociedad. El dinero entra a la sociedad y el vehículo sale del almacén.</div>
+            <div class="sx-rule"><span class="sx-ok">🔁</span> <b>Traspaso:</b> entre dos personas con un mecánico de mediador. No mueve dinero de la sociedad.</div>
+            <div class="sx-rule"><span class="sx-ok">✔</span> Puedes pegar el mismo log varias veces: lo repetido no se duplica.</div>
+          </div>
+        </section>
+      </div>
+
+      <dialog id="cv-view" class="cv-view">
+        <form method="dialog">
+          <img id="cv-view-img" alt="" />
+          <p id="cv-view-cap"></p>
+          <button value="close">Cerrar</button>
+        </form>
+      </dialog>
+    </section>
+
     <button type="button" class="m-ticket-bar" id="m-ticket-bar" aria-label="Ver el ticket">
       <span class="m-ticket-label">Ticket</span>
       <span class="m-ticket-count" id="m-ticket-count">Vacío</span>
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 25 - Aguila Motors</footer>
+    <footer class="app-version">Versión 26 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -605,6 +686,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
 </body>
 </html>

@@ -820,7 +820,7 @@ function getProductIcon(product) {
 // Pestanas que piden la contrasena de acceso (Pagos y Sorteo; tambien la piden
 // Gestion de Productos y la gestion de empleados). En el codigo solo esta su
 // huella SHA-256, no la contrasena. Para cambiarla, ver el README.
-const PROTECTED_TABS = ["tab-conta", "tab-sorteo"];
+const PROTECTED_TABS = ["tab-conta", "tab-sorteo", "tab-cv"];
 const ACCESS_PASSWORD_SHA256 = "40506021bdec7651d70346f8a8c63adf55ed2860bc5f5d6b48c52a2a7f1ca810";
 
 // Contrasena escrita al desbloquear, para las acciones internas que la piden.
@@ -1087,6 +1087,7 @@ function normalizeSharedData(raw) {
     noPay,
     customProducts: Array.isArray(raw.customProducts) ? raw.customProducts : [],
     productOverrides: raw.productOverrides && typeof raw.productOverrides === "object" ? raw.productOverrides : {},
+    compraventa: cvNormalizeShared(raw.compraventa),
   };
 }
 
@@ -1158,6 +1159,7 @@ async function buildSharedDataFile() {
     employees,
     customProducts: loadCustomProductsLocal(),
     productOverrides: loadProductOverridesLocal(),
+    compraventa: cvForExport(),
   };
   const text =
     "// Datos compartidos de Aguila Motors. Se generan desde la pagina\n" +
@@ -1178,6 +1180,7 @@ async function importSharedIntoLocal() {
   }
   saveCustomProductsLocal(SHARED_DATA.customProducts);
   saveProductOverridesLocal(SHARED_DATA.productOverrides);
+  if (SHARED_DATA.compraventa.tx.length || !cvLoadLocal().tx.length) cvSaveLocal(SHARED_DATA.compraventa);
 }
 
 function setupSharedData() {
@@ -1236,7 +1239,7 @@ function setupSharedData() {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     statusEl.textContent =
-      `Exportado: ${data.employees.length} empleados y ${data.customProducts.length} productos agregados. ` +
+      `Exportado: ${data.employees.length} empleados, ${data.customProducts.length} productos agregados y ${data.compraventa.tx.length} movimientos de compraventa. ` +
       "Sube el archivo al repositorio con el nombre datos.js (si el navegador lo guardó como «datos (1).js», cámbiale el nombre).";
   });
 
@@ -1248,7 +1251,7 @@ function setupSharedData() {
   });
 
   btnImport.addEventListener("click", async () => {
-    if (!window.confirm("Esto reemplaza los empleados, Discord, IBAN y productos de esta PC por los publicados. ¿Continuar?")) return;
+    if (!window.confirm("Esto reemplaza los empleados, Discord, IBAN, productos y compraventa de esta PC por los publicados. ¿Continuar?")) return;
     statusEl.textContent = "Cargando los datos publicados en esta PC…";
     btnImport.disabled = true;
     try {
@@ -3653,6 +3656,7 @@ loadSharedData()
     setupContabilidad();
     setupSharedData();
     setupSorteo();
+    setupCompraventa();
     setupMobileNav();
   });
 
@@ -3769,3 +3773,407 @@ function setupMobileNav() {
   if (document.readyState === "complete") hide();
   else window.addEventListener("load", hide, { once: true });
 })();
+
+// ============================================================================
+// Modulo de Compraventa
+// ----------------------------------------------------------------------------
+// Lee el log "Transaccion de vehiculo" (Mediador, Dueno, Comprador, Precio,
+// Vehiculo + matricula, Empresa). La empresa aparece como "society_..."
+// (society_aguilamotor = Aguila Motors). Si la empresa compra, el dinero sale
+// de la caja de la sociedad; si vende, entra. El almacen son los vehiculos cuyo
+// ultimo movimiento es una compra de la empresa. El encargado procesa el log y
+// lo publica en datos.js para que todos lo vean; las fotos se guardan
+// comprimidas y solo se publican las de los vehiculos en existencia.
+// ============================================================================
+const CV_STORAGE_KEY = "aguila_compraventa_v1";
+const CV_SOCIETY_NAMES = { society_aguilamotor: "Aguila Motors" };
+
+function cvIsSociety(name) {
+  return /^society_/i.test(String(name || "").trim());
+}
+
+function cvDisplayName(name) {
+  const n = String(name || "").trim();
+  if (!n) return "-";
+  return CV_SOCIETY_NAMES[n.toLowerCase()] || n;
+}
+
+function cvLoadLocal() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CV_STORAGE_KEY) || "null");
+    if (raw && Array.isArray(raw.tx)) return { tx: raw.tx, photos: raw.photos && typeof raw.photos === "object" ? raw.photos : {} };
+  } catch {
+    // sin almacenamiento
+  }
+  return { tx: [], photos: {} };
+}
+
+function cvSaveLocal(data) {
+  try {
+    localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Lo que se ve: lo publicado (solo lectura) o lo de esta PC (encargado o sin publicar).
+function cvSource() {
+  if (isSharedReadOnly()) return SHARED_DATA.compraventa || { tx: [], photos: {} };
+  return cvLoadLocal();
+}
+
+function cvNormalizeShared(raw) {
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.tx)) return { tx: [], photos: {} };
+  return { tx: raw.tx, photos: raw.photos && typeof raw.photos === "object" ? raw.photos : {} };
+}
+
+// Fecha "dd/mm/aaaa hh:mm" -> clave ordenable "aaaammddhhmm".
+function cvSortKey(ts) {
+  const m = String(ts || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+  if (!m) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${m[3]}${p(m[2])}${p(m[1])}${p(m[4])}${m[5]}`;
+}
+
+function cvParseLog(text) {
+  const out = [];
+  let cur = null;
+  let ts = "";
+  const pad = (n) => String(n).padStart(2, "0");
+  const clean = (v) =>
+    String(v || "")
+      .replace(/\*\*/g, "")
+      .replace(/^[^\p{L}\p{N}_]+/u, "")
+      .replace(/\bchar\d+:\S+/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  const push = () => {
+    if (cur && cur.plate) out.push(cur);
+    cur = null;
+  };
+  for (const rawLine of String(text || "").split(/\r?\n/)) {
+    const line = rawLine.replace(/\*\*/g, "").trim();
+    if (!line) continue;
+    // Cabecera del mensaje de Discord con la fecha.
+    let d = line.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[ ,]+(\d{1,2}):(\d{2})/);
+    if (d && !/:\s*\S/.test(line.replace(/\d{1,2}:\d{2}/, ""))) {
+      ts = `${pad(d[1])}/${pad(d[2])}/${d[3]} ${pad(d[4])}:${d[5]}`;
+      continue;
+    }
+    d = line.match(/^(?:—\s*)?(hoy|ayer) a las (\d{1,2}):(\d{2})/i);
+    if (d) {
+      const day = new Date();
+      if (/ayer/i.test(d[1])) day.setDate(day.getDate() - 1);
+      ts = `${pad(day.getDate())}/${pad(day.getMonth() + 1)}/${day.getFullYear()} ${pad(d[2])}:${d[3]}`;
+      continue;
+    }
+    if (/^transacci[oó]n de veh[ií]culo/i.test(line)) {
+      push();
+      cur = { ts, mediator: "", owner: "", buyer: "", price: 0, model: "", plate: "", company: "" };
+      continue;
+    }
+    if (!cur) continue;
+    const m = line.match(/^(Mediador|Due[ñn]o|Comprador|Precio|Veh[ií]culo|Empresa)\s*:\s*(.*)$/i);
+    if (!m) continue;
+    const key = normalizeKeySimple(m[1]);
+    const val = clean(m[2]);
+    if (key.startsWith("mediador")) cur.mediator = val;
+    else if (key.startsWith("due")) cur.owner = val;
+    else if (key.startsWith("comprador")) cur.buyer = val;
+    else if (key.startsWith("precio")) cur.price = Number(val.replace(/[^\d]/g, "")) || 0;
+    else if (key.startsWith("empresa")) cur.company = val;
+    else {
+      const parts = val.split(" ");
+      const last = parts[parts.length - 1] || "";
+      if (parts.length > 1 && /^[A-Z0-9]{3,8}$/i.test(last)) {
+        cur.plate = last.toUpperCase();
+        cur.model = parts.slice(0, -1).join(" ");
+      } else {
+        cur.plate = val.toUpperCase();
+        cur.model = val;
+      }
+    }
+  }
+  push();
+  // Los mensajes sin fecha al inicio del pegado van antes de la primera fecha.
+  const firstKey = out.map((t) => cvSortKey(t.ts)).find(Boolean) || "";
+  for (const t of out) t.sort = cvSortKey(t.ts) || firstKey;
+  return out;
+}
+
+const cvSig = (t) => [t.mediator, t.owner, t.buyer, t.price, t.model, t.plate].map((x) => normalizeKeySimple(String(x))).join("|");
+
+// Mezcla sin duplicar: pegar el mismo log dos veces no repite nada.
+function cvMerge(data, incoming) {
+  const used = new Set();
+  let added = 0;
+  let seq = data.tx.reduce((m, t) => Math.max(m, t.seq || 0), 0);
+  for (const t of incoming) {
+    const sig = cvSig(t);
+    let match = data.tx.find((e, i) => !used.has(i) && cvSig(e) === sig && (e.ts || "") === (t.ts || ""));
+    if (!match && t.ts) {
+      match = data.tx.find((e, i) => !used.has(i) && cvSig(e) === sig && !e.ts);
+      if (match) {
+        match.ts = t.ts;
+        match.sort = t.sort;
+      }
+    }
+    if (match) {
+      used.add(data.tx.indexOf(match));
+      continue;
+    }
+    data.tx.push({ ...t, seq: ++seq });
+    used.add(data.tx.length - 1);
+    added++;
+  }
+  data.tx.sort((a, b) => (a.sort || "").localeCompare(b.sort || "") || a.seq - b.seq);
+  return added;
+}
+
+function cvKind(t) {
+  const b = cvIsSociety(t.buyer);
+  const o = cvIsSociety(t.owner);
+  if (b && !o) return "compra";
+  if (o && !b) return "venta";
+  return "traspaso";
+}
+
+// Ultimo movimiento de cada matricula: si fue una compra de la empresa, esta en el almacen.
+function cvStock(tx) {
+  const last = new Map();
+  for (const t of tx) last.set(t.plate, t);
+  return [...last.values()].filter((t) => cvKind(t) === "compra").reverse();
+}
+
+// Reduce la foto (max. 800 px, JPEG) para que quepa en el navegador y en datos.js.
+function cvCompressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("El archivo no es una imagen válida."));
+      img.onload = () => {
+        const max = 800;
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k);
+        c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", 0.72));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Lo que se publica en datos.js: todo el historial y solo las fotos de lo que hay en el almacen.
+function cvForExport() {
+  const data = cvLoadLocal();
+  const plates = new Set(cvStock(data.tx).map((t) => t.plate));
+  const photos = {};
+  for (const [p, src] of Object.entries(data.photos)) if (plates.has(p)) photos[p] = src;
+  return { tx: data.tx, photos };
+}
+
+function setupCompraventa() {
+  const root = byId("tab-cv");
+  if (!root) return;
+  const $ = (id) => byId(id);
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  const canEdit = !isSharedReadOnly();
+  let photoPlate = null;
+
+  function showPane(id) {
+    root.querySelectorAll(".sx-subtab").forEach((b) => b.classList.toggle("is-active", b.dataset.cv === id));
+    root.querySelectorAll(".sx-pane").forEach((p) => p.classList.toggle("is-active", p.id === id));
+  }
+  root.querySelectorAll(".sx-subtab").forEach((b) => b.addEventListener("click", () => showPane(b.dataset.cv)));
+  $("cv-tab-log").hidden = !canEdit;
+
+  const when = SHARED_DATA?.publishedAt ? ` el ${SHARED_DATA.publishedAt}` : "";
+  $("cv-mode").textContent = canEdit
+    ? SHARED_DATA
+      ? "Modo encargado: procesa el log y luego exporta datos.js (Módulo de Pagos → Datos compartidos) para que todos lo vean."
+      : "Estos datos se guardan en esta PC."
+    : `Publicado por el encargado${when}. Aquí solo se puede ver.`;
+
+  function card(t, photos) {
+    const c = el("article", "cv-car");
+    const pic = el("div", "cv-pic");
+    if (photos[t.plate]) {
+      const img = el("img");
+      img.src = photos[t.plate];
+      img.alt = `${t.model} ${t.plate}`;
+      img.addEventListener("click", () => {
+        $("cv-view-img").src = photos[t.plate];
+        $("cv-view-cap").textContent = `${t.model.toUpperCase()} · ${t.plate}`;
+        $("cv-view").showModal();
+      });
+      pic.appendChild(img);
+    } else {
+      pic.innerHTML =
+        '<svg viewBox="0 0 64 32" aria-hidden="true"><path d="M6 22h52M10 22l4-8c1-2 3-3 5-3h18c2 0 4 1 6 3l7 6 6 1c2 0 3 1 3 3v2H4v-2c0-1 1-2 2-2"/><circle cx="18" cy="24" r="4"/><circle cx="48" cy="24" r="4"/></svg>';
+      pic.appendChild(el("span", "", "Sin foto"));
+    }
+    pic.appendChild(el("span", "cv-plate", t.plate));
+    c.appendChild(pic);
+    const body = el("div", "cv-body");
+    body.appendChild(el("h4", "", t.model.toUpperCase()));
+    const dl = el("dl");
+    const row = (k, v) => {
+      dl.appendChild(el("dt", "", k));
+      dl.appendChild(el("dd", "", v));
+    };
+    row("Comprado a", cvDisplayName(t.owner));
+    row("Pagado", fmtMoney(t.price));
+    row("Mediador", cvDisplayName(t.mediator));
+    row("Fecha", t.ts || "Sin fecha");
+    body.appendChild(dl);
+    if (canEdit) {
+      const acts = el("div", "cv-acts");
+      const up = el("button", "ghost", photos[t.plate] ? "📷 Cambiar foto" : "📷 Subir foto");
+      up.type = "button";
+      up.addEventListener("click", () => {
+        photoPlate = t.plate;
+        $("cv-file").value = "";
+        $("cv-file").click();
+      });
+      acts.appendChild(up);
+      if (photos[t.plate]) {
+        const del = el("button", "ghost", "Quitar foto");
+        del.type = "button";
+        del.addEventListener("click", () => {
+          if (!window.confirm(`¿Quitar la foto de ${t.plate}?`)) return;
+          const data = cvLoadLocal();
+          delete data.photos[t.plate];
+          cvSaveLocal(data);
+          render();
+        });
+        acts.appendChild(del);
+      }
+      body.appendChild(acts);
+    }
+    c.appendChild(body);
+    return c;
+  }
+
+  function render() {
+    const { tx, photos } = cvSource();
+    const stock = cvStock(tx);
+    const buys = tx.filter((t) => cvKind(t) === "compra");
+    const sells = tx.filter((t) => cvKind(t) === "venta");
+    const sum = (a) => a.reduce((s, t) => s + (Number(t.price) || 0), 0);
+    $("cv-kpi-stock").textContent = String(stock.length);
+    $("cv-kpi-stock-sub").textContent = `${fmtMoney(sum(stock))} invertidos`;
+    $("cv-kpi-buy").textContent = fmtMoney(sum(buys));
+    $("cv-kpi-buy-sub").textContent = `${buys.length} compras · sale de la sociedad`;
+    $("cv-kpi-sell").textContent = fmtMoney(sum(sells));
+    $("cv-kpi-sell-sub").textContent = `${sells.length} ventas · entra a la sociedad`;
+    const bal = sum(sells) - sum(buys);
+    $("cv-kpi-bal").textContent = (bal < 0 ? "- " : "") + fmtMoney(Math.abs(bal));
+    $("cv-kpi-bal-sub").textContent = `${tx.length} movimientos registrados`;
+
+    // Almacen
+    const grid = $("cv-stock");
+    grid.innerHTML = "";
+    const q = normalizeKeySimple($("cv-stock-q").value);
+    const shown = stock.filter((t) => !q || normalizeKeySimple(`${t.model} ${t.plate} ${t.owner} ${t.mediator}`).includes(q));
+    shown.forEach((t) => grid.appendChild(card(t, photos)));
+    $("cv-stock-empty").hidden = shown.length > 0;
+    $("cv-stock-empty").textContent = stock.length
+      ? "Ningún vehículo coincide con la búsqueda."
+      : "No hay vehículos en el almacén. Aparecen aquí los que compra la empresa y todavía no se han vendido.";
+
+    // Historial (lo mas reciente arriba)
+    const hq = normalizeKeySimple($("cv-hist-q").value);
+    const kindF = $("cv-hist-kind").value;
+    const body = $("cv-hist");
+    body.innerHTML = "";
+    const rows = tx
+      .slice()
+      .reverse()
+      .filter((t) => (!kindF || cvKind(t) === kindF) && (!hq || normalizeKeySimple(`${t.model} ${t.plate} ${t.owner} ${t.buyer} ${t.mediator}`).includes(hq)));
+    const labels = { compra: "Compra", venta: "Venta", traspaso: "Traspaso" };
+    for (const t of rows) {
+      const tr = el("tr");
+      const k = cvKind(t);
+      tr.appendChild(el("td", "cv-date", t.ts || "-"));
+      const tdK = el("td");
+      tdK.appendChild(el("span", `cv-badge cv-${k}`, labels[k]));
+      tr.appendChild(tdK);
+      const tdV = el("td");
+      tdV.appendChild(el("b", "", t.model.toUpperCase()));
+      tdV.appendChild(el("span", "cv-plate-sm", t.plate));
+      tr.appendChild(tdV);
+      tr.appendChild(el("td", cvIsSociety(t.owner) ? "cv-soc" : "", cvDisplayName(t.owner)));
+      tr.appendChild(el("td", cvIsSociety(t.buyer) ? "cv-soc" : "", cvDisplayName(t.buyer)));
+      tr.appendChild(el("td", "", cvDisplayName(t.mediator)));
+      const money = el("td", `num cv-money-${k}`, (k === "compra" ? "− " : k === "venta" ? "+ " : "") + fmtMoney(t.price));
+      tr.appendChild(money);
+      body.appendChild(tr);
+    }
+    $("cv-hist-empty").hidden = rows.length > 0;
+  }
+
+  $("cv-stock-q").addEventListener("input", render);
+  $("cv-hist-q").addEventListener("input", render);
+  $("cv-hist-kind").addEventListener("change", render);
+
+  $("cv-file").addEventListener("change", async () => {
+    const f = $("cv-file").files?.[0];
+    if (!f || !photoPlate) return;
+    try {
+      const src = await cvCompressImage(f);
+      const data = cvLoadLocal();
+      data.photos[photoPlate] = src;
+      if (!cvSaveLocal(data)) {
+        alert("No hay espacio para guardar más fotos en este navegador. Quita fotos de vehículos que ya no estén.");
+        return;
+      }
+      render();
+    } catch (e) {
+      alert(String(e?.message || e));
+    }
+  });
+
+  function process() {
+    const found = cvParseLog($("cv-input").value);
+    const status = $("cv-status");
+    if (!found.length) {
+      status.textContent = "No se encontró ninguna «Transacción de vehículo» en el texto.";
+      return;
+    }
+    const data = cvLoadLocal();
+    const added = cvMerge(data, found);
+    cvSaveLocal(data);
+    status.textContent = `Leídas ${found.length} transacciones: ${added} nuevas, ${found.length - added} ya estaban.`;
+    $("cv-input").value = "";
+    render();
+  }
+  $("cv-process").addEventListener("click", process);
+  $("cv-paste").addEventListener("click", async () => {
+    try {
+      $("cv-input").value = await navigator.clipboard.readText();
+    } catch {
+      $("cv-status").textContent = "No se pudo leer el portapapeles: pega el texto con Ctrl+V y pulsa Procesar.";
+      return;
+    }
+    process();
+  });
+  $("cv-reset").addEventListener("click", () => {
+    if (!window.confirm("¿Borrar todo el historial de compraventa y las fotos de esta PC?")) return;
+    cvSaveLocal({ tx: [], photos: {} });
+    $("cv-status").textContent = "Historial borrado.";
+    render();
+  });
+
+  render();
+}
