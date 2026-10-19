@@ -227,6 +227,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 31 · 19 de octubre de 2026
+- Compraventa: las **matrículas con espacio** (p. ej. `3Y5A 0F1`) se leen enteras. Cada dato del log se separa por los espacios largos o las comillas invertidas (`` ` ``) que pone Discord, en vez de tomar la última palabra.
+- Los registros que antes se leyeron mal se **corrigen solos** al volver a pegar el log (también su foto).
+- Se reconoce la hora sola de los mensajes de hoy (`— 08:36`).
+
 ### Versión 30 · 19 de octubre de 2026
 - Compraventa (cambio de papeles): nuevo **Compraventa Camiones** a $ 7500.
 

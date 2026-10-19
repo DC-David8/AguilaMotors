@@ -3859,6 +3859,15 @@ function cvParseLog(text) {
       .replace(/\bchar\d+:\S+/gi, "")
       .replace(/\s+/g, " ")
       .trim();
+  // Cada dato del log va separado por 2+ espacios (texto pegado) o entre
+  // comillas invertidas (`...`). Asi una matricula con espacio ("3Y5A 0F1")
+  // queda entera. Se descartan el emoji y el "char1:..." del personaje.
+  const pieces = (v) =>
+    String(v || "")
+      .replace(/\*\*/g, "")
+      .split(/`|\s{2,}/)
+      .map((s) => s.trim())
+      .filter((s) => s && /[\p{L}\p{N}]/u.test(s) && !/^char\d+:/i.test(s));
   const push = () => {
     if (cur && cur.plate) out.push(cur);
     cur = null;
@@ -3872,10 +3881,11 @@ function cvParseLog(text) {
       ts = `${pad(d[1])}/${pad(d[2])}/${d[3]} ${pad(d[4])}:${d[5]}`;
       continue;
     }
-    d = line.match(/^(?:—\s*)?(hoy|ayer) a las (\d{1,2}):(\d{2})/i);
-    if (d) {
+    // "Hoy a las 08:36", "Ayer a las 08:36" o solo "— 08:36" (mensajes de hoy).
+    d = line.match(/(hoy|ayer) a las (\d{1,2}):(\d{2})/i) || line.match(/(?:^|—)\s*()(\d{1,2}):(\d{2})\s*$/);
+    if (d && !/^(Mediador|Due|Comprador|Precio|Veh|Empresa)/i.test(line)) {
       const day = new Date();
-      if (/ayer/i.test(d[1])) day.setDate(day.getDate() - 1);
+      if (/ayer/i.test(d[1] || "")) day.setDate(day.getDate() - 1);
       ts = `${pad(day.getDate())}/${pad(day.getMonth() + 1)}/${day.getFullYear()} ${pad(d[2])}:${d[3]}`;
       continue;
     }
@@ -3888,18 +3898,24 @@ function cvParseLog(text) {
     const m = line.match(/^(Mediador|Due[ñn]o|Comprador|Precio|Veh[ií]culo|Empresa)\s*:\s*(.*)$/i);
     if (!m) continue;
     const key = normalizeKeySimple(m[1]);
-    const val = clean(m[2]);
+    const parts = pieces(m[2]);
+    const val = clean(parts.length ? parts.join(" ") : m[2]);
     if (key.startsWith("mediador")) cur.mediator = val;
     else if (key.startsWith("due")) cur.owner = val;
     else if (key.startsWith("comprador")) cur.buyer = val;
     else if (key.startsWith("precio")) cur.price = Number(val.replace(/[^\d]/g, "")) || 0;
     else if (key.startsWith("empresa")) cur.company = val;
-    else {
-      const parts = val.split(" ");
-      const last = parts[parts.length - 1] || "";
-      if (parts.length > 1 && /^[A-Z0-9]{3,8}$/i.test(last)) {
+    else if (parts.length > 1) {
+      // Modelo y matricula vienen como datos separados: el ultimo es la matricula.
+      cur.plate = clean(parts[parts.length - 1]).toUpperCase();
+      cur.model = clean(parts.slice(0, -1).join(" "));
+    } else {
+      // Todo junto (sin separacion clara): la ultima palabra es la matricula.
+      const words = val.split(" ");
+      const last = words[words.length - 1] || "";
+      if (words.length > 1 && /^[A-Z0-9]{3,8}$/i.test(last)) {
         cur.plate = last.toUpperCase();
-        cur.model = parts.slice(0, -1).join(" ");
+        cur.model = words.slice(0, -1).join(" ");
       } else {
         cur.plate = val.toUpperCase();
         cur.model = val;
@@ -3913,12 +3929,15 @@ function cvParseLog(text) {
   return out;
 }
 
-const cvSig = (t) => [t.mediator, t.owner, t.buyer, t.price, t.model, t.plate].map((x) => normalizeKeySimple(String(x))).join("|");
+// Modelo y matricula van juntos en la firma: si antes se partieron mal
+// ("PANTO 3Y5A" + "0F1"), al volver a pegar el log se reconoce y se corrige.
+const cvSig = (t) => [t.mediator, t.owner, t.buyer, t.price, `${t.model} ${t.plate}`].map((x) => normalizeKeySimple(String(x))).join("|");
 
 // Mezcla sin duplicar: pegar el mismo log dos veces no repite nada.
 function cvMerge(data, incoming) {
   const used = new Set();
   let added = 0;
+  let fixed = 0;
   let seq = data.tx.reduce((m, t) => Math.max(m, t.seq || 0), 0);
   for (const t of incoming) {
     const sig = cvSig(t);
@@ -3931,6 +3950,16 @@ function cvMerge(data, incoming) {
       }
     }
     if (match) {
+      if (match.plate !== t.plate || match.model !== t.model) {
+        // Corrige la matricula de un registro antiguo (y su foto, si la tenia).
+        if (data.photos[match.plate] && !data.photos[t.plate]) {
+          data.photos[t.plate] = data.photos[match.plate];
+          delete data.photos[match.plate];
+        }
+        match.plate = t.plate;
+        match.model = t.model;
+        fixed++;
+      }
       used.add(data.tx.indexOf(match));
       continue;
     }
@@ -3939,6 +3968,7 @@ function cvMerge(data, incoming) {
     added++;
   }
   data.tx.sort((a, b) => (a.sort || "").localeCompare(b.sort || "") || a.seq - b.seq);
+  data.lastFixed = fixed;
   return added;
 }
 
@@ -4224,8 +4254,12 @@ function setupCompraventa() {
     }
     const data = cvLoadLocal();
     const added = cvMerge(data, found);
+    const fixed = data.lastFixed || 0;
+    delete data.lastFixed;
     cvSaveLocal(data);
-    status.textContent = `Leídas ${found.length} transacciones: ${added} nuevas, ${found.length - added} ya estaban.`;
+    status.textContent =
+      `Leídas ${found.length} transacciones: ${added} nuevas, ${found.length - added} ya estaban.` +
+      (fixed ? ` Se corrigió la matrícula de ${fixed}.` : "");
     $("cv-input").value = "";
     render();
   }
