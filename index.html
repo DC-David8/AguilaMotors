@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=31" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=31" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=32" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -374,6 +374,16 @@
         <div class="pg-kpi"><div class="lbl">⬆️ Ventas</div><div class="val" id="cv-kpi-sell">$ 0</div><div class="sub" id="cv-kpi-sell-sub">-</div></div>
         <div class="pg-kpi"><div class="lbl">⚖️ Balance</div><div class="val" id="cv-kpi-bal">$ 0</div><div class="sub" id="cv-kpi-bal-sub">-</div></div>
       </div>
+      <div class="cv-cloud" id="cv-cloud">
+        <span class="cv-dot" id="cv-cloud-dot"></span>
+        <span class="cv-cloud-text" id="cv-cloud-text">Conectando con la base en línea…</span>
+        <span class="cv-cloud-acts">
+          <button type="button" id="cv-refresh" class="ghost" hidden>🔄 Actualizar</button>
+          <button type="button" id="cv-login" class="ghost" hidden>🔑 Iniciar sesión</button>
+          <button type="button" id="cv-migrate" hidden>☁️ Subir historial de esta PC</button>
+          <button type="button" id="cv-logout" class="ghost" hidden>Cerrar sesión</button>
+        </span>
+      </div>
       <p class="muted cv-mode" id="cv-mode"></p>
 
       <nav class="sx-subtabs" aria-label="Secciones de compraventa">
@@ -452,6 +462,20 @@
         </div>
       </dialog>
 
+      <dialog id="cv-login-dlg" class="cv-view cv-photo-dlg">
+        <form id="cv-login-form" class="cv-login">
+          <h3>🔑 Encargado · Compraventa</h3>
+          <p class="muted">Usa el correo y la contraseña del usuario creado en Supabase (Authentication → Users).</p>
+          <label>Correo <input id="cv-login-email" class="text-input" type="email" autocomplete="username" /></label>
+          <label>Contraseña <input id="cv-login-pass" class="text-input" type="password" autocomplete="current-password" /></label>
+          <p class="warn" id="cv-login-err"></p>
+          <div class="actions">
+            <button type="submit" id="cv-login-ok">Entrar</button>
+            <button type="button" id="cv-login-cancel" class="ghost">Cancelar</button>
+          </div>
+        </form>
+      </dialog>
+
       <dialog id="cv-view" class="cv-view">
         <form method="dialog">
           <img id="cv-view-img" alt="" />
@@ -467,7 +491,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 31 - Aguila Motors</footer>
+    <footer class="app-version">Versión 32 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -700,6 +724,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=32"></script>
 </body>
 </html>

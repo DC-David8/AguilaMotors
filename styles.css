@@ -1286,3 +1286,17 @@ html, body {
 
 /* Observacion bajo el nombre del producto (v29) */
 .product-note { display: block; margin-top: 4px; font-size: 0.72rem; font-weight: 600; line-height: 1.3; color: #ffb15c; opacity: 0.85; }
+
+/* Compraventa en linea (Supabase) (v32) */
+.cv-cloud { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: -4px 0 6px; padding: 8px 12px; border: 1px solid #3a2c1d; border-radius: 12px; background: #120d09; font-size: 0.85rem; }
+.cv-dot { width: 10px; height: 10px; border-radius: 50%; background: #6b5a48; flex: none; }
+.cv-dot.is-on { background: #3ddc84; box-shadow: 0 0 10px rgba(61, 220, 132, 0.7); }
+.cv-dot.is-off { background: #ff7a5c; }
+.cv-cloud-text { flex: 1; min-width: 200px; color: var(--muted); }
+.cv-cloud-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.cv-cloud-acts button { padding: 6px 12px; font-size: 0.8rem; }
+#tab-cv.is-busy { cursor: progress; }
+#tab-cv.is-busy button { pointer-events: none; opacity: 0.6; }
+.cv-login { display: flex; flex-direction: column; gap: 10px; }
+.cv-login label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.cv-login p { margin: 0; }

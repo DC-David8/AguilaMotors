@@ -227,6 +227,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 32 · 19 de octubre de 2026
+- Compraventa **en línea** con Supabase: historial y fotos se guardan en la base de datos y todos los ven al momento (se actualiza cada 45 s y con 🔄 Actualizar).
+  - Solo escribe el encargado con **sesión iniciada** (usuario de Supabase → Authentication → Users). Las reglas de la base lo exigen también en el servidor.
+  - **☁️ Subir historial de esta PC**: pasa a la nube lo procesado antes (fotos incluidas) sin duplicar.
+  - Si la base no responde, la pestaña sigue funcionando con los datos de la PC / datos.js como antes.
+
 ### Versión 31 · 19 de octubre de 2026
 - Compraventa: las **matrículas con espacio** (p. ej. `3Y5A 0F1`) se leen enteras. Cada dato del log se separa por los espacios largos o las comillas invertidas (`` ` ``) que pone Discord, en vez de tomar la última palabra.
 - Los registros que antes se leyeron mal se **corrigen solos** al volver a pegar el log (también su foto).

@@ -4012,12 +4012,187 @@ function cvCompressImage(file) {
 
 // Lo que se publica en datos.js: todo el historial y solo las fotos de lo que hay en el almacen.
 function cvForExport() {
+  if (CV_CLOUD_CACHE) return { tx: CV_CLOUD_CACHE.tx.map(({ seq, ...t }) => t), photos: {} };
   const data = cvLoadLocal();
   const plates = new Set(cvStock(data.tx).map((t) => t.plate));
   const photos = {};
   for (const [p, src] of Object.entries(data.photos)) if (plates.has(p)) photos[p] = src;
   return { tx: data.tx, photos };
 }
+
+// ---------------------------------------------------------------------------
+// Base de datos en linea (Supabase). La clave "publishable" es publica: solo
+// deja leer. Para escribir hace falta iniciar sesion como encargado, y las
+// reglas de la base (RLS) lo exigen en el servidor. Si la base no responde,
+// la pestana sigue funcionando con los datos de esta PC / datos.js.
+// ---------------------------------------------------------------------------
+const CV_CLOUD_URL = window.AGUILA_CLOUD_URL || "https://tguizsunuekxqfgiclfq.supabase.co";
+const CV_CLOUD_KEY = window.AGUILA_CLOUD_KEY || "sb_publishable_ur32LOkr30IpJlc8ek9Rfg_UDYo_D7X";
+const CV_SESSION_KEY = "aguila_cv_session_v1";
+const CV_PHOTO_BUCKET = "cv-fotos";
+const CV_FIELDS = ["uid", "ts", "sort", "mediator", "owner", "buyer", "price", "model", "plate", "company"];
+let CV_CLOUD_CACHE = null; // { tx, photoPaths } de la ultima lectura correcta
+
+const cvCloud = {
+  session: (() => {
+    try {
+      return JSON.parse(localStorage.getItem(CV_SESSION_KEY) || "null");
+    } catch {
+      return null;
+    }
+  })(),
+
+  setSession(j) {
+    this.session = {
+      access_token: j.access_token,
+      refresh_token: j.refresh_token,
+      expires_at: Date.now() + (Number(j.expires_in) || 3600) * 1000,
+      email: j.user?.email || this.session?.email || "",
+    };
+    try {
+      localStorage.setItem(CV_SESSION_KEY, JSON.stringify(this.session));
+    } catch {
+      // sin almacenamiento: la sesion dura hasta cerrar la pagina
+    }
+  },
+
+  clearSession() {
+    this.session = null;
+    try {
+      localStorage.removeItem(CV_SESSION_KEY);
+    } catch {
+      // nada
+    }
+  },
+
+  async req(path, { method = "GET", body, headers = {}, auth = false } = {}) {
+    const h = { apikey: CV_CLOUD_KEY, ...headers };
+    if (auth) {
+      const tok = await this.token();
+      if (!tok) throw new Error("Tu sesión de encargado caducó: vuelve a iniciar sesión.");
+      h.Authorization = `Bearer ${tok}`;
+    }
+    let payload = body;
+    if (body !== undefined && !(body instanceof Blob)) {
+      h["Content-Type"] = "application/json";
+      payload = JSON.stringify(body);
+    }
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    let r;
+    try {
+      r = await fetch(CV_CLOUD_URL + path, { method, headers: h, body: payload, signal: ctl.signal });
+    } catch {
+      throw new Error("No hay conexión con la base de datos en línea.");
+    } finally {
+      clearTimeout(timer);
+    }
+    const text = await r.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+    if (!r.ok) {
+      const e = new Error((data && (data.error_description || data.msg || data.message || data.error)) || `Error ${r.status}`);
+      e.status = r.status;
+      e.code = data?.code || data?.error_code || "";
+      throw e;
+    }
+    return data;
+  },
+
+  async login(email, password) {
+    const j = await this.req("/auth/v1/token?grant_type=password", { method: "POST", body: { email, password } });
+    this.setSession(j);
+  },
+
+  async token() {
+    if (!this.session) return null;
+    if (Date.now() > this.session.expires_at - 60000) {
+      try {
+        const j = await this.req("/auth/v1/token?grant_type=refresh_token", {
+          method: "POST",
+          body: { refresh_token: this.session.refresh_token },
+        });
+        this.setSession(j);
+      } catch {
+        this.clearSession();
+        return null;
+      }
+    }
+    return this.session.access_token;
+  },
+
+  async logout() {
+    try {
+      if (this.session) await this.req("/auth/v1/logout", { method: "POST", auth: true });
+    } catch {
+      // aunque falle, se cierra en esta PC
+    }
+    this.clearSession();
+  },
+
+  // Lee toda la tabla en paginas de 1000 (el limite por defecto de Supabase).
+  async selectAll(table, order) {
+    const out = [];
+    for (let off = 0; ; off += 1000) {
+      const page = await this.req(`/rest/v1/${table}?select=*&order=${order}&limit=1000&offset=${off}`);
+      out.push(...(page || []));
+      if (!page || page.length < 1000) return out;
+    }
+  },
+
+  async upsert(table, rows, onConflict) {
+    for (let i = 0; i < rows.length; i += 500) {
+      await this.req(`/rest/v1/${table}?on_conflict=${onConflict}`, {
+        method: "POST",
+        body: rows.slice(i, i + 500),
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        auth: true,
+      });
+    }
+  },
+
+  del(table, filter) {
+    return this.req(`/rest/v1/${table}?${filter}`, { method: "DELETE", headers: { Prefer: "return=minimal" }, auth: true });
+  },
+
+  uploadPhoto(path, blob) {
+    return this.req(`/storage/v1/object/${CV_PHOTO_BUCKET}/${path}`, {
+      method: "POST",
+      body: blob,
+      headers: { "Content-Type": blob.type || "image/jpeg", "x-upsert": "true", "cache-control": "31536000" },
+      auth: true,
+    });
+  },
+
+  removePhotos(paths) {
+    if (!paths.length) return Promise.resolve();
+    return this.req(`/storage/v1/object/${CV_PHOTO_BUCKET}`, { method: "DELETE", body: { prefixes: paths }, auth: true });
+  },
+
+  publicUrl(path) {
+    return `${CV_CLOUD_URL}/storage/v1/object/public/${CV_PHOTO_BUCKET}/${path}`;
+  },
+};
+
+function cvDataUrlToBlob(dataUrl) {
+  const [head, b64] = String(dataUrl).split(",");
+  const type = (head.match(/data:([^;]+)/) || [])[1] || "image/jpeg";
+  const bin = atob(b64 || "");
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+
+// Identificador ordenable: mantiene el orden de llegada dentro del mismo minuto.
+function cvNewUid(i) {
+  return `${Date.now().toString(36).padStart(9, "0")}-${String(i).padStart(5, "0")}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+const cvPhotoPath = (plate) => `${String(plate).replace(/[^A-Z0-9]/gi, "_")}-${Date.now().toString(36)}.jpg`;
 
 function setupCompraventa() {
   const root = byId("tab-cv");
@@ -4029,22 +4204,68 @@ function setupCompraventa() {
     if (text != null) n.textContent = text;
     return n;
   };
-  const canEdit = !isSharedReadOnly();
   let photoPlate = null;
+  let busy = false;
+  // Estado de la base en linea.
+  const cloud = { ok: false, tried: false, error: "", tx: [], photoPaths: {}, loadedAt: null };
+
+  const online = () => cloud.ok;
+  const canEdit = () => (online() ? !!cvCloud.session : !isSharedReadOnly());
+
+  // Lo que se ve: la base en linea si responde; si no, esta PC o datos.js.
+  function source() {
+    if (online()) {
+      const photos = {};
+      for (const [plate, path] of Object.entries(cloud.photoPaths)) photos[plate] = cvCloud.publicUrl(path);
+      return { tx: cloud.tx, photos };
+    }
+    return cvSource();
+  }
 
   function showPane(id) {
     root.querySelectorAll(".sx-subtab").forEach((b) => b.classList.toggle("is-active", b.dataset.cv === id));
     root.querySelectorAll(".sx-pane").forEach((p) => p.classList.toggle("is-active", p.id === id));
   }
   root.querySelectorAll(".sx-subtab").forEach((b) => b.addEventListener("click", () => showPane(b.dataset.cv)));
-  $("cv-tab-log").hidden = !canEdit;
 
-  const when = SHARED_DATA?.publishedAt ? ` el ${SHARED_DATA.publishedAt}` : "";
-  $("cv-mode").textContent = canEdit
-    ? SHARED_DATA
-      ? "Modo encargado: procesa el log y luego exporta datos.js (Módulo de Pagos → Datos compartidos) para que todos lo vean."
-      : "Estos datos se guardan en esta PC."
-    : `Publicado por el encargado${when}. Aquí solo se puede ver.`;
+  function setStatus(msg) {
+    $("cv-status").textContent = msg;
+  }
+
+  function renderBar() {
+    const logged = !!cvCloud.session;
+    const dot = $("cv-cloud-dot");
+    const txt = $("cv-cloud-text");
+    if (online()) {
+      dot.className = "cv-dot is-on";
+      const hh = cloud.loadedAt ? cloud.loadedAt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
+      txt.textContent = `En línea · actualizado ${hh}` + (logged ? ` · Encargado: ${cvCloud.session.email}` : "");
+    } else if (!cloud.tried) {
+      dot.className = "cv-dot";
+      txt.textContent = "Conectando con la base en línea…";
+    } else {
+      dot.className = "cv-dot is-off";
+      txt.textContent = cloud.error || "Sin conexión con la base en línea";
+    }
+    $("cv-login").hidden = logged || !cloud.tried || (!online() && !cloud.reachable);
+    $("cv-logout").hidden = !logged;
+    $("cv-refresh").hidden = !cloud.tried;
+    const local = cvLoadLocal();
+    $("cv-migrate").hidden = !(online() && logged && (local.tx.length || Object.keys(local.photos).length));
+
+    const when = SHARED_DATA?.publishedAt ? ` el ${SHARED_DATA.publishedAt}` : "";
+    $("cv-mode").textContent = online()
+      ? logged
+        ? "Lo que proceses y las fotos que subas se guardan en línea: todos lo ven al momento."
+        : "Datos en línea, siempre al día. Solo el encargado con sesión iniciada puede añadir o cambiar."
+      : canEdit()
+        ? SHARED_DATA
+          ? "Sin base en línea: lo que proceses queda en esta PC. Exporta datos.js (Pagos → Datos compartidos) para que lo vean los demás."
+          : "Sin base en línea: estos datos se guardan en esta PC."
+        : `Publicado por el encargado${when}. Aquí solo se puede ver.`;
+    $("cv-tab-log").hidden = !canEdit();
+    if (!canEdit() && $("cv-p-log").classList.contains("is-active")) showPane("cv-p-stock");
+  }
 
   function card(t, photos) {
     const c = el("article", "cv-car");
@@ -4053,6 +4274,7 @@ function setupCompraventa() {
       const img = el("img");
       img.src = photos[t.plate];
       img.alt = `${t.model} ${t.plate}`;
+      img.loading = "lazy";
       img.addEventListener("click", () => {
         $("cv-view-img").src = photos[t.plate];
         $("cv-view-cap").textContent = `${t.model.toUpperCase()} · ${t.plate}`;
@@ -4078,7 +4300,7 @@ function setupCompraventa() {
     row("Mediador", cvDisplayName(t.mediator));
     row("Fecha", t.ts || "Sin fecha");
     body.appendChild(dl);
-    if (canEdit) {
+    if (canEdit()) {
       const acts = el("div", "cv-acts");
       const up = el("button", "ghost", photos[t.plate] ? "📷 Cambiar foto" : "📷 Subir foto");
       up.type = "button";
@@ -4087,13 +4309,7 @@ function setupCompraventa() {
       if (photos[t.plate]) {
         const del = el("button", "ghost", "Quitar foto");
         del.type = "button";
-        del.addEventListener("click", () => {
-          if (!window.confirm(`¿Quitar la foto de ${t.plate}?`)) return;
-          const data = cvLoadLocal();
-          delete data.photos[t.plate];
-          cvSaveLocal(data);
-          render();
-        });
+        del.addEventListener("click", () => removePhoto(t.plate));
         acts.appendChild(del);
       }
       body.appendChild(acts);
@@ -4103,7 +4319,8 @@ function setupCompraventa() {
   }
 
   function render() {
-    const { tx, photos } = cvSource();
+    renderBar();
+    const { tx, photos } = source();
     const stock = cvStock(tx);
     const buys = tx.filter((t) => cvKind(t) === "compra");
     const sells = tx.filter((t) => cvKind(t) === "venta");
@@ -4153,18 +4370,157 @@ function setupCompraventa() {
       tr.appendChild(el("td", cvIsSociety(t.owner) ? "cv-soc" : "", cvDisplayName(t.owner)));
       tr.appendChild(el("td", cvIsSociety(t.buyer) ? "cv-soc" : "", cvDisplayName(t.buyer)));
       tr.appendChild(el("td", "", cvDisplayName(t.mediator)));
-      const money = el("td", `num cv-money-${k}`, (k === "compra" ? "− " : k === "venta" ? "+ " : "") + fmtMoney(t.price));
-      tr.appendChild(money);
+      tr.appendChild(el("td", `num cv-money-${k}`, (k === "compra" ? "− " : k === "venta" ? "+ " : "") + fmtMoney(t.price)));
       body.appendChild(tr);
     }
     $("cv-hist-empty").hidden = rows.length > 0;
+  }
+
+  // ---------- lectura de la base en linea ----------
+  async function loadCloud() {
+    try {
+      const [rows, photos] = await Promise.all([
+        cvCloud.selectAll("cv_tx", "sort.asc,uid.asc"),
+        cvCloud.selectAll("cv_photos", "plate.asc"),
+      ]);
+      cloud.tx = rows.map((r, i) => ({
+        uid: r.uid,
+        ts: r.ts || "",
+        sort: r.sort || "",
+        mediator: r.mediator || "",
+        owner: r.owner || "",
+        buyer: r.buyer || "",
+        price: Number(r.price) || 0,
+        model: r.model || "",
+        plate: r.plate || "",
+        company: r.company || "",
+        seq: i + 1,
+      }));
+      cloud.photoPaths = {};
+      for (const ph of photos) cloud.photoPaths[ph.plate] = ph.path;
+      cloud.ok = true;
+      cloud.reachable = true;
+      cloud.error = "";
+      cloud.loadedAt = new Date();
+      CV_CLOUD_CACHE = { tx: cloud.tx, photoPaths: cloud.photoPaths };
+    } catch (e) {
+      cloud.ok = false;
+      cloud.reachable = !!e.status;
+      cloud.error =
+        e.code === "PGRST205" || e.code === "42P01" || e.status === 404
+          ? "La base en línea aún no tiene las tablas (falta pegar el SQL en Supabase). Se usan los datos de esta PC."
+          : `${e.message} Se usan los datos de esta PC.`;
+    }
+    cloud.tried = true;
+    render();
+  }
+
+  // Aplica a la base en linea lo que cambio entre "antes" y "despues".
+  async function pushChanges(before, data) {
+    const old = new Map(before.tx.map((t) => [t.uid, JSON.stringify(CV_FIELDS.map((f) => t[f]))]));
+    let n = 0;
+    const rows = [];
+    for (const t of data.tx) {
+      if (!t.uid) t.uid = cvNewUid(n++);
+      const cur = JSON.stringify(CV_FIELDS.map((f) => t[f]));
+      if (old.get(t.uid) !== cur) rows.push(Object.fromEntries(CV_FIELDS.map((f) => [f, f === "price" ? Number(t[f]) || 0 : t[f] ?? ""])));
+    }
+    if (rows.length) await cvCloud.upsert("cv_tx", rows, "uid");
+    // Fotos que cambiaron de matricula al corregir un registro.
+    const moved = Object.entries(data.photos).filter(([plate, path]) => before.photos[plate] !== path);
+    if (moved.length) await cvCloud.upsert("cv_photos", moved.map(([plate, path]) => ({ plate, path })), "plate");
+    for (const plate of Object.keys(before.photos)) {
+      if (!(plate in data.photos)) await cvCloud.del("cv_photos", `plate=eq.${encodeURIComponent(plate)}`);
+    }
+    return rows.length;
+  }
+
+  async function guarded(fn) {
+    if (busy) return;
+    busy = true;
+    root.classList.add("is-busy");
+    try {
+      await fn();
+    } catch (e) {
+      setStatus(`⚠️ ${e.message || e}`);
+      alert(`No se pudo guardar en línea: ${e.message || e}`);
+    } finally {
+      busy = false;
+      root.classList.remove("is-busy");
+    }
   }
 
   $("cv-stock-q").addEventListener("input", render);
   $("cv-hist-q").addEventListener("input", render);
   $("cv-hist-kind").addEventListener("change", render);
 
-  // Foto: recorte pegado con Ctrl+V (Windows + Shift + S), archivo o arrastrar.
+  // ---------- sesion del encargado ----------
+  const loginDlg = $("cv-login-dlg");
+  $("cv-login").addEventListener("click", () => {
+    $("cv-login-err").textContent = "";
+    loginDlg.showModal();
+    $("cv-login-email").focus();
+  });
+  $("cv-login-cancel").addEventListener("click", () => loginDlg.close());
+  $("cv-login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("cv-login-email").value.trim();
+    const pass = $("cv-login-pass").value;
+    if (!email || !pass) {
+      $("cv-login-err").textContent = "Escribe el correo y la contraseña.";
+      return;
+    }
+    $("cv-login-ok").disabled = true;
+    try {
+      await cvCloud.login(email, pass);
+      $("cv-login-pass").value = "";
+      loginDlg.close();
+      await loadCloud();
+    } catch (err) {
+      $("cv-login-err").textContent = /invalid/i.test(err.message) ? "Correo o contraseña incorrectos." : err.message;
+    } finally {
+      $("cv-login-ok").disabled = false;
+    }
+  });
+  $("cv-logout").addEventListener("click", async () => {
+    if (!window.confirm("¿Cerrar la sesión de encargado en esta PC?")) return;
+    await cvCloud.logout();
+    render();
+  });
+  $("cv-refresh").addEventListener("click", () => loadCloud());
+
+  // Pasa a la nube el historial y las fotos guardados en esta PC.
+  $("cv-migrate").addEventListener("click", () =>
+    guarded(async () => {
+      const local = cvLoadLocal();
+      if (!window.confirm(`¿Subir a la base en línea las ${local.tx.length} transacciones y ${Object.keys(local.photos).length} fotos de esta PC? Lo repetido no se duplica.`)) return;
+      setStatus("Subiendo el historial de esta PC…");
+      await loadCloud();
+      if (!online()) throw new Error(cloud.error);
+      const before = { tx: cloud.tx.map((t) => ({ ...t })), photos: { ...cloud.photoPaths } };
+      const data = { tx: cloud.tx.map((t) => ({ ...t })), photos: { ...cloud.photoPaths } };
+      const incoming = local.tx.map(({ seq, uid, ...t }) => ({ ...t, sort: t.sort || cvSortKey(t.ts) }));
+      const added = cvMerge(data, incoming);
+      delete data.lastFixed;
+      await pushChanges(before, data);
+      let ph = 0;
+      for (const [plate, src] of Object.entries(local.photos)) {
+        if (data.photos[plate]) continue;
+        const path = cvPhotoPath(plate);
+        await cvCloud.uploadPhoto(path, cvDataUrlToBlob(src));
+        await cvCloud.upsert("cv_photos", [{ plate, path }], "plate");
+        ph++;
+      }
+      await loadCloud();
+      setStatus(`☁️ Subidas ${added} transacciones nuevas y ${ph} fotos. Ya están en línea para todos.`);
+      if (window.confirm("Listo. ¿Borrar la copia de esta PC? (ya está todo en línea)")) {
+        cvSaveLocal({ tx: [], photos: {} });
+        render();
+      }
+    })
+  );
+
+  // ---------- fotos: recorte con Ctrl+V, archivo o arrastrar ----------
   const photoDlg = $("cv-photo-dlg");
   const photoErr = $("cv-photo-err");
 
@@ -4182,19 +4538,53 @@ function setupCompraventa() {
       photoErr.textContent = "Eso no es una imagen. Haz el recorte y vuelve a pegar.";
       return;
     }
+    let src;
     try {
-      const src = await cvCompressImage(blob);
-      const data = cvLoadLocal();
-      data.photos[photoPlate] = src;
-      if (!cvSaveLocal(data)) {
-        photoErr.textContent = "No hay espacio para más fotos en este navegador. Quita fotos de vehículos que ya no estén.";
-        return;
-      }
-      photoDlg.close();
-      render();
+      src = await cvCompressImage(blob);
     } catch (e) {
       photoErr.textContent = String(e?.message || e);
+      return;
     }
+    const plate = photoPlate;
+    if (online()) {
+      photoErr.textContent = "Subiendo la foto…";
+      await guarded(async () => {
+        const path = cvPhotoPath(plate);
+        const old = cloud.photoPaths[plate];
+        await cvCloud.uploadPhoto(path, cvDataUrlToBlob(src));
+        await cvCloud.upsert("cv_photos", [{ plate, path }], "plate");
+        if (old) await cvCloud.removePhotos([old]).catch(() => {});
+        photoDlg.close();
+        await loadCloud();
+      });
+      if (photoDlg.open) photoErr.textContent = "No se pudo subir la foto. Prueba otra vez.";
+      return;
+    }
+    const data = cvLoadLocal();
+    data.photos[plate] = src;
+    if (!cvSaveLocal(data)) {
+      photoErr.textContent = "No hay espacio para más fotos en este navegador. Quita fotos de vehículos que ya no estén.";
+      return;
+    }
+    photoDlg.close();
+    render();
+  }
+
+  function removePhoto(plate) {
+    if (!window.confirm(`¿Quitar la foto de ${plate}?`)) return;
+    if (online()) {
+      guarded(async () => {
+        const path = cloud.photoPaths[plate];
+        await cvCloud.del("cv_photos", `plate=eq.${encodeURIComponent(plate)}`);
+        if (path) await cvCloud.removePhotos([path]).catch(() => {});
+        await loadCloud();
+      });
+      return;
+    }
+    const data = cvLoadLocal();
+    delete data.photos[plate];
+    cvSaveLocal(data);
+    render();
   }
 
   const imageFrom = (items) => {
@@ -4245,11 +4635,35 @@ function setupCompraventa() {
   $("cv-photo-cancel").addEventListener("click", () => photoDlg.close());
   $("cv-file").addEventListener("change", () => savePhoto($("cv-file").files?.[0]));
 
-  function process() {
+  // ---------- procesar el log ----------
+  function summary(found, added, fixed) {
+    return (
+      `Leídas ${found} transacciones: ${added} nuevas, ${found - added} ya estaban.` +
+      (fixed ? ` Se corrigió la matrícula de ${fixed}.` : "")
+    );
+  }
+
+  async function process() {
     const found = cvParseLog($("cv-input").value);
-    const status = $("cv-status");
     if (!found.length) {
-      status.textContent = "No se encontró ninguna «Transacción de vehículo» en el texto.";
+      setStatus("No se encontró ninguna «Transacción de vehículo» en el texto.");
+      return;
+    }
+    if (online()) {
+      await guarded(async () => {
+        setStatus("Guardando en línea…");
+        await loadCloud(); // por si otro encargado cambio algo
+        if (!online()) throw new Error(cloud.error);
+        const before = { tx: cloud.tx.map((t) => ({ ...t })), photos: { ...cloud.photoPaths } };
+        const data = { tx: cloud.tx.map((t) => ({ ...t })), photos: { ...cloud.photoPaths } };
+        const added = cvMerge(data, found);
+        const fixed = data.lastFixed || 0;
+        delete data.lastFixed;
+        await pushChanges(before, data);
+        $("cv-input").value = "";
+        await loadCloud();
+        setStatus(`☁️ ${summary(found.length, added, fixed)} Ya está en línea para todos.`);
+      });
       return;
     }
     const data = cvLoadLocal();
@@ -4257,9 +4671,7 @@ function setupCompraventa() {
     const fixed = data.lastFixed || 0;
     delete data.lastFixed;
     cvSaveLocal(data);
-    status.textContent =
-      `Leídas ${found.length} transacciones: ${added} nuevas, ${found.length - added} ya estaban.` +
-      (fixed ? ` Se corrigió la matrícula de ${fixed}.` : "");
+    setStatus(summary(found.length, added, fixed));
     $("cv-input").value = "";
     render();
   }
@@ -4268,17 +4680,43 @@ function setupCompraventa() {
     try {
       $("cv-input").value = await navigator.clipboard.readText();
     } catch {
-      $("cv-status").textContent = "No se pudo leer el portapapeles: pega el texto con Ctrl+V y pulsa Procesar.";
+      setStatus("No se pudo leer el portapapeles: pega el texto con Ctrl+V y pulsa Procesar.");
       return;
     }
     process();
   });
   $("cv-reset").addEventListener("click", () => {
+    if (online()) {
+      if (!window.confirm("¿Borrar TODO el historial y las fotos de la base EN LÍNEA? Lo dejarán de ver todos.")) return;
+      if (window.prompt('Para confirmar escribe BORRAR') !== "BORRAR") return;
+      guarded(async () => {
+        const paths = Object.values(cloud.photoPaths);
+        await cvCloud.del("cv_tx", "uid=not.is.null");
+        await cvCloud.del("cv_photos", "plate=not.is.null");
+        await cvCloud.removePhotos(paths).catch(() => {});
+        await loadCloud();
+        setStatus("Historial en línea borrado.");
+      });
+      return;
+    }
     if (!window.confirm("¿Borrar todo el historial de compraventa y las fotos de esta PC?")) return;
     cvSaveLocal({ tx: [], photos: {} });
-    $("cv-status").textContent = "Historial borrado.";
+    setStatus("Historial borrado.");
     render();
   });
 
+  // Se ve al momento con lo de esta PC; luego se conecta y se mantiene al dia
+  // (cada 45 s mientras la pestana esta abierta y al volver a la ventana).
   render();
+  loadCloud();
+  const tabActive = () => root.classList.contains("is-active") && document.visibilityState === "visible";
+  setInterval(() => {
+    if (!busy && tabActive()) loadCloud();
+  }, 45000);
+  document.addEventListener("visibilitychange", () => {
+    if (!busy && tabActive()) loadCloud();
+  });
+  document.querySelector('.tab[data-tab-target="tab-cv"]')?.addEventListener("click", () => {
+    if (!busy && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
+  });
 }
