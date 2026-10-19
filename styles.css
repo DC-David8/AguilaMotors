@@ -1344,3 +1344,27 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .emp-rank-names-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin: 8px 0; }
 .emp-rank-names-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: var(--muted); }
 .pg-badge.r-aguila { background: linear-gradient(90deg, #f97d02, #ffcf94); color: #1a0f04; }
+
+/* Tarjeta de sesion con foto de Discord (v39) */
+.auth-user { display: flex; align-items: center; gap: 10px; max-width: none; padding: 5px 14px 5px 5px; font-weight: 400; color: var(--text); white-space: normal; }
+.auth-user[hidden] { display: none; }
+.auth-avatar { position: relative; flex: none; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  background: linear-gradient(135deg, #f97d02, #ffb15c); color: #1a0f04; font-weight: 900; font-size: 0.85rem; box-shadow: 0 0 0 2px #f97d02, 0 0 14px rgba(249, 125, 2, 0.45); }
+.auth-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.auth-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.auth-name { font-size: 0.92rem; font-weight: 800; color: #fff; line-height: 1.1; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-rank { font-size: 0.62rem; padding: 2px 8px; }
+.auth-rank:not([class*="r-"]) { background: #2a2017; color: #ffb15c; }
+@media (max-width: 700px) {
+  .auth-user { gap: 7px; padding: 3px 9px 3px 3px; max-width: none; }
+  .auth-avatar { width: 30px; height: 30px; font-size: 0.7rem; }
+  .auth-name { font-size: 0.78rem; max-width: 120px; }
+  .auth-rank { font-size: 0.55rem; padding: 1px 6px; }
+}
+
+.m-logout { display: none; }
+@media (max-width: 700px) {
+  #auth-logout { display: none !important; } /* en el movil, "Cerrar sesion" va en el menu */
+  .auth-box { flex-wrap: nowrap; }
+  .m-logout:not([hidden]) { display: block; width: 100%; margin: 18px 0 8px; padding: 12px; border-radius: 12px; border: 1px solid #5c2a1f; background: #1d0f0b; color: #ff9b8a; font-weight: 800; text-align: left; }
+}

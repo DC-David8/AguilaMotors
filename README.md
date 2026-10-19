@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 39 · 19 de octubre de 2026
+- Tarjeta de sesión arriba a la derecha con la **foto de perfil de Discord**, el **nombre registrado en la plantilla** y el **rango** (con su color y el nombre personalizado). Cada uno recibe solo sus datos (función `mi_perfil`).
+- En el móvil, **Cerrar sesión** pasa al menú ☰ para que la cabecera no se descoloque.
+
 ### Versión 38 · 19 de octubre de 2026
 - Panel de Pagos: el **trofeo 🏆 y el recuadro «Empleado de la semana»** ya no cuentan al Jefe Aguila, igual que Totales y Copiar todo.
 

@@ -4531,7 +4531,7 @@ function empCloudSet(fullNameStr, patch) {
 // cuenta de encargado, o ID de Discord de un empleado con rango Jefe), no la
 // pagina: aunque alguien toque el codigo, sin ser Jefe no recibe datos.
 // ---------------------------------------------------------------------------
-const AUTH = { role: "none", name: "", provider: "", checked: false, error: "", aguila: false, offline: false };
+const AUTH = { role: "none", name: "", provider: "", checked: false, error: "", aguila: false, offline: false, avatar: "", discordId: "", profile: null };
 
 function hasAccess() {
   return AUTH.role === "jefe";
@@ -4587,6 +4587,9 @@ async function authRefresh() {
     const md = u?.user_metadata || {};
     AUTH.provider = u?.app_metadata?.provider || "";
     AUTH.name = md.custom_claims?.global_name || md.full_name || md.name || u?.email || "";
+    AUTH.avatar = md.avatar_url || md.picture || "";
+    const ident = (u?.identities || []).find((i) => i.provider === "discord");
+    AUTH.discordId = String(md.provider_id || ident?.identity_data?.sub || ident?.id || "");
     if (cvCloud.session) {
       cvCloud.session.email = AUTH.name;
       cvPersistSession();
@@ -4616,6 +4619,7 @@ async function authRefresh() {
         // Funcion aun sin crear: la cuenta de correo del encargado es la del Jefe Aguila.
         AUTH.aguila = (e.status === 404 || e.code === "PGRST202") && AUTH.provider === "email";
       }
+      await loadMyProfile();
     }
     else {
       let emp = false;
@@ -4625,6 +4629,7 @@ async function authRefresh() {
         // funcion aun sin crear: solo la Caja
       }
       AUTH.role = emp ? "empleado" : "invitado";
+      if (emp) await loadMyProfile();
     }
   } catch (e) {
     // Sin la funcion es_jefe todavia (falta el SQL): la cuenta de correo del
@@ -4650,6 +4655,66 @@ async function loadRankNames() {
 async function saveRankNames(map) {
   await cvCloud.upsert("app_settings", [{ key: "rank_names", value: map }], "key");
   RANK_NAMES = map;
+}
+
+// Nombre y rango del que entra, sacados de la lista de empleados (funcion
+// mi_perfil: cada uno recibe solo SUS datos).
+async function loadMyProfile() {
+  try {
+    const rows = await cvCloud.req("/rest/v1/rpc/mi_perfil", { method: "POST", body: {}, auth: true });
+    const r = Array.isArray(rows) ? rows[0] : rows;
+    if (r && r.name) AUTH.profile = { name: String(r.name), surname: String(r.surname || ""), rank: String(r.rank || "") };
+  } catch {
+    // funcion aun sin crear: se intenta luego con la lista de empleados (Jefes)
+  }
+}
+
+function rankBadgeClass(rank) {
+  const map = { "jefe aguila": "r-aguila", jefe: "r-jefe", "mano derecha": "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };
+  return map[normalizeKeySimple(rank)] || "";
+}
+
+// Tarjeta de sesion de arriba: foto de Discord, nombre de la plantilla y rango.
+function renderAuthCard() {
+  const box = byId("auth-user");
+  if (!box) return;
+  if (!AUTH.profile && AUTH.discordId && EMP_CLOUD.list.length) {
+    const e = EMP_CLOUD.list.find((x) => x.discord === AUTH.discordId);
+    if (e) AUTH.profile = { name: e.name, surname: e.surname, rank: e.rank };
+  }
+  const p = AUTH.profile;
+  const name = p ? `${p.name} ${p.surname}`.trim() : AUTH.name || "Sesión iniciada";
+  const rank = p?.rank
+    ? rankLabel(p.rank)
+    : AUTH.aguila
+      ? rankLabel("Jefe Aguila")
+      : { jefe: "Jefe", empleado: "Empleado", invitado: "Sin registrar", offline: "Sin conexión" }[AUTH.role] || "";
+  const rankKey = p?.rank || (AUTH.aguila ? "Jefe Aguila" : "");
+
+  box.textContent = "";
+  const initials = name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+  const av = document.createElement("span");
+  av.className = "auth-avatar";
+  av.textContent = initials;
+  if (AUTH.avatar) {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.src = AUTH.avatar;
+    img.onerror = () => img.remove(); // si no carga, quedan las iniciales
+    av.appendChild(img);
+  }
+  const txt = document.createElement("span");
+  txt.className = "auth-txt";
+  const n = document.createElement("b");
+  n.className = "auth-name";
+  n.textContent = name;
+  const r = document.createElement("span");
+  r.className = `pg-badge auth-rank ${rankBadgeClass(rankKey)}`;
+  r.textContent = rank;
+  txt.append(n, r);
+  box.append(av, txt);
+  box.title = `${name} · ${rank}` + (AUTH.name && p ? ` (Discord: ${AUTH.name})` : "");
 }
 
 const LIVE_SITE_URL = "https://dc-david8.github.io/AguilaMotors/";
@@ -4696,6 +4761,7 @@ function setupAuthUI() {
   byId("cv-login-cancel")?.addEventListener("click", () => dlg?.close());
 
   byId("auth-login")?.addEventListener("click", openLoginDialog);
+  byId("m-logout")?.addEventListener("click", () => byId("auth-logout")?.click());
   byId("auth-logout")?.addEventListener("click", async () => {
     if (!window.confirm("¿Cerrar sesión en este navegador?")) return;
     await cvCloud.logout();
@@ -4727,9 +4793,11 @@ function setupAuthUI() {
   const logged = AUTH.role !== "none";
   byId("auth-login").hidden = logged;
   byId("auth-logout").hidden = !logged;
+  if (byId("m-logout")) byId("m-logout").hidden = !logged;
   const userEl = byId("auth-user");
   userEl.hidden = !logged;
-  if (logged) {
+  if (logged) renderAuthCard();
+  if (false) {
     const roleTxt = AUTH.aguila
       ? rankLabel("Jefe Aguila")
       : { jefe: "Jefe", empleado: "Empleado", invitado: "Sin registrar", offline: "Sin conexión" }[AUTH.role] || "";
