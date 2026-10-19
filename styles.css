@@ -1300,3 +1300,4 @@ html, body {
 .cv-login { display: flex; flex-direction: column; gap: 10px; }
 .cv-login label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
 .cv-login p { margin: 0; }
+.emp-cloud { margin: 10px 0 4px; }

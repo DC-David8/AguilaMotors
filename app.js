@@ -892,11 +892,13 @@ function parseDiscordId(raw) {
 }
 
 function getEmployeeDiscord(fullNameStr) {
+  if (empCloudOn()) return empCloudFind(fullNameStr)?.discord || "";
   const map = isSharedReadOnly() ? SHARED_DATA.discord : loadEmployeeDiscordMap();
   return map[normalizeKeySimple(fullNameStr)] || "";
 }
 
 function setEmployeeDiscord(fullNameStr, id) {
+  if (empCloudOn()) return empCloudSet(fullNameStr, { discord: id || "" });
   const map = loadEmployeeDiscordMap();
   const key = normalizeKeySimple(fullNameStr);
   if (id) map[key] = id;
@@ -934,11 +936,13 @@ function parseIban(raw) {
 }
 
 function getEmployeeIban(fullNameStr) {
+  if (empCloudOn()) return empCloudFind(fullNameStr)?.iban || "";
   const map = isSharedReadOnly() ? SHARED_DATA.iban : loadEmployeeIbanMap();
   return map[normalizeKeySimple(fullNameStr)] || "";
 }
 
 function setEmployeeIban(fullNameStr, iban) {
+  if (empCloudOn()) return empCloudSet(fullNameStr, { iban: iban || "" });
   const map = loadEmployeeIbanMap();
   const key = normalizeKeySimple(fullNameStr);
   if (iban) map[key] = iban;
@@ -968,11 +972,13 @@ function saveEmployeeNoPayMap(map) {
 }
 
 function isEmployeeNoPay(fullNameStr) {
+  if (empCloudOn()) return !!empCloudFind(fullNameStr)?.noPay;
   const map = isSharedReadOnly() ? SHARED_DATA.noPay : loadEmployeeNoPayMap();
   return !!map[normalizeKeySimple(fullNameStr)];
 }
 
 function setEmployeeNoPay(fullNameStr, noPay) {
+  if (empCloudOn()) return empCloudSet(fullNameStr, { noPay: !!noPay });
   const map = loadEmployeeNoPayMap();
   const key = normalizeKeySimple(fullNameStr);
   if (noPay) map[key] = true;
@@ -1151,17 +1157,14 @@ function fmtStamp(d = new Date()) {
 
 // Arma datos.js con los datos de ESTA PC (los que edita el encargado).
 async function buildSharedDataFile() {
-  const map = loadEmployeeDiscordMap();
-  const ibanMap = loadEmployeeIbanMap();
-  const noPayMap = loadEmployeeNoPayMap();
   const employees = (await listEmployees())
     .map((e) => ({
       name: String(e.name || "").trim(),
       surname: String(e.surname || "").trim(),
       rank: String(e.rank || "").trim(),
-      discord: map[normalizeKeySimple(fullName(e))] || "",
-      iban: ibanMap[normalizeKeySimple(fullName(e))] || "",
-      noPay: !!noPayMap[normalizeKeySimple(fullName(e))],
+      discord: getEmployeeDiscord(fullName(e)),
+      iban: getEmployeeIban(fullName(e)),
+      noPay: isEmployeeNoPay(fullName(e)),
     }))
     .filter((e) => e.name && e.surname)
     .sort((a, b) => `${a.surname} ${a.name}`.localeCompare(`${b.surname} ${b.name}`, "es", { sensitivity: "base" }));
@@ -1219,6 +1222,11 @@ function setupSharedData() {
     statusEl.textContent = `Empleados y productos publicados por el encargado${when}. Aquí solo se pueden ver.`;
   } else {
     statusEl.textContent = "Todavía no hay datos publicados: cada PC usa sus propios empleados y productos.";
+  }
+
+  if (empCloudOn()) {
+    statusEl.textContent +=
+      " · Los empleados ya están en línea (Supabase): se editan en Gestión de empleados con la sesión de encargado y todos los ven al momento.";
   }
 
   btnEditor.addEventListener("click", async () => {
@@ -1315,6 +1323,7 @@ async function waitPyApi(maxMs = 2500) {
 }
 
 async function listEmployees() {
+  if (empCloudOn()) return EMP_CLOUD.list.map((e) => ({ ...e }));
   if (isSharedReadOnly()) return SHARED_DATA.employees.map((e) => ({ ...e }));
   const api = await waitPyApi();
   if (api && typeof api.emp_list === "function") {
@@ -1333,6 +1342,13 @@ async function addEmployee(payload, password) {
     throw new Error("Contrasena incorrecta");
   }
 
+  if (empCloudOn()) {
+    const e = { id: safeRandomId(), name: payload.name, surname: payload.surname, rank: payload.rank || "", discord: "", iban: "", noPay: false };
+    await empCloudSave(e);
+    EMP_CLOUD.list.push(e);
+    return true;
+  }
+
   const api = await waitPyApi();
   if (api && typeof api.emp_add === "function") {
     await api.emp_add(payload, BACKEND_LEGACY_PASSWORD);
@@ -1348,6 +1364,15 @@ async function addEmployee(payload, password) {
 async function updateEmployee(id, payload, password) {
   if (!isAccessPassword(password)) {
     throw new Error("Contrasena incorrecta");
+  }
+
+  if (empCloudOn()) {
+    const cur = EMP_CLOUD.list.find((e) => String(e.id) === String(id));
+    if (!cur) throw new Error("Empleado no encontrado");
+    const next = { ...cur, ...payload };
+    await empCloudSave(next);
+    Object.assign(cur, next);
+    return true;
   }
 
   const api = await waitPyApi();
@@ -1391,6 +1416,13 @@ async function updateEmployee(id, payload, password) {
 async function deleteEmployee(id, password) {
   if (!isAccessPassword(password)) {
     throw new Error("Contrasena incorrecta");
+  }
+
+  if (empCloudOn()) {
+    empCloudRequireSession();
+    await cvCloud.del("employees", `id=eq.${encodeURIComponent(id)}`);
+    EMP_CLOUD.list = EMP_CLOUD.list.filter((e) => String(e.id) !== String(id));
+    return true;
   }
 
   const api = await waitPyApi();
@@ -2856,17 +2888,111 @@ function setupEmployeesAdminModal({ onChanged }) {
   let adminPass = "";
   let employees = [];
 
-  // Con datos publicados y sin modo encargado, la lista solo se puede ver.
-  const readOnly = isSharedReadOnly();
+  // Solo lectura: con empleados en linea y sin sesion de encargado, o con
+  // datos.js publicado y sin modo encargado. Se recalcula al abrir y al
+  // iniciar / cerrar sesion.
+  let readOnly = false;
   const roNote = byId("emp-readonly-note");
-  if (readOnly) {
-    nameInput?.closest(".admin-block")?.setAttribute("hidden", "");
-    passInput?.closest(".admin-block")?.setAttribute("hidden", "");
+  function applyMode() {
+    readOnly = empCloudOn() ? !cvCloud.session : isSharedReadOnly();
+    nameInput?.closest(".admin-block")?.toggleAttribute("hidden", readOnly);
+    passInput?.closest(".admin-block")?.toggleAttribute("hidden", readOnly);
     if (roNote) {
-      roNote.hidden = false;
-      roNote.textContent = `Empleados publicados por el encargado${SHARED_DATA.publishedAt ? " el " + SHARED_DATA.publishedAt : ""}. Aquí solo se pueden ver.`;
+      roNote.hidden = !readOnly;
+      roNote.textContent = empCloudOn()
+        ? "Empleados en línea. Para cambiarlos, inicia sesión de encargado."
+        : `Empleados publicados por el encargado${SHARED_DATA?.publishedAt ? " el " + SHARED_DATA.publishedAt : ""}. Aquí solo se pueden ver.`;
     }
+    const logged = !!cvCloud.session;
+    const dot = byId("emp-cloud-dot");
+    const txt = byId("emp-cloud-text");
+    if (dot && txt) {
+      if (empCloudOn()) {
+        dot.className = "cv-dot is-on";
+        txt.textContent = `En línea · ${EMP_CLOUD.list.length} empleados` + (logged ? ` · Encargado: ${cvCloud.session.email} (los cambios se guardan para todos al momento)` : "");
+      } else if (EMP_CLOUD.ok) {
+        dot.className = "cv-dot";
+        txt.textContent = logged
+          ? "La base en línea está lista pero vacía: sube los empleados para empezar a usarla."
+          : "La base en línea está lista pero vacía. Inicia sesión de encargado para subir los empleados.";
+      } else {
+        dot.className = "cv-dot is-off";
+        txt.textContent = EMP_CLOUD.tried ? `${EMP_CLOUD.error} Se usan datos.js / esta PC.` : "Conectando…";
+      }
+    }
+    byId("emp-cloud-login")?.toggleAttribute("hidden", logged || !EMP_CLOUD.ok);
+    byId("emp-cloud-migrate")?.toggleAttribute("hidden", !(EMP_CLOUD.ok && logged && !EMP_CLOUD.list.length));
   }
+
+  byId("emp-cloud-login")?.addEventListener("click", () => {
+    byId("cv-login-err").textContent = "";
+    byId("cv-login-dlg").showModal();
+    byId("cv-login-email").focus();
+  });
+
+  // Primera vez: copia a la base en linea los empleados que se ven ahora (datos.js o esta PC).
+  byId("emp-cloud-migrate")?.addEventListener("click", async () => {
+    const btn = byId("emp-cloud-migrate");
+    try {
+      // Los de esta PC (modo encargado) si los hay; si no, los publicados en datos.js.
+      let src = [];
+      if (!isSharedReadOnly()) {
+        const dMap = loadEmployeeDiscordMap();
+        const iMap = loadEmployeeIbanMap();
+        const nMap = loadEmployeeNoPayMap();
+        const k = (e) => normalizeKeySimple(fullName(e));
+        src = loadEmployeesLocal().map((e) => ({ ...e, discord: dMap[k(e)] || "", iban: iMap[k(e)] || "", noPay: !!nMap[k(e)] }));
+        const api = await waitPyApi();
+        if (api && typeof api.emp_list === "function") {
+          try {
+            const data = await api.emp_list();
+            const arr = Array.isArray(data) ? data : Array.isArray(data?.employees) ? data.employees : [];
+            if (arr.length) src = arr.map((e) => ({ ...e, discord: dMap[k(e)] || "", iban: iMap[k(e)] || "", noPay: !!nMap[k(e)] }));
+          } catch {
+            // se queda con lo guardado en el navegador
+          }
+        }
+      }
+      let from = "de esta PC";
+      if (!src.length && SHARED_DATA?.employees?.length) {
+        src = SHARED_DATA.employees.map((e) => ({ ...e }));
+        from = `publicados en datos.js${SHARED_DATA.publishedAt ? " (" + SHARED_DATA.publishedAt + ")" : ""}`;
+      }
+      if (!src.length) {
+        alert("No hay empleados que subir.");
+        return;
+      }
+      if (!confirm(`¿Subir ${src.length} empleados ${from} (con rango, Discord, IBAN y No cobra) a la base en línea?`)) return;
+      btn.disabled = true;
+      const rows = src
+        .filter((e) => String(e.name || "").trim() && String(e.surname || "").trim())
+        .map((e) =>
+          empCloudRow({
+            id: safeRandomId(),
+            name: String(e.name || "").trim(),
+            surname: String(e.surname || "").trim(),
+            rank: e.rank || "",
+            discord: e.discord || "",
+            iban: e.iban || "",
+            noPay: !!e.noPay,
+          })
+        );
+      empCloudRequireSession();
+      await cvCloud.upsert("employees", rows, "id");
+      await refresh();
+      await (onChanged?.());
+      setStatus(`☁️ ${rows.length} empleados subidos. Ya están en línea para todos.`, true);
+    } catch (err) {
+      alert(`No se pudieron subir: ${err.message || err}`);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.addEventListener("aguila-auth", async () => {
+    await refresh();
+    await (onChanged?.());
+  });
 
   function setStatus(text, ok = false) {
     status.textContent = text;
@@ -2942,6 +3068,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         tr.querySelector("button[data-del]")?.remove();
       }
       dInput.addEventListener("change", async () => {
+        if (readOnly) return;
         if (!unlocked) {
           alert("Primero desbloquea con la contrasena.");
           dInput.value = getEmployeeDiscord(full);
@@ -3029,6 +3156,8 @@ function setupEmployeesAdminModal({ onChanged }) {
 
   async function refresh() {
     try {
+      if (EMP_CLOUD.tried) await empCloudLoad();
+      applyMode();
       employees = await listEmployees();
       employees.sort((a, b) =>
         `${a.surname} ${a.name}`.localeCompare(`${b.surname} ${b.name}`, "es", { sensitivity: "base" })
@@ -3658,10 +3787,12 @@ function setupSorteo() {
 setupCopyFallbackModal();
 setupTabs();
 // Primero los datos publicados (si los hay); luego se arma la pagina con ellos.
-loadSharedData()
-  .catch(() => {
+Promise.allSettled([
+  loadSharedData().catch(() => {
     SHARED_DATA = null;
-  })
+  }),
+  Promise.resolve().then(() => empCloudLoad()),
+])
   .finally(() => {
     setupCaja();
     setupContabilidad();
@@ -4178,6 +4309,79 @@ const cvCloud = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Empleados en linea (tabla "employees" de Supabase). Si la tabla existe y
+// tiene empleados, manda sobre datos.js y sobre lo guardado en la PC. Leer
+// es libre; cambiar exige la sesion de encargado (la misma de Compraventa).
+// ---------------------------------------------------------------------------
+const EMP_CLOUD = { ok: false, tried: false, error: "", list: [] };
+
+function empCloudOn() {
+  return EMP_CLOUD.ok && EMP_CLOUD.list.length > 0;
+}
+
+async function empCloudLoad() {
+  try {
+    const rows = await cvCloud.selectAll("employees", "surname.asc,name.asc");
+    EMP_CLOUD.list = rows
+      .map((r) => ({
+        id: String(r.id),
+        name: String(r.name || "").trim(),
+        surname: String(r.surname || "").trim(),
+        rank: String(r.rank || "").trim(),
+        discord: String(r.discord || ""),
+        iban: String(r.iban || ""),
+        noPay: r.no_pay === true,
+      }))
+      .filter((e) => e.name && e.surname);
+    EMP_CLOUD.ok = true;
+    EMP_CLOUD.error = "";
+  } catch (e) {
+    EMP_CLOUD.ok = false;
+    EMP_CLOUD.error =
+      e.code === "PGRST205" || e.code === "42P01" || e.status === 404
+        ? "La tabla de empleados aún no existe en Supabase (falta pegar el SQL)."
+        : e.message;
+  }
+  EMP_CLOUD.tried = true;
+}
+
+function empCloudFind(fullNameStr) {
+  const k = normalizeKeySimple(fullNameStr);
+  return EMP_CLOUD.list.find((e) => normalizeKeySimple(fullName(e)) === k);
+}
+
+function empCloudRequireSession() {
+  if (!cvCloud.session) throw new Error("Los empleados están en línea: inicia sesión de encargado (🔑) para cambiarlos.");
+}
+
+const empCloudRow = (e) => ({
+  id: e.id,
+  name: e.name,
+  surname: e.surname,
+  rank: e.rank || "",
+  discord: e.discord || "",
+  iban: e.iban || "",
+  no_pay: !!e.noPay,
+});
+
+async function empCloudSave(e) {
+  empCloudRequireSession();
+  await cvCloud.upsert("employees", [empCloudRow(e)], "id");
+}
+
+// Para Discord / IBAN / No cobra (se llaman sin esperar): guarda y avisa si falla.
+function empCloudSet(fullNameStr, patch) {
+  const e = empCloudFind(fullNameStr);
+  if (!e) return;
+  const prev = { ...e };
+  Object.assign(e, patch);
+  empCloudSave(e).catch((err) => {
+    Object.assign(e, prev);
+    alert(`No se pudo guardar en línea: ${err.message || err}`);
+  });
+}
+
 function cvDataUrlToBlob(dataUrl) {
   const [head, b64] = String(dataUrl).split(",");
   const type = (head.match(/data:([^;]+)/) || [])[1] || "image/jpeg";
@@ -4206,6 +4410,9 @@ function setupCompraventa() {
   };
   let photoPlate = null;
   let busy = false;
+  // La ventana de inicio de sesion tambien se abre desde Gestion de empleados
+  // (en Pagos): fuera de la pestana para que se vea aunque esta este oculta.
+  document.body.appendChild($("cv-login-dlg"));
   // Estado de la base en linea.
   const cloud = { ok: false, tried: false, error: "", tx: [], photoPaths: {}, loadedAt: null };
 
@@ -4475,6 +4682,7 @@ function setupCompraventa() {
       await cvCloud.login(email, pass);
       $("cv-login-pass").value = "";
       loginDlg.close();
+      document.dispatchEvent(new Event("aguila-auth"));
       await loadCloud();
     } catch (err) {
       $("cv-login-err").textContent = /invalid/i.test(err.message) ? "Correo o contraseña incorrectos." : err.message;
@@ -4485,6 +4693,7 @@ function setupCompraventa() {
   $("cv-logout").addEventListener("click", async () => {
     if (!window.confirm("¿Cerrar la sesión de encargado en esta PC?")) return;
     await cvCloud.logout();
+    document.dispatchEvent(new Event("aguila-auth"));
     render();
   });
   $("cv-refresh").addEventListener("click", () => loadCloud());

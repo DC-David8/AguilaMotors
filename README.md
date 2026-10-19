@@ -227,6 +227,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 33 · 19 de octubre de 2026
+- **Empleados en línea** (tabla `employees` de Supabase): nombre, rango, Discord, IBAN y No cobra. Pagos, Totales y Sorteo los leen de ahí y todos ven los cambios al abrir la página.
+  - Se editan en **Gestión de empleados** con la contraseña de acceso **y** la sesión de encargado (🔑). Sin sesión, solo lectura.
+  - **☁️ Subir empleados a la nube**: la primera vez copia los empleados actuales (datos.js) a la base.
+  - Si la base no responde o la tabla está vacía, se sigue usando datos.js / la PC como antes.
+
 ### Versión 32 · 19 de octubre de 2026
 - Compraventa **en línea** con Supabase: historial y fotos se guardan en la base de datos y todos los ven al momento (se actualiza cada 45 s y con 🔄 Actualizar).
   - Solo escribe el encargado con **sesión iniciada** (usuario de Supabase → Authentication → Users). Las reglas de la base lo exigen también en el servidor.
