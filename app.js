@@ -255,7 +255,15 @@ function setupCopyFallbackModal() {
   }
 }
 
+// Ya no hay contrasena compartida: las secciones restringidas son para los
+// Jefes (sesion con Discord o con la cuenta de correo del encargado).
 function showAccessModal({ sectionLabel }) {
+  if (hasAccess()) return Promise.resolve(true);
+  alert(`${sectionLabel || "Esta sección"}: solo para Jefes. Inicia sesión con 🔑 Entrar (arriba).`);
+  return Promise.resolve(false);
+}
+
+function showAccessModalLegacy({ sectionLabel }) {
   const dlg = byId("access-modal");
   const titleEl = byId("access-title");
   const input = byId("access-pass");
@@ -832,17 +840,17 @@ function getProductIcon(product) {
 // Gestion de Productos y la gestion de empleados). En el codigo solo esta su
 // huella SHA-256, no la contrasena. Para cambiarla, ver el README.
 const PROTECTED_TABS = ["tab-conta", "tab-sorteo", "tab-cv"];
-const ACCESS_PASSWORD_SHA256 = "40506021bdec7651d70346f8a8c63adf55ed2860bc5f5d6b48c52a2a7f1ca810";
+
 
 // Contrasena escrita al desbloquear, para las acciones internas que la piden.
 let unlockedAccessPassword = "";
 
-function isAccessPassword(pass) {
-  return !!pass && sha256Hex(String(pass)) === ACCESS_PASSWORD_SHA256;
+function isAccessPassword() {
+  return hasAccess();
 }
 
 function unlockAccess(pass) {
-  if (!isAccessPassword(pass)) return false;
+  if (!hasAccess()) return false;
   unlockedAccessPassword = String(pass);
   return true;
 }
@@ -1157,7 +1165,8 @@ function fmtStamp(d = new Date()) {
 
 // Arma datos.js con los datos de ESTA PC (los que edita el encargado).
 async function buildSharedDataFile() {
-  const employees = (await listEmployees())
+  // Si los empleados estan en linea, no se copian a datos.js (que es publico en GitHub).
+  const employees = (EMP_CLOUD.ok ? [] : await listEmployees())
     .map((e) => ({
       name: String(e.name || "").trim(),
       surname: String(e.surname || "").trim(),
@@ -2894,22 +2903,24 @@ function setupEmployeesAdminModal({ onChanged }) {
   let readOnly = false;
   const roNote = byId("emp-readonly-note");
   function applyMode() {
-    readOnly = empCloudOn() ? !cvCloud.session : isSharedReadOnly();
+    readOnly = !hasAccess() || (!empCloudOn() && isSharedReadOnly());
+    unlocked = !readOnly;
+    adminPass = unlocked ? "jefe" : "";
     nameInput?.closest(".admin-block")?.toggleAttribute("hidden", readOnly);
-    passInput?.closest(".admin-block")?.toggleAttribute("hidden", readOnly);
+    passInput?.closest(".admin-block")?.toggleAttribute("hidden", true); // ya no hay contrasena
     if (roNote) {
       roNote.hidden = !readOnly;
       roNote.textContent = empCloudOn()
-        ? "Empleados en línea. Para cambiarlos, inicia sesión de encargado."
+        ? "Empleados en línea. Solo los Jefes pueden cambiarlos."
         : `Empleados publicados por el encargado${SHARED_DATA?.publishedAt ? " el " + SHARED_DATA.publishedAt : ""}. Aquí solo se pueden ver.`;
     }
-    const logged = !!cvCloud.session;
+    const logged = hasAccess();
     const dot = byId("emp-cloud-dot");
     const txt = byId("emp-cloud-text");
     if (dot && txt) {
       if (empCloudOn()) {
         dot.className = "cv-dot is-on";
-        txt.textContent = `En línea · ${EMP_CLOUD.list.length} empleados` + (logged ? ` · Encargado: ${cvCloud.session.email} (los cambios se guardan para todos al momento)` : "");
+        txt.textContent = `En línea · ${EMP_CLOUD.list.length} empleados` + (logged ? ` · Jefe: ${AUTH.name} (los cambios se guardan al momento)` : "");
       } else if (EMP_CLOUD.ok) {
         dot.className = "cv-dot";
         txt.textContent = logged
@@ -2920,15 +2931,11 @@ function setupEmployeesAdminModal({ onChanged }) {
         txt.textContent = EMP_CLOUD.tried ? `${EMP_CLOUD.error} Se usan datos.js / esta PC.` : "Conectando…";
       }
     }
-    byId("emp-cloud-login")?.toggleAttribute("hidden", logged || !EMP_CLOUD.ok);
+    byId("emp-cloud-login")?.toggleAttribute("hidden", true);
     byId("emp-cloud-migrate")?.toggleAttribute("hidden", !(EMP_CLOUD.ok && logged && !EMP_CLOUD.list.length));
   }
 
-  byId("emp-cloud-login")?.addEventListener("click", () => {
-    byId("cv-login-err").textContent = "";
-    byId("cv-login-dlg").showModal();
-    byId("cv-login-email").focus();
-  });
+  byId("emp-cloud-login")?.addEventListener("click", openLoginDialog);
 
   // Primera vez: copia a la base en linea los empleados que se ven ahora (datos.js o esta PC).
   byId("emp-cloud-migrate")?.addEventListener("click", async () => {
@@ -3791,7 +3798,9 @@ Promise.allSettled([
   loadSharedData().catch(() => {
     SHARED_DATA = null;
   }),
-  Promise.resolve().then(() => empCloudLoad()),
+  Promise.resolve()
+    .then(() => authInit())
+    .then(() => (hasAccess() ? empCloudLoad() : null)),
 ])
   .finally(() => {
     setupCaja();
@@ -3799,6 +3808,7 @@ Promise.allSettled([
     setupSharedData();
     setupSorteo();
     setupCompraventa();
+    setupAuthUI();
     setupMobileNav();
   });
 
@@ -3830,6 +3840,7 @@ function setupMobileNav() {
   function build() {
     sectionsEl.textContent = "";
     document.querySelectorAll("nav.tabs .tab").forEach((tab) => {
+      if (tab.hidden) return;
       const item = navButton(tab.textContent.trim(), tab.classList.contains("is-active"), () => {
         close();
         tab.click(); // misma logica (y contrasena) que en PC
@@ -4143,7 +4154,7 @@ function cvCompressImage(file) {
 
 // Lo que se publica en datos.js: todo el historial y solo las fotos de lo que hay en el almacen.
 function cvForExport() {
-  if (CV_CLOUD_CACHE) return { tx: CV_CLOUD_CACHE.tx.map(({ seq, ...t }) => t), photos: {} };
+  if (CV_CLOUD_CACHE) return { tx: [], photos: {} }; // esta en linea: no se publica en GitHub
   const data = cvLoadLocal();
   const plates = new Set(cvStock(data.tx).map((t) => t.plate));
   const photos = {};
@@ -4200,8 +4211,12 @@ const cvCloud = {
     const h = { apikey: CV_CLOUD_KEY, ...headers };
     if (auth) {
       const tok = await this.token();
-      if (!tok) throw new Error("Tu sesión de encargado caducó: vuelve a iniciar sesión.");
+      if (!tok) throw new Error("Tu sesión caducó: vuelve a iniciar sesión (🔑 Entrar).");
       h.Authorization = `Bearer ${tok}`;
+    } else if (this.session && !path.startsWith("/auth/")) {
+      // Lecturas: con sesion, el servidor decide que puede ver (solo Jefes).
+      const tok = await this.token();
+      if (tok) h.Authorization = `Bearer ${tok}`;
     }
     let payload = body;
     if (body !== undefined && !(body instanceof Blob)) {
@@ -4352,7 +4367,7 @@ function empCloudFind(fullNameStr) {
 }
 
 function empCloudRequireSession() {
-  if (!cvCloud.session) throw new Error("Los empleados están en línea: inicia sesión de encargado (🔑) para cambiarlos.");
+  if (!cvCloud.session || !hasAccess()) throw new Error("Solo los Jefes pueden cambiar los empleados (inicia sesión con 🔑 Entrar).");
 }
 
 const empCloudRow = (e) => ({
@@ -4380,6 +4395,188 @@ function empCloudSet(fullNameStr, patch) {
     Object.assign(e, prev);
     alert(`No se pudo guardar en línea: ${err.message || err}`);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Sesion y permisos. Se entra con Discord (web) o con correo (programa de
+// escritorio). Quien es Jefe lo decide la BASE DE DATOS (funcion es_jefe:
+// cuenta de encargado, o ID de Discord de un empleado con rango Jefe), no la
+// pagina: aunque alguien toque el codigo, sin ser Jefe no recibe datos.
+// ---------------------------------------------------------------------------
+const AUTH = { role: "none", name: "", provider: "", checked: false, error: "" };
+
+function hasAccess() {
+  return AUTH.role === "jefe";
+}
+
+function cvPersistSession() {
+  try {
+    localStorage.setItem(CV_SESSION_KEY, JSON.stringify(cvCloud.session));
+  } catch {
+    // nada
+  }
+}
+
+async function authInit() {
+  // Vuelta desde Discord: la sesion llega en la direccion (#access_token=...).
+  const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const q = new URLSearchParams(location.search);
+  const err = h.get("error_description") || q.get("error_description");
+  if (h.get("access_token")) {
+    cvCloud.setSession({
+      access_token: h.get("access_token"),
+      refresh_token: h.get("refresh_token"),
+      expires_in: h.get("expires_in"),
+      user: null,
+    });
+  }
+  if (h.get("access_token") || err) {
+    try {
+      history.replaceState(null, "", location.pathname);
+    } catch {
+      // nada
+    }
+  }
+  if (err) AUTH.error = err.replace(/\+/g, " ");
+  await authRefresh();
+}
+
+async function authRefresh() {
+  AUTH.role = "none";
+  AUTH.name = "";
+  AUTH.provider = "";
+  if (!cvCloud.session) {
+    AUTH.checked = true;
+    return;
+  }
+  try {
+    const u = await cvCloud.req("/auth/v1/user", { auth: true });
+    const md = u?.user_metadata || {};
+    AUTH.provider = u?.app_metadata?.provider || "";
+    AUTH.name = md.custom_claims?.global_name || md.full_name || md.name || u?.email || "";
+    if (cvCloud.session) {
+      cvCloud.session.email = AUTH.name;
+      cvPersistSession();
+    }
+  } catch (e) {
+    if (!cvCloud.session || e.status === 401 || e.status === 403) {
+      cvCloud.clearSession();
+      AUTH.checked = true;
+      return;
+    }
+  }
+  try {
+    const jefe = await cvCloud.req("/rest/v1/rpc/es_jefe", { method: "POST", body: {}, auth: true });
+    AUTH.role = jefe === true ? "jefe" : "empleado";
+  } catch (e) {
+    // Sin la funcion es_jefe todavia (falta el SQL): la cuenta de correo del
+    // encargado sigue funcionando como antes; con Discord, solo la Caja.
+    const missing = e.status === 404 || e.code === "PGRST202" || e.code === "42883";
+    AUTH.role = missing && AUTH.provider === "email" ? "jefe" : cvCloud.session ? "empleado" : "none";
+  }
+  AUTH.checked = true;
+}
+
+function authDiscordLogin() {
+  const back = location.origin + location.pathname;
+  location.href = `${CV_CLOUD_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(back)}`;
+}
+
+function openLoginDialog() {
+  const dlg = byId("cv-login-dlg");
+  if (!dlg) return;
+  byId("cv-login-err").textContent = "";
+  dlg.showModal();
+}
+
+// Barra de sesion (arriba), secciones segun el rango y ventana de inicio de sesion.
+function setupAuthUI() {
+  const dlg = byId("cv-login-dlg");
+  const isFile = location.protocol === "file:";
+  const discordBtn = byId("cv-login-discord");
+  if (discordBtn) {
+    discordBtn.hidden = isFile;
+    discordBtn.addEventListener("click", authDiscordLogin);
+  }
+  if (isFile && byId("cv-login-discord-note")) {
+    byId("cv-login-discord-note").textContent = "En el programa de escritorio se entra con correo. Con Discord, desde la web.";
+  }
+
+  byId("cv-login-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = byId("cv-login-email").value.trim();
+    const pass = byId("cv-login-pass").value;
+    if (!email || !pass) {
+      byId("cv-login-err").textContent = "Escribe el correo y la contraseña.";
+      return;
+    }
+    byId("cv-login-ok").disabled = true;
+    try {
+      await cvCloud.login(email, pass);
+      location.reload();
+    } catch (err) {
+      byId("cv-login-err").textContent = /invalid/i.test(err.message) ? "Correo o contraseña incorrectos." : err.message;
+      byId("cv-login-ok").disabled = false;
+    }
+  });
+  byId("cv-login-cancel")?.addEventListener("click", () => dlg?.close());
+
+  byId("auth-login")?.addEventListener("click", openLoginDialog);
+  byId("auth-logout")?.addEventListener("click", async () => {
+    if (!window.confirm("¿Cerrar sesión en este navegador?")) return;
+    await cvCloud.logout();
+    location.reload();
+  });
+
+  const logged = AUTH.role !== "none";
+  byId("auth-login").hidden = logged;
+  byId("auth-logout").hidden = !logged;
+  const userEl = byId("auth-user");
+  userEl.hidden = !logged;
+  if (logged) {
+    userEl.textContent = `👤 ${AUTH.name || "Sesión iniciada"} · ${hasAccess() ? "Jefe" : "Empleado"}`;
+    userEl.title = hasAccess() ? "Acceso a todos los módulos" : "Acceso a la Caja";
+  }
+
+  // Secciones solo para Jefes: ni se muestran.
+  const tabs = document.querySelectorAll("nav.tabs .tab");
+  tabs.forEach((t) => {
+    t.hidden = PROTECTED_TABS.includes(t.dataset.tabTarget) && !hasAccess();
+  });
+  const active = document.querySelector("nav.tabs .tab.is-active");
+  if (active?.hidden) document.querySelector('nav.tabs .tab[data-tab-target="tab-caja"]')?.click();
+  const prodBtn = byId("btn-add-product");
+  if (prodBtn) prodBtn.hidden = !hasAccess();
+
+  if (AUTH.error) {
+    setTimeout(() => alert(`No se pudo entrar con Discord: ${AUTH.error}`), 300);
+  }
+}
+
+// Fotos privadas: enlaces firmados (validos 1 h), guardados para no
+// volver a descargarlas en cada actualizacion.
+const CV_SIGNED = {};
+async function cvSignedUrls(paths) {
+  const now = Date.now();
+  const need = paths.filter((p) => !CV_SIGNED[p] || CV_SIGNED[p].exp - now < 5 * 60000);
+  if (need.length && cvCloud.session) {
+    try {
+      const arr = await cvCloud.req(`/storage/v1/object/sign/${CV_PHOTO_BUCKET}`, {
+        method: "POST",
+        body: { expiresIn: 3600, paths: need },
+        auth: true,
+      });
+      for (const it of arr || []) {
+        const url = it?.signedURL || it?.signedUrl;
+        if (url && !it.error) CV_SIGNED[it.path] = { url: `${CV_CLOUD_URL}/storage/v1${url}`, exp: now + 3600 * 1000 };
+      }
+    } catch {
+      // carpeta aun publica o sin permiso: se usa el enlace publico
+    }
+  }
+  const out = {};
+  for (const p of paths) out[p] = CV_SIGNED[p]?.url || cvCloud.publicUrl(p);
+  return out;
 }
 
 function cvDataUrlToBlob(dataUrl) {
@@ -4414,16 +4611,16 @@ function setupCompraventa() {
   // (en Pagos): fuera de la pestana para que se vea aunque esta este oculta.
   document.body.appendChild($("cv-login-dlg"));
   // Estado de la base en linea.
-  const cloud = { ok: false, tried: false, error: "", tx: [], photoPaths: {}, loadedAt: null };
+  const cloud = { ok: false, tried: false, error: "", tx: [], photoPaths: {}, photoUrls: {}, loadedAt: null };
 
   const online = () => cloud.ok;
-  const canEdit = () => (online() ? !!cvCloud.session : !isSharedReadOnly());
+  const canEdit = () => (online() ? hasAccess() : hasAccess() && !isSharedReadOnly());
 
   // Lo que se ve: la base en linea si responde; si no, esta PC o datos.js.
   function source() {
     if (online()) {
       const photos = {};
-      for (const [plate, path] of Object.entries(cloud.photoPaths)) photos[plate] = cvCloud.publicUrl(path);
+      for (const [plate, path] of Object.entries(cloud.photoPaths)) photos[plate] = cloud.photoUrls[path] || cvCloud.publicUrl(path);
       return { tx: cloud.tx, photos };
     }
     return cvSource();
@@ -4440,13 +4637,13 @@ function setupCompraventa() {
   }
 
   function renderBar() {
-    const logged = !!cvCloud.session;
+    const logged = hasAccess();
     const dot = $("cv-cloud-dot");
     const txt = $("cv-cloud-text");
     if (online()) {
       dot.className = "cv-dot is-on";
       const hh = cloud.loadedAt ? cloud.loadedAt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
-      txt.textContent = `En línea · actualizado ${hh}` + (logged ? ` · Encargado: ${cvCloud.session.email}` : "");
+      txt.textContent = `En línea · actualizado ${hh}` + (logged ? ` · Jefe: ${AUTH.name}` : "");
     } else if (!cloud.tried) {
       dot.className = "cv-dot";
       txt.textContent = "Conectando con la base en línea…";
@@ -4454,8 +4651,8 @@ function setupCompraventa() {
       dot.className = "cv-dot is-off";
       txt.textContent = cloud.error || "Sin conexión con la base en línea";
     }
-    $("cv-login").hidden = logged || !cloud.tried || (!online() && !cloud.reachable);
-    $("cv-logout").hidden = !logged;
+    $("cv-login").hidden = true; // la sesion se inicia arriba (🔑 Entrar)
+    $("cv-logout").hidden = true;
     $("cv-refresh").hidden = !cloud.tried;
     const local = cvLoadLocal();
     $("cv-migrate").hidden = !(online() && logged && (local.tx.length || Object.keys(local.photos).length));
@@ -4463,8 +4660,8 @@ function setupCompraventa() {
     const when = SHARED_DATA?.publishedAt ? ` el ${SHARED_DATA.publishedAt}` : "";
     $("cv-mode").textContent = online()
       ? logged
-        ? "Lo que proceses y las fotos que subas se guardan en línea: todos lo ven al momento."
-        : "Datos en línea, siempre al día. Solo el encargado con sesión iniciada puede añadir o cambiar."
+        ? "Lo que proceses y las fotos que subas se guardan en línea: los Jefes lo ven al momento."
+        : "Datos en línea. Solo los Jefes pueden verlos y cambiarlos."
       : canEdit()
         ? SHARED_DATA
           ? "Sin base en línea: lo que proceses queda en esta PC. Exporta datos.js (Pagos → Datos compartidos) para que lo vean los demás."
@@ -4605,6 +4802,7 @@ function setupCompraventa() {
       }));
       cloud.photoPaths = {};
       for (const ph of photos) cloud.photoPaths[ph.plate] = ph.path;
+      cloud.photoUrls = await cvSignedUrls(Object.values(cloud.photoPaths));
       cloud.ok = true;
       cloud.reachable = true;
       cloud.error = "";
@@ -4661,41 +4859,6 @@ function setupCompraventa() {
   $("cv-hist-q").addEventListener("input", render);
   $("cv-hist-kind").addEventListener("change", render);
 
-  // ---------- sesion del encargado ----------
-  const loginDlg = $("cv-login-dlg");
-  $("cv-login").addEventListener("click", () => {
-    $("cv-login-err").textContent = "";
-    loginDlg.showModal();
-    $("cv-login-email").focus();
-  });
-  $("cv-login-cancel").addEventListener("click", () => loginDlg.close());
-  $("cv-login-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = $("cv-login-email").value.trim();
-    const pass = $("cv-login-pass").value;
-    if (!email || !pass) {
-      $("cv-login-err").textContent = "Escribe el correo y la contraseña.";
-      return;
-    }
-    $("cv-login-ok").disabled = true;
-    try {
-      await cvCloud.login(email, pass);
-      $("cv-login-pass").value = "";
-      loginDlg.close();
-      document.dispatchEvent(new Event("aguila-auth"));
-      await loadCloud();
-    } catch (err) {
-      $("cv-login-err").textContent = /invalid/i.test(err.message) ? "Correo o contraseña incorrectos." : err.message;
-    } finally {
-      $("cv-login-ok").disabled = false;
-    }
-  });
-  $("cv-logout").addEventListener("click", async () => {
-    if (!window.confirm("¿Cerrar la sesión de encargado en esta PC?")) return;
-    await cvCloud.logout();
-    document.dispatchEvent(new Event("aguila-auth"));
-    render();
-  });
   $("cv-refresh").addEventListener("click", () => loadCloud());
 
   // Pasa a la nube el historial y las fotos guardados en esta PC.
@@ -4917,15 +5080,20 @@ function setupCompraventa() {
   // Se ve al momento con lo de esta PC; luego se conecta y se mantiene al dia
   // (cada 45 s mientras la pestana esta abierta y al volver a la ventana).
   render();
-  loadCloud();
+  if (hasAccess()) loadCloud();
+  else {
+    cloud.tried = true;
+    cloud.error = "Solo para Jefes.";
+    render();
+  }
   const tabActive = () => root.classList.contains("is-active") && document.visibilityState === "visible";
   setInterval(() => {
-    if (!busy && tabActive()) loadCloud();
+    if (!busy && hasAccess() && tabActive()) loadCloud();
   }, 45000);
   document.addEventListener("visibilitychange", () => {
-    if (!busy && tabActive()) loadCloud();
+    if (!busy && hasAccess() && tabActive()) loadCloud();
   });
   document.querySelector('.tab[data-tab-target="tab-cv"]')?.addEventListener("click", () => {
-    if (!busy && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
+    if (!busy && hasAccess() && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
   });
 }

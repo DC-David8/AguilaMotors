@@ -227,6 +227,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 34 · 19 de octubre de 2026
+- **Entrar con Discord** (web) o con correo (programa de escritorio), con el botón 🔑 Entrar arriba a la derecha.
+- **Permisos por rango, decididos por la base de datos** (función `es_jefe`): los **Jefes** (rango Jefe con su ID de Discord en Gestión de empleados, o la cuenta de encargado) ven y editan Pagos, Sorteo, Compraventa y la Gestión de empleados y productos. Chalán, Mecánico, Experimentado y Subjefe (y quien no inicia sesión) solo ven la **Caja**.
+- Se quita la **contraseña compartida** de acceso.
+- Empleados y compraventa **ya no se publican en datos.js** (que es público en GitHub): solo los Jefes los reciben de la base. Las fotos pasan a una carpeta **privada** con enlaces firmados.
+
 ### Versión 33 · 19 de octubre de 2026
 - **Empleados en línea** (tabla `employees` de Supabase): nombre, rango, Discord, IBAN y No cobra. Pagos, Totales y Sorteo los leen de ahí y todos ven los cambios al abrir la página.
   - Se editan en **Gestión de empleados** con la contraseña de acceso **y** la sesión de encargado (🔑). Sin sesión, solo lectura.

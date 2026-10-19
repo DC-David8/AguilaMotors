@@ -1301,3 +1301,19 @@ html, body {
 .cv-login label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
 .cv-login p { margin: 0; }
 .emp-cloud { margin: 10px 0 4px; }
+
+/* Sesion: Discord / correo (v34) */
+.topbar { gap: 12px; }
+.auth-box { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.auth-user { font-size: 0.85rem; font-weight: 700; color: #ffb15c; padding: 6px 12px; border: 1px solid #3a2c1d; border-radius: 999px; background: #120d09; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-btn { padding: 8px 14px; font-size: 0.85rem; }
+.discord-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px; border: 0; border-radius: 10px; background: #5865f2; color: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 6px 18px rgba(88, 101, 242, 0.35); }
+.discord-btn:hover { background: #4752c4; }
+.discord-btn svg { width: 22px; height: 22px; fill: #fff; }
+.login-sep { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.75rem; margin: 4px 0; }
+.login-sep::before, .login-sep::after { content: ""; flex: 1; height: 1px; background: #3a2c1d; }
+@media (max-width: 700px) {
+  .auth-user { max-width: 150px; padding: 5px 9px; font-size: 0.75rem; }
+  .auth-btn { padding: 6px 10px; font-size: 0.78rem; }
+  #auth-logout { padding: 5px 8px; font-size: 0.72rem; }
+}

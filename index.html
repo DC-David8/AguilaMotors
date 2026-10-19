@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=33" />
+  <link rel="stylesheet" href="styles.css?v=34" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=33" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=34" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -51,6 +51,11 @@
           <h1>Aguila Motors</h1>
           <p>Taller en Servicio</p>
         </div>
+      </div>
+      <div class="auth-box" id="auth-box">
+        <span class="auth-user" id="auth-user" hidden></span>
+        <button type="button" class="auth-btn" id="auth-login">🔑 Entrar</button>
+        <button type="button" class="ghost small" id="auth-logout" hidden>Salir</button>
       </div>
       <button type="button" class="m-menu-btn" id="m-menu-btn" aria-label="Abrir menú" aria-expanded="false">☰</button>
     </header>
@@ -464,8 +469,10 @@
 
       <dialog id="cv-login-dlg" class="cv-view cv-photo-dlg">
         <form id="cv-login-form" class="cv-login">
-          <h3>🔑 Encargado · Compraventa</h3>
-          <p class="muted">Usa el correo y la contraseña del usuario creado en Supabase (Authentication → Users).</p>
+          <h3>🔑 Entrar · Aguila Motors</h3>
+          <button type="button" class="discord-btn" id="cv-login-discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A17 17 0 0 0 15.4 4l-.5 1.1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.8 9.2 1.1 13 1.4 16.8a17 17 0 0 0 5.2 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.2 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.2-3-11.5zM8.7 14.5c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>Entrar con Discord</button>
+          <p class="muted" id="cv-login-discord-note">Los Jefes ven todos los módulos; el resto del equipo, la Caja.</p>
+          <div class="login-sep"><span>o con correo (programa de escritorio)</span></div>
           <label>Correo <input id="cv-login-email" class="text-input" type="email" autocomplete="username" /></label>
           <label>Contraseña <input id="cv-login-pass" class="text-input" type="password" autocomplete="current-password" /></label>
           <p class="warn" id="cv-login-err"></p>
@@ -491,7 +498,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 33 - Aguila Motors</footer>
+    <footer class="app-version">Versión 34 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -733,6 +740,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=33"></script>
+  <script src="app.js?v=34"></script>
 </body>
 </html>
