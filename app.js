@@ -581,7 +581,23 @@ const RANKS = [
   { label: "Experimentado", pct: 0.50 },
   { label: "Subjefe", pct: 0.50 },
   { label: "Jefe", pct: 0.50 },
+  { label: "Mano Derecha", pct: 0.50 },
+  { label: "Jefe Aguila", pct: 1.0 },
 ];
+
+// Posicion del rango (mayor = mas arriba). Sin rango o desconocido: abajo del todo.
+function rankOrder(rank) {
+  const key = normalizeKeySimple(rank);
+  return RANKS.findIndex((r) => normalizeKeySimple(r.label) === key);
+}
+
+// Orden de la plantilla: Jefe Aguila arriba ... Chalan abajo; dentro del rango, por apellido.
+function byRankThenName(a, b) {
+  return (
+    rankOrder(b.rank) - rankOrder(a.rank) ||
+    `${a.surname || ""} ${a.name || ""}`.localeCompare(`${b.surname || ""} ${b.name || ""}`, "es", { sensitivity: "base" })
+  );
+}
 
 function pctForRank(rank) {
   const key = normalizeKeySimple(rank);
@@ -2708,7 +2724,8 @@ function setupEmployeesModal(state, refreshPagos) {
       const payout = Math.round(gross * pct);
       return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name), noPay: isEmployeeNoPay(name), kitsUnits, kitsSelf };
     });
-    totalsRows.sort((a, b) => b.payout - a.payout || a.name.localeCompare(b.name, "es"));
+    // Mismo orden que la plantilla (por rango): asi sale tambien al copiar para las pagas.
+    totalsRows.sort((a, b) => rankOrder(b.rank) - rankOrder(a.rank) || a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
   }
 
   function renderTotalsRows() {
@@ -2754,8 +2771,11 @@ function setupEmployeesModal(state, refreshPagos) {
   });
 
   // Quien mas cobra en la lista es el empleado de la semana (si hay empate, todos).
+  // El Jefe Aguila (100 %) no compite: si no, lo ganaria siempre.
+  const competes = (r) => normalizeKeySimple(r.rank) !== normalizeKeySimple("Jefe Aguila");
   function isEmployeeOfWeek(row) {
-    const maxPayout = Math.max(0, ...totalsRows.map((r) => r.payout));
+    if (!competes(row)) return false;
+    const maxPayout = Math.max(0, ...totalsRows.filter(competes).map((r) => r.payout));
     return maxPayout > 0 && row.payout === maxPayout;
   }
 
@@ -3166,9 +3186,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (EMP_CLOUD.tried) await empCloudLoad();
       applyMode();
       employees = await listEmployees();
-      employees.sort((a, b) =>
-        `${a.surname} ${a.name}`.localeCompare(`${b.surname} ${b.name}`, "es", { sensitivity: "base" })
-      );
+      employees.sort(byRankThenName);
       renderList();
     } catch {
       alert("No se pudieron cargar los empleados.");

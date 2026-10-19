@@ -227,6 +227,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 36 · 19 de octubre de 2026
+- Rangos nuevos: **Jefe Aguila** (100 %) y **Mano Derecha** (50 %). Ambos con los mismos privilegios que el Jefe (función `es_jefe` en Supabase).
+- **Orden por rango** (Jefe Aguila → Mano Derecha → Jefe → Subjefe → Experimentado → Mecánico → Chalán) en Gestión de empleados, Totales por empleado y **Copiar todo** para el canal de pagas.
+- El **Jefe Aguila** no compite por Empleado de la semana (con el 100 % lo ganaría siempre).
+
 ### Versión 35 · 19 de octubre de 2026
 - Los **empleados registrados** (Chalán a Subjefe, con su Discord en la lista) ven en Compraventa **solo el Almacén**: sin Historial, sin Procesar log y sin los totales de dinero.
   - El servidor solo les entrega los coches en existencia (función `almacen()`), nunca el historial. Quien entra con un Discord que no está en la lista sigue viendo solo la Caja.
