@@ -606,6 +606,8 @@ function rankLabel(rank) {
 // sin contar al Jefe Aguila (con el 100 % ganaria siempre). Si hay empate,
 // cada ganador recibe el bono completo.
 const WEEK_BONUS = 10000;
+// Quien no factura nada en la semana (y si cobra) se lleva un warn.
+const WARN_TEXT = "⚠️ **Aplicar warn** (no facturó)";
 const fmtBonus = (n) => `$ ${Number(n).toLocaleString("en-US")}`;
 
 function weekWinners(rows, isRegistered = () => true) {
@@ -2544,6 +2546,25 @@ function setupContabilidad() {
       card.append(av, mid, amt);
       list.appendChild(card);
     }
+
+    // Sin facturar esta semana: solo tienen derecho los que no cobran.
+    const billed = new Set(rows.filter((r) => r.total > 0).map((r) => normalizeKeySimple(r.name)));
+    const idle = employees
+      .filter((e) => !isEmployeeNoPay(fullName(e)) && !billed.has(normalizeKeySimple(fullName(e))))
+      .sort(byRankThenName);
+    if (idle.length) {
+      const box = el("div", "pg-warn-box");
+      box.appendChild(el("div", "pg-warn-head", `⚠️ Sin facturar esta semana · aplicar warn (${idle.length})`));
+      const chips = el("div", "pg-warn-list");
+      for (const e of idle) {
+        const chip = el("span", "pg-warn-chip");
+        chip.appendChild(el("b", "", fullName(e)));
+        if (e.rank) chip.appendChild(el("span", "pg-badge " + (RANK_BADGE[normalizeKeySimple(e.rank)] || ""), rankLabel(e.rank)));
+        chips.appendChild(chip);
+      }
+      box.appendChild(chips);
+      list.appendChild(box);
+    }
   }
 
   async function refresh() {
@@ -2761,7 +2782,9 @@ function setupEmployeesModal(state, refreshPagos) {
     });
     // Empleado de la Semana: se decide aqui (con lo que cobra sin bono) y se le suma el bono.
     const winners = weekWinners(totalsRows);
+    const hasData = totalsRows.some((r) => r.gross > 0);
     for (const r of totalsRows) {
+      r.warn = hasData && !r.noPay && r.gross === 0;
       r.base = r.payout;
       r.week = winners.has(r);
       r.bonus = r.week ? WEEK_BONUS : 0;
@@ -2777,7 +2800,7 @@ function setupEmployeesModal(state, refreshPagos) {
       const tr = document.createElement("tr");
       if (row.id === selectedId) tr.classList.add("is-selected");
       tr.innerHTML = `
-        <td>${row.name}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
+        <td>${row.name}${row.warn ? `<br><small class="warn">⚠️ Aplicar warn (no facturó)</small>` : ""}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
         <td>${row.rank ? rankLabel(row.rank) : "-"}</td>
         <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
         <td class="num">${fmtMoney(row.gross)}</td>
@@ -2864,6 +2887,7 @@ function setupEmployeesModal(state, refreshPagos) {
           ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
           : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
         if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
+        if (r.warn) line += ` ${WARN_TEXT}`;
         if (r.bonus && !r.noPay) line += `\n  ↳ 🏆 Incluye bono de Empleado de la Semana: ${fmtMoneyPlain(r.bonus)}`;
         return line;
       })

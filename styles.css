@@ -1384,3 +1384,10 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
   #employees-admin-modal .admin-grid > .admin-block { flex-basis: 100%; }
 }
 #employees-admin-modal .emp-rank-select { min-width: 170px; }
+
+/* Aviso de warn por no facturar (v43) */
+.pg-warn-box { margin-top: 4px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255, 112, 90, 0.45); background: linear-gradient(90deg, rgba(255, 112, 90, 0.12), rgba(255, 112, 90, 0.04)); }
+.pg-warn-head { font-weight: 800; color: #ff9b8a; font-size: 0.9rem; margin-bottom: 8px; }
+.pg-warn-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.pg-warn-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border-radius: 999px; background: #1d0f0b; border: 1px solid #5c2a1f; font-size: 0.82rem; }
+.pg-warn-chip b { color: #fff; font-weight: 700; }

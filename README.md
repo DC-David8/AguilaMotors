@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 43 · 19 de octubre de 2026
+- **Aviso de warn por no facturar**: quien no facturó nada en la semana (y no está como «No cobra») lleva `⚠️ **Aplicar warn** (no facturó)` en el mensaje de pagas, sale marcado en Totales y en un apartado **⚠️ Sin facturar esta semana** debajo del ranking. Solo aparece cuando ya se pegó el log.
+
 ### Versión 42 · 19 de octubre de 2026
 - Gestión de empleados más compacta: **Nuevo empleado** y **Nombres de los rangos** van lado a lado, con la barra de estado en línea arriba.
 
