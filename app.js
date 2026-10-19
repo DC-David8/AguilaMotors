@@ -2460,8 +2460,10 @@ function setupContabilidad() {
     rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es"));
 
     const maxTotal = Math.max(1, ...rows.map((r) => r.total));
-    const maxPayout = Math.max(0, ...rows.map((r) => r.payout));
-    const top = rows.find((r) => maxPayout > 0 && r.payout === maxPayout);
+    // Empleado de la semana: quien mas cobra, sin contar al Jefe Aguila (con el 100 % ganaria siempre).
+    const competes = (r) => normalizeKeySimple(r.rank) !== normalizeKeySimple("Jefe Aguila");
+    const maxPayout = Math.max(0, ...rows.filter(competes).map((r) => r.payout));
+    const top = rows.find((r) => competes(r) && maxPayout > 0 && r.payout === maxPayout);
     const kitsQty = kitsSummary.qty || 0;
     const selfQty = rows.reduce((a, r) => a + r.self, 0);
     const paying = rows.filter((r) => !r.noPay && r.payout > 0).length;

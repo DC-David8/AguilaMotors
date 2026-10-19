@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 38 · 19 de octubre de 2026
+- Panel de Pagos: el **trofeo 🏆 y el recuadro «Empleado de la semana»** ya no cuentan al Jefe Aguila, igual que Totales y Copiar todo.
+
 ### Versión 37 · 19 de octubre de 2026
 - **Orden de rangos** (de abajo arriba): Chalán, Mecánico, Experimentado, Subjefe, Mano Derecha, Jefe, Jefe Aguila.
 - **Rangos protegidos**: solo el Jefe Aguila puede dar, cambiar o quitar Jefe Aguila, Jefe y Mano Derecha (ni su Discord). Lo impide también la base (disparador `proteger_rangos`).
