@@ -227,6 +227,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 41 · 19 de octubre de 2026
+- **Bono de $ 10,000 para el Empleado de la Semana**, sumado en su «A pagar» y en el «Total a retirar». En el mensaje de pagas sale una línea `↳ 🏆 Incluye bono de Empleado de la Semana` y al final «incluye Bono por Empleado de la Semana de $ 10,000».
+  - Compiten los que cobran (no los «No cobra» ni el Jefe Aguila). Si hay empate, cada ganador recibe el bono completo.
+  - Se aplica en Copiar para Discord, Totales (y Copiar todo / seleccionado) y el ranking del panel de Pagos.
+
 ### Versión 40 · 19 de octubre de 2026
 - **Copiar para Discord** (panel de Pagos) deja fuera de la lista a los marcados como **No cobra**: se pega el log y se copia directamente.
 

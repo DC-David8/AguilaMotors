@@ -602,6 +602,18 @@ function rankLabel(rank) {
   return String(RANK_NAMES[found.label] || "").trim() || found.label;
 }
 
+// Empleado de la Semana: quien mas cobra (sin bono) entre los que cobran,
+// sin contar al Jefe Aguila (con el 100 % ganaria siempre). Si hay empate,
+// cada ganador recibe el bono completo.
+const WEEK_BONUS = 10000;
+const fmtBonus = (n) => `$ ${Number(n).toLocaleString("en-US")}`;
+
+function weekWinners(rows, isRegistered = () => true) {
+  const competes = (r) => isRegistered(r) && !r.noPay && normalizeKeySimple(r.rank) !== normalizeKeySimple("Jefe Aguila");
+  const max = Math.max(0, ...rows.filter(competes).map((r) => r.base ?? r.payout));
+  return new Set(max > 0 ? rows.filter((r) => competes(r) && (r.base ?? r.payout) === max) : []);
+}
+
 // Posicion del rango (mayor = mas arriba). Sin rango o desconocido: abajo del todo.
 function rankOrder(rank) {
   const key = normalizeKeySimple(rank);
@@ -2433,7 +2445,8 @@ function setupContabilidad() {
   // lo que hay que pagarle y avisos (sin IBAN, no cobra, kits a si mismo).
   const RANK_BADGE = { "jefe aguila": "r-aguila", jefe: "r-jefe", "mano derecha": "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };
 
-  function renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar }) {
+  function renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar: baseTotal }) {
+    let totalAPagar = baseTotal;
     const list = byId("pg-ranking");
     if (!list) return;
     const byKey = new Map();
@@ -2460,10 +2473,12 @@ function setupContabilidad() {
     rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es"));
 
     const maxTotal = Math.max(1, ...rows.map((r) => r.total));
-    // Empleado de la semana: quien mas cobra, sin contar al Jefe Aguila (con el 100 % ganaria siempre).
-    const competes = (r) => normalizeKeySimple(r.rank) !== normalizeKeySimple("Jefe Aguila");
-    const maxPayout = Math.max(0, ...rows.filter(competes).map((r) => r.payout));
-    const top = rows.find((r) => competes(r) && maxPayout > 0 && r.payout === maxPayout);
+    // Empleado de la Semana (misma regla que Totales) y su bono.
+    const winners = weekWinners(rows, (r) => !!r.emp);
+    const top = rows.find((r) => winners.has(r));
+    const bonusTotal = WEEK_BONUS * winners.size;
+    totalAPagar += bonusTotal;
+    if (byId("conta-total-a-pagar")) byId("conta-total-a-pagar").textContent = fmtMoney(totalAPagar);
     const kitsQty = kitsSummary.qty || 0;
     const selfQty = rows.reduce((a, r) => a + r.self, 0);
     const paying = rows.filter((r) => !r.noPay && r.payout > 0).length;
@@ -2495,10 +2510,11 @@ function setupContabilidad() {
       return n;
     };
     for (const r of rows) {
-      const card = el("div", "pg-row" + (r === top ? " first" : ""));
+      const isWinner = winners.has(r);
+      const card = el("div", "pg-row" + (isWinner ? " first" : ""));
       const initials = r.name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
       const av = el("div", "pg-av" + (r.noPay ? " np" : ""), initials);
-      if (r === top) av.appendChild(el("span", "crown", "🏆"));
+      if (isWinner) av.appendChild(el("span", "crown", "🏆"));
 
       const mid = el("div", "pg-mid");
       const nameRow = el("div", "pg-name");
@@ -2523,7 +2539,7 @@ function setupContabilidad() {
       } else if (!r.emp) {
         amt.append(el("small", "", "Sin rango"), el("b", "pg-dash", "$ 0"));
       } else {
-        amt.append(el("small", "", "A pagar"), el("b", "pay", fmtMoney(r.payout)));
+        amt.append(el("small", "", isWinner ? "A pagar · incl. bono 🏆" : "A pagar"), el("b", "pay", fmtMoney(r.payout + (isWinner ? WEEK_BONUS : 0))));
       }
       card.append(av, mid, amt);
       list.appendChild(card);
@@ -2743,6 +2759,14 @@ function setupEmployeesModal(state, refreshPagos) {
       const payout = Math.round(gross * pct);
       return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name), noPay: isEmployeeNoPay(name), kitsUnits, kitsSelf };
     });
+    // Empleado de la Semana: se decide aqui (con lo que cobra sin bono) y se le suma el bono.
+    const winners = weekWinners(totalsRows);
+    for (const r of totalsRows) {
+      r.base = r.payout;
+      r.week = winners.has(r);
+      r.bonus = r.week ? WEEK_BONUS : 0;
+      r.payout = r.base + r.bonus;
+    }
     // Mismo orden que la plantilla (por rango): asi sale tambien al copiar para las pagas.
     totalsRows.sort((a, b) => rankOrder(b.rank) - rankOrder(a.rank) || a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
   }
@@ -2757,7 +2781,7 @@ function setupEmployeesModal(state, refreshPagos) {
         <td>${row.rank ? rankLabel(row.rank) : "-"}</td>
         <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
         <td class="num">${fmtMoney(row.gross)}</td>
-        <td class="num">${row.noPay ? `<span class="muted" title="Le corresponderían ${fmtMoney(row.payout)}">${NO_PAY_TEXT}</span>` : fmtMoney(row.payout)}</td>
+        <td class="num">${row.noPay ? `<span class="muted" title="Le corresponderían ${fmtMoney(row.payout)}">${NO_PAY_TEXT}</span>` : fmtMoney(row.payout)}${row.bonus ? `<br><small class="ok">🏆 incluye bono ${fmtBonus(row.bonus)}</small>` : ""}</td>
       `;
       tr.addEventListener("click", () => {
         selectedId = row.id;
@@ -2791,11 +2815,9 @@ function setupEmployeesModal(state, refreshPagos) {
 
   // Quien mas cobra en la lista es el empleado de la semana (si hay empate, todos).
   // El Jefe Aguila (100 %) no compite: si no, lo ganaria siempre.
-  const competes = (r) => normalizeKeySimple(r.rank) !== normalizeKeySimple("Jefe Aguila");
+  // Se decide al armar los totales (ver weekWinners): quitar a alguien de la lista no cambia al ganador.
   function isEmployeeOfWeek(row) {
-    if (!competes(row)) return false;
-    const maxPayout = Math.max(0, ...totalsRows.filter(competes).map((r) => r.payout));
-    return maxPayout > 0 && row.payout === maxPayout;
+    return !!row.week;
   }
 
   // "Nombre (Rango) <@ID>": el nombre de rol se mantiene y, si tiene Discord, se le etiqueta.
@@ -2814,7 +2836,7 @@ function setupEmployeesModal(state, refreshPagos) {
     const pctTxt = row.pct ? `${Math.round(row.pct * 100)}%` : "-";
     let text = row.noPay
       ? `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | ${NO_PAY_TEXT}`
-      : `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)} | ${ibanForCopy(row)}`;
+      : `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)}${row.bonus ? ` (incluye Bono por Empleado de la Semana de ${fmtBonus(row.bonus)})` : ""} | ${ibanForCopy(row)}`;
     if (isEmployeeOfWeek(row)) text += ` | ${EMPLOYEE_OF_WEEK_TAG}`;
 
     const ok = await copyText(text);
@@ -2842,11 +2864,14 @@ function setupEmployeesModal(state, refreshPagos) {
           ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
           : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
         if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
+        if (r.bonus && !r.noPay) line += `\n  ↳ 🏆 Incluye bono de Empleado de la Semana: ${fmtMoneyPlain(r.bonus)}`;
         return line;
       })
       .join("\n");
     const paying = rows.filter((r) => !r.noPay && r.payout > 0).length;
-    const total = `**Total a retirar de la cuenta de la empresa: ${fmtMoney(bankTotalOf(rows))}** (${paying} ${paying === 1 ? "empleado" : "empleados"} a pagar)`;
+    const bonusN = rows.filter((r) => r.bonus && !r.noPay).length;
+    const bonusTxt = bonusN ? ` · incluye Bono por Empleado de la Semana de ${fmtBonus(WEEK_BONUS)}${bonusN > 1 ? ` (x${bonusN})` : ""}` : "";
+    const total = `**Total a retirar de la cuenta de la empresa: ${fmtMoney(bankTotalOf(rows))}** (${paying} ${paying === 1 ? "empleado" : "empleados"} a pagar${bonusTxt})`;
     return `${lines}\n\n${total}`;
   }
 
