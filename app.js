@@ -474,7 +474,9 @@ const SERVICE_SHORT = {
   "Reparación + Repostaje (Grúa)": ["Rep+Gas", "G"],
   "Reparación + Limpieza + Repostaje (Grúa)": ["Rep+Limp+Gas", "G"],
   "Repostaje (Grúa)": ["Gas", "G"],
-  "Servicio de Grúa (desplazamiento)": ["Grua", "G"],
+  "Grúa Terrestre": ["Grua", "G"],
+  "Grúa Aérea": ["Grua aerea", ""],
+  "Rescate Aéreo Completo": ["Rescate aereo", ""],
   "Kit de Desvuelco": ["Desvuelco", ""],
   "Rueda": ["Rueda", ""],
   "Bayetas": ["Bayeta", ""],
@@ -526,9 +528,9 @@ const SERVICE_PRODUCTS = [
   { name: "Reparación + Repostaje (Grúa)", price: 1300, category: "servicios_grua" },
   { name: "Reparación + Limpieza + Repostaje (Grúa)", price: 1350, category: "servicios_grua" },
   { name: "Repostaje (Grúa)", price: 350, category: "servicios_grua" },
-  { name: "Servicio de Grúa (desplazamiento)", price: 500, category: "servicios_grua" },
-  { name: "Grúa Aérea", price: 1500, category: "servicios_grua" },
-  { name: "Rescate Aéreo Completo", price: 4500, category: "servicios_grua" },
+  { name: "Grúa Terrestre", price: 1500, category: "servicios_grua" },
+  { name: "Grúa Aérea", price: 3500, category: "servicios_grua" },
+  { name: "Rescate Aéreo Completo", price: 4500, category: "servicios_grua", note: "Incluye grúa aérea, reparación, limpieza y repostaje" },
 
   // Tienda junto al taller: productos que se compran a precio de taller y se
   // revenden aqui.
@@ -679,7 +681,7 @@ function getAllProducts() {
   const overrides = productOverridesSource();
   const fixedVisible = PRODUCTS.filter((p) => !overrides[normalizeKeySimple(p.name)]?.hidden).map((p) => {
     const ov = overrides[normalizeKeySimple(p.name)];
-    if (!ov) return { name: p.name, price: p.price, image: p.image, category: p.category, short: p.short, group: p.group };
+    if (!ov) return { name: p.name, price: p.price, image: p.image, category: p.category, short: p.short, group: p.group, note: p.note };
     return {
       name: p.name,
       price: ov.price != null ? Number(ov.price) : p.price,
@@ -687,6 +689,7 @@ function getAllProducts() {
       category: p.category,
       short: p.short,
       group: p.group,
+      note: p.note,
     };
   });
   const custom = customProductsSource().map((p) => ({
@@ -1707,7 +1710,7 @@ function setupCaja() {
       button.dataset.name = product.name;
       button.innerHTML = `
         <img src="${getProductIcon(product)}" alt="${product.name}" />
-        <strong>${product.name}</strong>
+        <strong>${product.name}${product.note ? `<span class="product-note">${product.note}</span>` : ""}</strong>
         <small>${fmtMoney(product.price)}</small>
         <span class="qty-badge"></span>
       `;

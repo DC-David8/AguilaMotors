@@ -1283,3 +1283,6 @@ html, body {
 .cv-drop:focus, .cv-drop.is-over { border-color: #f97d02; box-shadow: 0 0 18px rgba(249, 125, 2, 0.3); }
 .cv-drop kbd { background: #2a2017; border: 1px solid #4a3622; border-bottom-width: 3px; border-radius: 5px; padding: 1px 6px; font-size: 0.78rem; color: #fff; }
 .cv-keys { font-style: normal; white-space: nowrap; }
+
+/* Observacion bajo el nombre del producto (v29) */
+.product-note { display: block; margin-top: 4px; font-size: 0.72rem; font-weight: 600; line-height: 1.3; color: #ffb15c; opacity: 0.85; }

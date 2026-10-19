@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 29 · 19 de octubre de 2026
+- Servicios (Grúa): **Servicio de Grúa (desplazamiento)** pasa a llamarse **Grúa Terrestre** y sube a $ 1500; **Grúa Aérea** a $ 3500.
+- **Rescate Aéreo Completo** ($ 4500) muestra la observación «Incluye grúa aérea, reparación, limpieza y repostaje».
+
 ### Versión 28 · 19 de octubre de 2026
 - Servicios (Grúa): nuevos **Grúa Aérea** ($ 1500) y **Rescate Aéreo Completo** ($ 4500), con iconos propios (helicóptero con coche y salvavidas bajo la hélice).
 
