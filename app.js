@@ -355,7 +355,7 @@ function setupTabs() {
   tabs.forEach((tab) => {
     tab.addEventListener("click", async () => {
       const target = tab.dataset.tabTarget;
-      const required = PROTECTED_TABS.includes(target);
+      const required = PROTECTED_TABS.includes(target) && !(target === "tab-cv" && canSeeStock());
       if (required && !unlocked.has(target)) {
         const ok = await showAccessModal({
           sectionLabel: tab.textContent?.trim() || "Acceso restringido",
@@ -4409,6 +4409,11 @@ function hasAccess() {
   return AUTH.role === "jefe";
 }
 
+// Empleados registrados (Chalan a Subjefe): ven solo el Almacen de Compraventa.
+function canSeeStock() {
+  return AUTH.role === "jefe" || AUTH.role === "empleado";
+}
+
 function cvPersistSession() {
   try {
     localStorage.setItem(CV_SESSION_KEY, JSON.stringify(cvCloud.session));
@@ -4467,12 +4472,21 @@ async function authRefresh() {
   }
   try {
     const jefe = await cvCloud.req("/rest/v1/rpc/es_jefe", { method: "POST", body: {}, auth: true });
-    AUTH.role = jefe === true ? "jefe" : "empleado";
+    if (jefe === true) AUTH.role = "jefe";
+    else {
+      let emp = false;
+      try {
+        emp = (await cvCloud.req("/rest/v1/rpc/es_empleado", { method: "POST", body: {}, auth: true })) === true;
+      } catch {
+        // funcion aun sin crear: solo la Caja
+      }
+      AUTH.role = emp ? "empleado" : "invitado";
+    }
   } catch (e) {
     // Sin la funcion es_jefe todavia (falta el SQL): la cuenta de correo del
     // encargado sigue funcionando como antes; con Discord, solo la Caja.
     const missing = e.status === 404 || e.code === "PGRST202" || e.code === "42883";
-    AUTH.role = missing && AUTH.provider === "email" ? "jefe" : cvCloud.session ? "empleado" : "none";
+    AUTH.role = missing && AUTH.provider === "email" ? "jefe" : cvCloud.session ? "invitado" : "none";
   }
   AUTH.checked = true;
 }
@@ -4534,14 +4548,20 @@ function setupAuthUI() {
   const userEl = byId("auth-user");
   userEl.hidden = !logged;
   if (logged) {
-    userEl.textContent = `👤 ${AUTH.name || "Sesión iniciada"} · ${hasAccess() ? "Jefe" : "Empleado"}`;
-    userEl.title = hasAccess() ? "Acceso a todos los módulos" : "Acceso a la Caja";
+    const roleTxt = { jefe: "Jefe", empleado: "Empleado", invitado: "Sin registrar" }[AUTH.role] || "";
+    userEl.textContent = `👤 ${AUTH.name || "Sesión iniciada"} · ${roleTxt}`;
+    userEl.title = hasAccess()
+      ? "Acceso a todos los módulos"
+      : AUTH.role === "empleado"
+        ? "Caja y Almacén de Compraventa"
+        : "Tu Discord no está en la lista de empleados: solo la Caja";
   }
 
   // Secciones solo para Jefes: ni se muestran.
   const tabs = document.querySelectorAll("nav.tabs .tab");
   tabs.forEach((t) => {
-    t.hidden = PROTECTED_TABS.includes(t.dataset.tabTarget) && !hasAccess();
+    const target = t.dataset.tabTarget;
+    t.hidden = PROTECTED_TABS.includes(target) && !(target === "tab-cv" ? canSeeStock() : hasAccess());
   });
   const active = document.querySelector("nav.tabs .tab.is-active");
   if (active?.hidden) document.querySelector('nav.tabs .tab[data-tab-target="tab-caja"]')?.click();
@@ -4638,6 +4658,11 @@ function setupCompraventa() {
 
   function renderBar() {
     const logged = hasAccess();
+    const stockOnly = !hasAccess();
+    root.querySelector(".cv-kpis")?.toggleAttribute("hidden", stockOnly);
+    root.querySelector('[data-cv="cv-p-hist"]')?.toggleAttribute("hidden", stockOnly);
+    root.querySelector(".sx-subtabs")?.toggleAttribute("hidden", stockOnly); // solo hay Almacen
+    if (stockOnly && !$("cv-p-stock").classList.contains("is-active")) showPane("cv-p-stock");
     const dot = $("cv-cloud-dot");
     const txt = $("cv-cloud-text");
     if (online()) {
@@ -4658,7 +4683,9 @@ function setupCompraventa() {
     $("cv-migrate").hidden = !(online() && logged && (local.tx.length || Object.keys(local.photos).length));
 
     const when = SHARED_DATA?.publishedAt ? ` el ${SHARED_DATA.publishedAt}` : "";
-    $("cv-mode").textContent = online()
+    $("cv-mode").textContent = !logged && canSeeStock()
+      ? "Vehículos disponibles en el almacén de la compraventa."
+      : online()
       ? logged
         ? "Lo que proceses y las fotos que subas se guardan en línea: los Jefes lo ven al momento."
         : "Datos en línea. Solo los Jefes pueden verlos y cambiarlos."
@@ -4782,6 +4809,7 @@ function setupCompraventa() {
 
   // ---------- lectura de la base en linea ----------
   async function loadCloud() {
+    if (!hasAccess()) return loadStockOnly();
     try {
       const [rows, photos] = await Promise.all([
         cvCloud.selectAll("cv_tx", "sort.asc,uid.asc"),
@@ -4815,6 +4843,42 @@ function setupCompraventa() {
         e.code === "PGRST205" || e.code === "42P01" || e.status === 404
           ? "La base en línea aún no tiene las tablas (falta pegar el SQL en Supabase). Se usan los datos de esta PC."
           : `${e.message} Se usan los datos de esta PC.`;
+    }
+    cloud.tried = true;
+    render();
+  }
+
+  // Empleados (no Jefes): la base solo les da lo que hay en el almacen.
+  async function loadStockOnly() {
+    try {
+      const rows = (await cvCloud.req("/rest/v1/rpc/almacen", { method: "POST", body: {} })) || [];
+      cloud.tx = rows.map((r, i) => ({
+        uid: r.uid,
+        ts: r.ts || "",
+        sort: r.sort || "",
+        mediator: r.mediator || "",
+        owner: r.owner || "",
+        buyer: r.buyer || "",
+        price: Number(r.price) || 0,
+        model: r.model || "",
+        plate: r.plate || "",
+        company: r.company || "",
+        seq: i + 1,
+      }));
+      cloud.photoPaths = {};
+      for (const r of rows) if (r.photo) cloud.photoPaths[r.plate] = r.photo;
+      cloud.photoUrls = await cvSignedUrls(Object.values(cloud.photoPaths));
+      cloud.ok = true;
+      cloud.reachable = true;
+      cloud.error = "";
+      cloud.loadedAt = new Date();
+    } catch (e) {
+      cloud.ok = false;
+      cloud.reachable = !!e.status;
+      cloud.error =
+        e.status === 404 || e.code === "PGRST202"
+          ? "El almacén aún no está disponible para empleados (falta el SQL en Supabase)."
+          : e.message;
     }
     cloud.tried = true;
     render();
@@ -5080,7 +5144,7 @@ function setupCompraventa() {
   // Se ve al momento con lo de esta PC; luego se conecta y se mantiene al dia
   // (cada 45 s mientras la pestana esta abierta y al volver a la ventana).
   render();
-  if (hasAccess()) loadCloud();
+  if (canSeeStock()) loadCloud();
   else {
     cloud.tried = true;
     cloud.error = "Solo para Jefes.";
@@ -5088,12 +5152,12 @@ function setupCompraventa() {
   }
   const tabActive = () => root.classList.contains("is-active") && document.visibilityState === "visible";
   setInterval(() => {
-    if (!busy && hasAccess() && tabActive()) loadCloud();
+    if (!busy && canSeeStock() && tabActive()) loadCloud();
   }, 45000);
   document.addEventListener("visibilitychange", () => {
-    if (!busy && hasAccess() && tabActive()) loadCloud();
+    if (!busy && canSeeStock() && tabActive()) loadCloud();
   });
   document.querySelector('.tab[data-tab-target="tab-cv"]')?.addEventListener("click", () => {
-    if (!busy && hasAccess() && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
+    if (!busy && canSeeStock() && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
   });
 }

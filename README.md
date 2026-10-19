@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 35 · 19 de octubre de 2026
+- Los **empleados registrados** (Chalán a Subjefe, con su Discord en la lista) ven en Compraventa **solo el Almacén**: sin Historial, sin Procesar log y sin los totales de dinero.
+  - El servidor solo les entrega los coches en existencia (función `almacen()`), nunca el historial. Quien entra con un Discord que no está en la lista sigue viendo solo la Caja.
+
 ### Versión 34 · 19 de octubre de 2026
 - **Entrar con Discord** (web) o con correo (programa de escritorio), con el botón 🔑 Entrar arriba a la derecha.
 - **Permisos por rango, decididos por la base de datos** (función `es_jefe`): los **Jefes** (rango Jefe con su ID de Discord en Gestión de empleados, o la cuenta de encargado) ven y editan Pagos, Sorteo, Compraventa y la Gestión de empleados y productos. Chalán, Mecánico, Experimentado y Subjefe (y quien no inicia sesión) solo ven la **Caja**.
