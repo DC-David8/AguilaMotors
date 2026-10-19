@@ -527,6 +527,8 @@ const SERVICE_PRODUCTS = [
   { name: "Reparación + Limpieza + Repostaje (Grúa)", price: 1350, category: "servicios_grua" },
   { name: "Repostaje (Grúa)", price: 350, category: "servicios_grua" },
   { name: "Servicio de Grúa (desplazamiento)", price: 500, category: "servicios_grua" },
+  { name: "Grúa Aérea", price: 1500, category: "servicios_grua" },
+  { name: "Rescate Aéreo Completo", price: 4500, category: "servicios_grua" },
 
   // Tienda junto al taller: productos que se compran a precio de taller y se
   // revenden aqui.
@@ -788,10 +790,14 @@ const PRODUCT_ICON_PATHS = {
     nitro: '<rect x="8" y="6" width="8" height="15" rx="3"/><path d="M10 6V3h4v3M12 10v6M9 13h6"/>',
     camaleon: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/>',
     compra: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>',
+    // Helicoptero levantando un coche con el cable.
+    gruaaerea: '<path d="M3 2.5h18M12 2.5v2"/><path d="M8.5 4.5h5a3 3 0 0 1 3 3v1h-8a2 2 0 0 1 0-4z"/><path d="M16.5 6.5h4l1-2"/><path d="M12 8.5v6" stroke-dasharray="1.2 1.4"/><path d="M6 19l1.5-3h9l1.5 3v1.5H6z"/><circle cx="8.5" cy="21" r="1"/><circle cx="15.5" cy="21" r="1"/>',
+    // Salvavidas bajo la helice: rescate aereo con todo incluido.
+    rescate: '<path d="M4 2.5h16M12 2.5v3"/><circle cx="12" cy="14" r="7.5"/><circle cx="12" cy="14" r="3"/><path d="M12 6.5v4.5M12 17v4.5M4.5 14H9M15 14h4.5"/><path d="M19.5 4.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/>',
     desvuelco: '<path d="M4 14l2-4h12l2 4v2H4z"/><path d="M8 6a6 6 0 0 1 9 1M17 3v4h-4"/>',
   };
 
-const PRODUCT_ICON_KEYWORDS = [["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["nitro","nitro"],["compraventa","compra"],["desvuelco","desvuelco"]];
+const PRODUCT_ICON_KEYWORDS = [["rescate aéreo","rescate"],["grúa aérea","gruaaerea"],["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["nitro","nitro"],["compraventa","compra"],["desvuelco","desvuelco"]];
 
 function productIconKey(name) {
   const n = String(name || "").toLowerCase();

@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 28 · 19 de octubre de 2026
+- Servicios (Grúa): nuevos **Grúa Aérea** ($ 1500) y **Rescate Aéreo Completo** ($ 4500), con iconos propios (helicóptero con coche y salvavidas bajo la hélice).
+
 ### Versión 27 · 18 de octubre de 2026
 - Compraventa: la foto del vehículo se puede **pegar como recorte** (Windows + Shift + S y luego Ctrl + V), además de elegir un archivo o arrastrar la imagen.
 
