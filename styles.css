@@ -1317,3 +1317,30 @@ html, body {
   .auth-btn { padding: 6px 10px; font-size: 0.78rem; }
   #auth-logout { padding: 5px 8px; font-size: 0.72rem; }
 }
+
+/* Pantalla de inicio de sesion (v37) */
+.auth-pending .app-shell { visibility: hidden; }
+body.is-gated .app-shell, body.is-gated .m-ticket-bar, body.is-gated .m-drawer { display: none !important; }
+.login-gate { position: fixed; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 20%, rgba(249, 125, 2, 0.22), transparent 60%), repeating-linear-gradient(135deg, #0d0a07 0 14px, #0a0806 14px 28px); }
+.login-gate[hidden] { display: none; }
+.gate-card { width: min(420px, 100%); text-align: center; padding: 34px 28px 26px; border: 1px solid #3a2c1d; border-radius: 22px;
+  background: linear-gradient(180deg, rgba(27, 20, 13, 0.96), rgba(14, 11, 8, 0.96)); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(249, 125, 2, 0.15); }
+.gate-logo { width: 140px; height: 140px; object-fit: contain; filter: drop-shadow(0 8px 24px rgba(249, 125, 2, 0.45)); }
+.gate-title { margin: 10px 0 0; font-size: 2rem; letter-spacing: 0.06em; text-transform: uppercase;
+  background: linear-gradient(180deg, #fff, #ffb15c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gate-sub { margin: 2px 0 14px; color: #ffb15c; letter-spacing: 0.3em; text-transform: uppercase; font-size: 0.72rem; }
+.gate-stripe { height: 8px; margin: 0 auto 18px; width: 70%; border-radius: 4px; background: repeating-linear-gradient(135deg, #f97d02 0 10px, #1a120b 10px 20px); }
+.gate-msg { margin: 0 0 18px; color: var(--text); line-height: 1.5; }
+.gate-discord { padding: 14px; font-size: 1rem; }
+.gate-link { margin-top: 12px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.85rem; box-shadow: none; }
+#gate-logout { margin-top: 6px; }
+.gate-foot { margin: 22px 0 0; color: var(--muted); font-size: 0.78rem; }
+.cv-login-dlg, #cv-login-dlg { z-index: 1000; }
+
+/* Rangos protegidos y nombres de rangos (v37) */
+tr.emp-locked td:first-child::after { content: " 🔒"; }
+.emp-rank-names { margin: 10px 0; }
+.emp-rank-names-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin: 8px 0; }
+.emp-rank-names-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: var(--muted); }
+.pg-badge.r-aguila { background: linear-gradient(90deg, #f97d02, #ffcf94); color: #1a0f04; }

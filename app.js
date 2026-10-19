@@ -580,10 +580,27 @@ const RANKS = [
   { label: "Mecánico", pct: 0.45 },
   { label: "Experimentado", pct: 0.50 },
   { label: "Subjefe", pct: 0.50 },
-  { label: "Jefe", pct: 0.50 },
   { label: "Mano Derecha", pct: 0.50 },
+  { label: "Jefe", pct: 0.50 },
   { label: "Jefe Aguila", pct: 1.0 },
 ];
+
+// Rangos que solo el Jefe Aguila puede dar, cambiar o quitar (tambien lo
+// impide la base de datos). En la base se guarda siempre el nombre original;
+// el Jefe Aguila puede cambiar el nombre que se MUESTRA (RANK_NAMES).
+const TOP_RANKS = ["Jefe", "Mano Derecha", "Jefe Aguila"];
+let RANK_NAMES = {};
+
+function isTopRank(rank) {
+  const k = normalizeKeySimple(rank);
+  return TOP_RANKS.some((r) => normalizeKeySimple(r) === k);
+}
+
+function rankLabel(rank) {
+  const found = RANKS.find((r) => normalizeKeySimple(r.label) === normalizeKeySimple(rank));
+  if (!found) return rank || "";
+  return String(RANK_NAMES[found.label] || "").trim() || found.label;
+}
 
 // Posicion del rango (mayor = mas arriba). Sin rango o desconocido: abajo del todo.
 function rankOrder(rank) {
@@ -2414,7 +2431,7 @@ function setupContabilidad() {
 
   // Ranking de la semana: una fila por persona con facturas + kits, su rango,
   // lo que hay que pagarle y avisos (sin IBAN, no cobra, kits a si mismo).
-  const RANK_BADGE = { jefe: "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };
+  const RANK_BADGE = { "jefe aguila": "r-aguila", jefe: "r-jefe", "mano derecha": "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };
 
   function renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar }) {
     const list = byId("pg-ranking");
@@ -2484,7 +2501,7 @@ function setupContabilidad() {
       const mid = el("div", "pg-mid");
       const nameRow = el("div", "pg-name");
       nameRow.appendChild(el("span", "", r.name));
-      if (r.rank) nameRow.appendChild(el("span", "pg-badge " + (RANK_BADGE[normalizeKeySimple(r.rank)] || ""), r.rank));
+      if (r.rank) nameRow.appendChild(el("span", "pg-badge " + (RANK_BADGE[normalizeKeySimple(r.rank)] || ""), rankLabel(r.rank)));
       else nameRow.appendChild(el("span", "pg-badge w-nopay", "Sin registrar"));
       if (r.emp && r.noPay) nameRow.appendChild(el("span", "pg-badge w-nopay", "No cobra"));
       else if (r.emp && !r.iban) nameRow.appendChild(el("span", "pg-badge w-iban", "⚠ Sin IBAN"));
@@ -2735,7 +2752,7 @@ function setupEmployeesModal(state, refreshPagos) {
       if (row.id === selectedId) tr.classList.add("is-selected");
       tr.innerHTML = `
         <td>${row.name}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
-        <td>${row.rank || "-"}</td>
+        <td>${row.rank ? rankLabel(row.rank) : "-"}</td>
         <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
         <td class="num">${fmtMoney(row.gross)}</td>
         <td class="num">${row.noPay ? `<span class="muted" title="Le corresponderían ${fmtMoney(row.payout)}">${NO_PAY_TEXT}</span>` : fmtMoney(row.payout)}</td>
@@ -2781,7 +2798,7 @@ function setupEmployeesModal(state, refreshPagos) {
 
   // "Nombre (Rango) <@ID>": el nombre de rol se mantiene y, si tiene Discord, se le etiqueta.
   function labelForCopy(row) {
-    let label = row.rank ? `${row.name} (${row.rank})` : row.name;
+    let label = row.rank ? `${row.name} (${rankLabel(row.rank)})` : row.name;
     if (row.discord) label += ` <@${row.discord}>`;
     return label;
   }
@@ -2952,10 +2969,73 @@ function setupEmployeesAdminModal({ onChanged }) {
       }
     }
     byId("emp-cloud-login")?.toggleAttribute("hidden", true);
+
+    // Desplegable de alta: nombres visibles; los rangos altos solo para el Jefe Aguila.
+    if (rankInput) {
+      const cur = rankInput.value;
+      rankInput.innerHTML = "";
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "Sin rango";
+      rankInput.appendChild(blank);
+      for (const r of RANKS.slice().reverse()) {
+        if (isTopRank(r.label) && !AUTH.aguila) continue;
+        const opt = document.createElement("option");
+        opt.value = r.label;
+        opt.textContent = `${rankLabel(r.label)} (${Math.round(r.pct * 100)}%)`;
+        rankInput.appendChild(opt);
+      }
+      rankInput.value = [...rankInput.options].some((o) => o.value === cur) ? cur : "";
+    }
+
+    // Nombres de los rangos: solo el Jefe Aguila.
+    const namesBox = byId("emp-rank-names");
+    if (namesBox) {
+      namesBox.hidden = !(AUTH.aguila && !readOnly);
+      const grid = byId("emp-rank-names-grid");
+      if (!namesBox.hidden && grid && !grid.dataset.built) {
+        grid.dataset.built = "1";
+        for (const r of RANKS.slice().reverse()) {
+          const lab = document.createElement("label");
+          lab.textContent = `${r.label} (${Math.round(r.pct * 100)}%)`;
+          const inp = document.createElement("input");
+          inp.className = "text-input";
+          inp.dataset.rank = r.label;
+          inp.maxLength = 30;
+          inp.placeholder = r.label;
+          lab.appendChild(inp);
+          grid.appendChild(lab);
+        }
+      }
+      grid?.querySelectorAll("input[data-rank]").forEach((inp) => {
+        if (document.activeElement !== inp) inp.value = RANK_NAMES[inp.dataset.rank] || "";
+      });
+    }
     byId("emp-cloud-migrate")?.toggleAttribute("hidden", !(EMP_CLOUD.ok && logged && !EMP_CLOUD.list.length));
   }
 
   byId("emp-cloud-login")?.addEventListener("click", openLoginDialog);
+
+  byId("emp-rank-names-save")?.addEventListener("click", async () => {
+    if (!AUTH.aguila) return;
+    const map = {};
+    byId("emp-rank-names-grid").querySelectorAll("input[data-rank]").forEach((inp) => {
+      const v = inp.value.replace(/\s+/g, " ").trim();
+      if (v && v !== inp.dataset.rank) map[inp.dataset.rank] = v;
+    });
+    const btn = byId("emp-rank-names-save");
+    btn.disabled = true;
+    try {
+      await saveRankNames(map);
+      setStatus("✔ Nombres de los rangos guardados. Se ven en toda la página y al copiar las pagas.", true);
+      await refresh();
+      await (onChanged?.());
+    } catch (err) {
+      alert(`No se pudieron guardar: ${err.message || err}`);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // Primera vez: copia a la base en linea los empleados que se ven ahora (datos.js o esta PC).
   byId("emp-cloud-migrate")?.addEventListener("click", async () => {
@@ -3063,13 +3143,21 @@ function setupEmployeesAdminModal({ onChanged }) {
       blank.value = "";
       blank.textContent = "Sin rango";
       select.appendChild(blank);
-      for (const r of RANKS) {
+      for (const r of RANKS.slice().reverse()) {
         const opt = document.createElement("option");
         opt.value = r.label;
-        opt.textContent = `${r.label} (${Math.round(r.pct * 100)}%)`;
+        opt.textContent = `${rankLabel(r.label)} (${Math.round(r.pct * 100)}%)`;
+        // Solo el Jefe Aguila reparte los rangos altos.
+        if (isTopRank(r.label) && !AUTH.aguila) opt.disabled = true;
         select.appendChild(opt);
       }
       select.value = e.rank || "";
+      const locked = isTopRank(e.rank) && !AUTH.aguila;
+      if (locked) {
+        select.disabled = true;
+        select.title = "Solo el Jefe Aguila puede cambiar este rango";
+        tr.classList.add("emp-locked");
+      }
 
       const dInput = tr.querySelector(".emp-discord-input");
       dInput.value = getEmployeeDiscord(full);
@@ -3087,6 +3175,11 @@ function setupEmployeesAdminModal({ onChanged }) {
         setEmployeeNoPay(full, npInput.checked);
         await (onChanged?.());
       });
+      if (locked) {
+        dInput.readOnly = true; // cambiar su Discord le daria el acceso a otra persona
+        dInput.title = "Solo el Jefe Aguila puede cambiar el Discord de este rango";
+        tr.querySelector("button[data-del]")?.remove();
+      }
       if (readOnly) {
         npInput.disabled = true;
         select.disabled = true;
@@ -3095,7 +3188,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         tr.querySelector("button[data-del]")?.remove();
       }
       dInput.addEventListener("change", async () => {
-        if (readOnly) return;
+        if (readOnly || locked) return;
         if (!unlocked) {
           alert("Primero desbloquea con la contrasena.");
           dInput.value = getEmployeeDiscord(full);
@@ -3142,6 +3235,11 @@ function setupEmployeesAdminModal({ onChanged }) {
           return;
         }
         const newRank = select.value;
+        if (!AUTH.aguila && (isTopRank(emp?.rank) || isTopRank(newRank))) {
+          alert(`Solo el Jefe Aguila puede dar o quitar los rangos ${TOP_RANKS.map(rankLabel).join(", ")}.`);
+          select.value = emp?.rank || "";
+          return;
+        }
         try {
           await updateEmployee(id, { rank: newRank }, adminPass);
           // El id puede cambiar por dentro (ver updateEmployee), asi que se
@@ -3163,6 +3261,10 @@ function setupEmployeesAdminModal({ onChanged }) {
           return;
         }
         const emp = employees.find((x) => String(x.id) === String(id));
+        if (emp && isTopRank(emp.rank) && !AUTH.aguila) {
+          alert("Solo el Jefe Aguila puede quitar a alguien con ese rango.");
+          return;
+        }
         const label = emp ? `${emp.name} ${emp.surname}` : `ID ${id}`;
         if (!confirm(`Eliminar a ${label}?`)) return;
         try {
@@ -3231,6 +3333,10 @@ function setupEmployeesAdminModal({ onChanged }) {
     }
     if (!unlocked) {
       alert("Primero desbloquea con la contrasena.");
+      return;
+    }
+    if (isTopRank(rank) && !AUTH.aguila) {
+      alert(`Solo el Jefe Aguila puede dar el rango ${rankLabel(rank)}.`);
       return;
     }
     try {
@@ -3809,6 +3915,8 @@ function setupSorteo() {
   renderAll();
 }
 
+// Seguridad: si algo fallara al arrancar, que la pagina no se quede oculta.
+setTimeout(() => document.documentElement.classList.remove("auth-pending"), 10000);
 setupCopyFallbackModal();
 setupTabs();
 // Primero los datos publicados (si los hay); luego se arma la pagina con ellos.
@@ -3818,7 +3926,7 @@ Promise.allSettled([
   }),
   Promise.resolve()
     .then(() => authInit())
-    .then(() => (hasAccess() ? empCloudLoad() : null)),
+    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null])),
 ])
   .finally(() => {
     setupCaja();
@@ -4421,7 +4529,7 @@ function empCloudSet(fullNameStr, patch) {
 // cuenta de encargado, o ID de Discord de un empleado con rango Jefe), no la
 // pagina: aunque alguien toque el codigo, sin ser Jefe no recibe datos.
 // ---------------------------------------------------------------------------
-const AUTH = { role: "none", name: "", provider: "", checked: false, error: "" };
+const AUTH = { role: "none", name: "", provider: "", checked: false, error: "", aguila: false, offline: false };
 
 function hasAccess() {
   return AUTH.role === "jefe";
@@ -4487,10 +4595,26 @@ async function authRefresh() {
       AUTH.checked = true;
       return;
     }
+    if (!e.status) {
+      // Sin conexion con la base: con sesion guardada se deja usar la Caja.
+      AUTH.offline = true;
+      AUTH.role = "offline";
+      AUTH.name = cvCloud.session?.email || "";
+      AUTH.checked = true;
+      return;
+    }
   }
   try {
     const jefe = await cvCloud.req("/rest/v1/rpc/es_jefe", { method: "POST", body: {}, auth: true });
-    if (jefe === true) AUTH.role = "jefe";
+    if (jefe === true) {
+      AUTH.role = "jefe";
+      try {
+        AUTH.aguila = (await cvCloud.req("/rest/v1/rpc/es_jefe_aguila", { method: "POST", body: {}, auth: true })) === true;
+      } catch (e) {
+        // Funcion aun sin crear: la cuenta de correo del encargado es la del Jefe Aguila.
+        AUTH.aguila = (e.status === 404 || e.code === "PGRST202") && AUTH.provider === "email";
+      }
+    }
     else {
       let emp = false;
       try {
@@ -4505,12 +4629,32 @@ async function authRefresh() {
     // encargado sigue funcionando como antes; con Discord, solo la Caja.
     const missing = e.status === 404 || e.code === "PGRST202" || e.code === "42883";
     AUTH.role = missing && AUTH.provider === "email" ? "jefe" : cvCloud.session ? "invitado" : "none";
+    if (AUTH.role === "jefe") AUTH.aguila = true;
   }
   AUTH.checked = true;
 }
 
+// Nombres visibles de los rangos (tabla app_settings, clave "rank_names").
+async function loadRankNames() {
+  try {
+    const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.rank_names");
+    const v = rows?.[0]?.value;
+    RANK_NAMES = v && typeof v === "object" ? v : {};
+  } catch {
+    RANK_NAMES = {};
+  }
+}
+
+async function saveRankNames(map) {
+  await cvCloud.upsert("app_settings", [{ key: "rank_names", value: map }], "key");
+  RANK_NAMES = map;
+}
+
+const LIVE_SITE_URL = "https://dc-david8.github.io/AguilaMotors/";
+
 function authDiscordLogin() {
-  const back = location.origin + location.pathname;
+  // En el programa de escritorio (archivo local) Discord devuelve a la web publicada.
+  const back = location.protocol === "file:" ? LIVE_SITE_URL : location.origin + location.pathname;
   location.href = `${CV_CLOUD_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(back)}`;
 }
 
@@ -4525,13 +4669,9 @@ function openLoginDialog() {
 function setupAuthUI() {
   const dlg = byId("cv-login-dlg");
   const isFile = location.protocol === "file:";
-  const discordBtn = byId("cv-login-discord");
-  if (discordBtn) {
-    discordBtn.hidden = isFile;
-    discordBtn.addEventListener("click", authDiscordLogin);
-  }
+  byId("cv-login-discord")?.addEventListener("click", authDiscordLogin);
   if (isFile && byId("cv-login-discord-note")) {
-    byId("cv-login-discord-note").textContent = "En el programa de escritorio se entra con correo. Con Discord, desde la web.";
+    byId("cv-login-discord-note").textContent = "Con Discord, el programa abre la versión web ya con tu sesión.";
   }
 
   byId("cv-login-form")?.addEventListener("submit", async (e) => {
@@ -4560,13 +4700,37 @@ function setupAuthUI() {
     location.reload();
   });
 
+  // ---------- pantalla de inicio de sesion ----------
+  const gate = byId("login-gate");
+  const showGate = AUTH.role === "none" || AUTH.role === "invitado";
+  if (gate) {
+    gate.hidden = !showGate;
+    byId("gate-discord").onclick = authDiscordLogin;
+    byId("gate-email").onclick = openLoginDialog;
+    byId("gate-logout").onclick = async () => {
+      await cvCloud.logout();
+      location.reload();
+    };
+    const guest = AUTH.role === "invitado";
+    byId("gate-discord").hidden = guest;
+    byId("gate-email").hidden = guest;
+    byId("gate-logout").hidden = !guest;
+    byId("gate-msg").textContent = guest
+      ? `${AUTH.name ? AUTH.name + ": tu" : "Tu"} Discord no está registrado en Aguila Motors. Pide a un Jefe que te añada en Gestión de empleados con tu ID de Discord y vuelve a entrar.`
+      : "Inicia sesión para entrar al sistema del taller.";
+  }
+  document.documentElement.classList.remove("auth-pending");
+  document.body.classList.toggle("is-gated", showGate);
+
   const logged = AUTH.role !== "none";
   byId("auth-login").hidden = logged;
   byId("auth-logout").hidden = !logged;
   const userEl = byId("auth-user");
   userEl.hidden = !logged;
   if (logged) {
-    const roleTxt = { jefe: "Jefe", empleado: "Empleado", invitado: "Sin registrar" }[AUTH.role] || "";
+    const roleTxt = AUTH.aguila
+      ? rankLabel("Jefe Aguila")
+      : { jefe: "Jefe", empleado: "Empleado", invitado: "Sin registrar", offline: "Sin conexión" }[AUTH.role] || "";
     userEl.textContent = `👤 ${AUTH.name || "Sesión iniciada"} · ${roleTxt}`;
     userEl.title = hasAccess()
       ? "Acceso a todos los módulos"

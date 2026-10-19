@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="auth-pending">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=36" />
+  <link rel="stylesheet" href="styles.css?v=37" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=36" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=37" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -42,6 +42,21 @@
   </div>
   <div class="bg-shape bg-shape-a"></div>
   <div class="bg-shape bg-shape-b"></div>
+
+  <!-- Pantalla de inicio de sesion (sin sesion o con un Discord no registrado) -->
+  <div class="login-gate" id="login-gate" hidden>
+    <div class="gate-card">
+      <img src="aguila_motors_logo.png" alt="Aguila Motors" class="gate-logo" />
+      <h1 class="gate-title">Aguila Motors</h1>
+      <p class="gate-sub">Taller en Servicio</p>
+      <div class="gate-stripe"></div>
+      <p class="gate-msg" id="gate-msg">Inicia sesión para entrar al sistema del taller.</p>
+      <button type="button" class="discord-btn gate-discord" id="gate-discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A17 17 0 0 0 15.4 4l-.5 1.1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.8 9.2 1.1 13 1.4 16.8a17 17 0 0 0 5.2 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.2 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.2-3-11.5zM8.7 14.5c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>Iniciar sesión con Discord</button>
+      <button type="button" class="gate-link" id="gate-email">Entrar con correo</button>
+      <button type="button" class="ghost" id="gate-logout" hidden>Cerrar sesión</button>
+      <p class="gate-foot">🦅 Tu vehículo, nuestra pasión.</p>
+    </div>
+  </div>
 
   <main class="app-shell">
     <header class="topbar">
@@ -498,7 +513,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 36 - Aguila Motors</footer>
+    <footer class="app-version">Versión 37 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -671,6 +686,13 @@
 
       <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
 
+      <div class="admin-block emp-rank-names" id="emp-rank-names" hidden>
+        <h4>👑 Nombres de los rangos <small class="muted">(solo Jefe Aguila)</small></h4>
+        <p class="muted">Cambia cómo se llama cada rango en la página y al copiar las pagas. Deja vacío para usar el nombre original. La comisión no cambia.</p>
+        <div class="emp-rank-names-grid" id="emp-rank-names-grid"></div>
+        <div class="actions"><button type="button" id="emp-rank-names-save">Guardar nombres</button></div>
+      </div>
+
       <h4>Empleados</h4>
       <div class="form-row">
         <input id="emp-search" class="text-input" type="text" placeholder="Buscar por nombre, apellido o rango..." />
@@ -740,6 +762,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>

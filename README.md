@@ -227,6 +227,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 37 · 19 de octubre de 2026
+- **Orden de rangos** (de abajo arriba): Chalán, Mecánico, Experimentado, Subjefe, Mano Derecha, Jefe, Jefe Aguila.
+- **Rangos protegidos**: solo el Jefe Aguila puede dar, cambiar o quitar Jefe Aguila, Jefe y Mano Derecha (ni su Discord). Lo impide también la base (disparador `proteger_rangos`).
+- **Nombres de los rangos** editables (solo Jefe Aguila) en Gestión de empleados; se guardan en línea (`app_settings`). Internamente se sigue usando el nombre original.
+- **Pantalla de inicio de sesión**: sin sesión (o con un Discord no registrado) solo se ve el logo y «Iniciar sesión con Discord». En el programa de escritorio, Discord abre la versión web ya con la sesión.
+
 ### Versión 36 · 19 de octubre de 2026
 - Rangos nuevos: **Jefe Aguila** (100 %) y **Mano Derecha** (50 %). Ambos con los mismos privilegios que el Jefe (función `es_jefe` en Supabase).
 - **Orden por rango** (Jefe Aguila → Mano Derecha → Jefe → Subjefe → Experimentado → Mecánico → Chalán) en Gestión de empleados, Totales por empleado y **Copiar todo** para el canal de pagas.
