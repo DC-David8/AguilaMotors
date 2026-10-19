@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=41" />
+  <link rel="stylesheet" href="styles.css?v=42" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=41" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=42" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -513,7 +513,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 41 - Aguila Motors</footer>
+    <footer class="app-version">Versión 42 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -649,6 +649,15 @@
         <button value="cancel" class="ghost">Cerrar</button>
       </header>
 
+      <div class="cv-cloud emp-cloud" id="emp-cloud">
+        <span class="cv-dot" id="emp-cloud-dot"></span>
+        <span class="cv-cloud-text" id="emp-cloud-text">Conectando…</span>
+        <span class="cv-cloud-acts">
+          <button type="button" id="emp-cloud-login" class="ghost" hidden>🔑 Iniciar sesión</button>
+          <button type="button" id="emp-cloud-migrate" hidden>☁️ Subir empleados a la nube</button>
+        </span>
+      </div>
+
       <section class="admin-grid">
         <div class="admin-block">
           <h4>Acceso</h4>
@@ -674,25 +683,18 @@
           </div>
           <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor). Con el ID de Discord se le etiqueta al copiar los totales, y con el IBAN sale su cuenta para la nómina.</p>
         </div>
+      
+        <div class="admin-block emp-rank-names" id="emp-rank-names" hidden>
+          <h4>👑 Nombres de los rangos <small class="muted">(solo Jefe Aguila)</small></h4>
+          <p class="muted emp-rank-names-hint">Así se verán en la página y al copiar las pagas. Vacío = nombre original. La comisión no cambia.</p>
+          <div class="emp-rank-names-grid" id="emp-rank-names-grid"></div>
+          <div class="actions"><button type="button" id="emp-rank-names-save">Guardar nombres</button></div>
+        </div>
       </section>
-
-      <div class="cv-cloud emp-cloud" id="emp-cloud">
-        <span class="cv-dot" id="emp-cloud-dot"></span>
-        <span class="cv-cloud-text" id="emp-cloud-text">Conectando…</span>
-        <span class="cv-cloud-acts">
-          <button type="button" id="emp-cloud-login" class="ghost" hidden>🔑 Iniciar sesión</button>
-          <button type="button" id="emp-cloud-migrate" hidden>☁️ Subir empleados a la nube</button>
-        </span>
-      </div>
 
       <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
 
-      <div class="admin-block emp-rank-names" id="emp-rank-names" hidden>
-        <h4>👑 Nombres de los rangos <small class="muted">(solo Jefe Aguila)</small></h4>
-        <p class="muted">Cambia cómo se llama cada rango en la página y al copiar las pagas. Deja vacío para usar el nombre original. La comisión no cambia.</p>
-        <div class="emp-rank-names-grid" id="emp-rank-names-grid"></div>
-        <div class="actions"><button type="button" id="emp-rank-names-save">Guardar nombres</button></div>
-      </div>
+
 
       <h4>Empleados</h4>
       <div class="form-row">
@@ -763,6 +765,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=41"></script>
+  <script src="app.js?v=42"></script>
 </body>
 </html>

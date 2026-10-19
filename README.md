@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 42 · 19 de octubre de 2026
+- Gestión de empleados más compacta: **Nuevo empleado** y **Nombres de los rangos** van lado a lado, con la barra de estado en línea arriba.
+
 ### Versión 41 · 19 de octubre de 2026
 - **Bono de $ 10,000 para el Empleado de la Semana**, sumado en su «A pagar» y en el «Total a retirar». En el mensaje de pagas sale una línea `↳ 🏆 Incluye bono de Empleado de la Semana` y al final «incluye Bono por Empleado de la Semana de $ 10,000».
   - Compiten los que cobran (no los «No cobra» ni el Jefe Aguila). Si hay empate, cada ganador recibe el bono completo.

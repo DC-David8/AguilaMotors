@@ -1368,3 +1368,19 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
   .auth-box { flex-wrap: nowrap; }
   .m-logout:not([hidden]) { display: block; width: 100%; margin: 18px 0 8px; padding: 12px; border-radius: 12px; border: 1px solid #5c2a1f; background: #1d0f0b; color: #ff9b8a; font-weight: 800; text-align: left; }
 }
+
+/* Gestion de empleados mas compacta: "Nuevo empleado" y "Nombres de los rangos" lado a lado (v42) */
+#employees-admin-modal .emp-cloud { margin: 0 0 10px; }
+#employees-admin-modal .admin-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+#employees-admin-modal .admin-grid > .admin-block { flex: 1 1 380px; min-width: 0; margin: 0; }
+#employees-admin-modal .admin-grid > .admin-block[hidden] { display: none; }
+#employees-admin-modal .admin-block h4 { margin: 2px 0 8px; }
+#employees-admin-modal #emp-new-hint { margin: 8px 0 0; font-size: 0.78rem; }
+.emp-rank-names-hint { margin: 0 0 6px; font-size: 0.78rem; }
+#employees-admin-modal .emp-rank-names-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; margin: 6px 0 8px; }
+#employees-admin-modal .emp-rank-names-grid label { font-size: 0.72rem; gap: 2px; }
+#employees-admin-modal .emp-rank-names-grid .text-input { padding: 6px 9px; }
+@media (max-width: 700px) {
+  #employees-admin-modal .admin-grid > .admin-block { flex-basis: 100%; }
+}
+#employees-admin-modal .emp-rank-select { min-width: 170px; }
