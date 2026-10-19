@@ -490,6 +490,7 @@ const SERVICE_SHORT = {
   "Compraventa Gama Baja": ["Compra", "GB"],
   "Compraventa Gama Media": ["Compra", "GM"],
   "Compraventa Gama Alta": ["Compra", "GA"],
+  "Compraventa Camiones": ["Compra", "CAM"],
 };
 
 function buildTuningProducts() {
@@ -555,6 +556,7 @@ const SERVICE_PRODUCTS = [
   { name: "Compraventa Gama Baja", price: 2500, category: "compraventa" },
   { name: "Compraventa Gama Media", price: 5000, category: "compraventa" },
   { name: "Compraventa Gama Alta", price: 10000, category: "compraventa" },
+  { name: "Compraventa Camiones", price: 7500, category: "compraventa" },
 ];
 
 const PRODUCTS = [

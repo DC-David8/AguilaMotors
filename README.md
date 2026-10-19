@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 30 · 19 de octubre de 2026
+- Compraventa (cambio de papeles): nuevo **Compraventa Camiones** a $ 7500.
+
 ### Versión 29 · 19 de octubre de 2026
 - Servicios (Grúa): **Servicio de Grúa (desplazamiento)** pasa a llamarse **Grúa Terrestre** y sube a $ 1500; **Grúa Aérea** a $ 3500.
 - **Rescate Aéreo Completo** ($ 4500) muestra la observación «Incluye grúa aérea, reparación, limpieza y repostaje».
