@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 27 · 18 de octubre de 2026
+- Compraventa: la foto del vehículo se puede **pegar como recorte** (Windows + Shift + S y luego Ctrl + V), además de elegir un archivo o arrastrar la imagen.
+
 ### Versión 26 · 18 de octubre de 2026
 - Nueva pestaña **Compraventa** (con contraseña de acceso). Lee el log «Transacción de vehículo»: mediador, dueño, comprador, precio, vehículo + matrícula y empresa. `society_aguilamotor` se muestra como **Aguila Motors**.
   - **Compra:** la sociedad es la compradora; el dinero sale de la caja de la sociedad y el vehículo entra al **almacén**.

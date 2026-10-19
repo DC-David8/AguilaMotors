@@ -1273,3 +1273,13 @@ html, body {
   #tab-cv .card-head-row { flex-direction: column; align-items: stretch; gap: 8px; }
   .cv-filters .cv-search { width: auto; }
 }
+
+/* Foto de compraventa: pegar recorte (v27) */
+.cv-photo-dlg { width: min(92vw, 520px); }
+.cv-photo-dlg h3 { margin: 4px 0 12px; }
+.cv-drop { border: 2px dashed #6b4a28; border-radius: 12px; padding: 26px 16px; text-align: center; display: flex; flex-direction: column; gap: 8px; background: #15100b; outline: none; }
+.cv-drop b { color: #ffb15c; font-size: 1.05rem; }
+.cv-drop span { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+.cv-drop:focus, .cv-drop.is-over { border-color: #f97d02; box-shadow: 0 0 18px rgba(249, 125, 2, 0.3); }
+.cv-drop kbd { background: #2a2017; border: 1px solid #4a3622; border-bottom-width: 3px; border-radius: 5px; padding: 1px 6px; font-size: 0.78rem; color: #fff; }
+.cv-keys { font-style: normal; white-space: nowrap; }

@@ -4041,11 +4041,7 @@ function setupCompraventa() {
       const acts = el("div", "cv-acts");
       const up = el("button", "ghost", photos[t.plate] ? "📷 Cambiar foto" : "📷 Subir foto");
       up.type = "button";
-      up.addEventListener("click", () => {
-        photoPlate = t.plate;
-        $("cv-file").value = "";
-        $("cv-file").click();
-      });
+      up.addEventListener("click", () => openPhotoDialog(t.plate));
       acts.appendChild(up);
       if (photos[t.plate]) {
         const del = el("button", "ghost", "Quitar foto");
@@ -4127,22 +4123,86 @@ function setupCompraventa() {
   $("cv-hist-q").addEventListener("input", render);
   $("cv-hist-kind").addEventListener("change", render);
 
-  $("cv-file").addEventListener("change", async () => {
-    const f = $("cv-file").files?.[0];
-    if (!f || !photoPlate) return;
+  // Foto: recorte pegado con Ctrl+V (Windows + Shift + S), archivo o arrastrar.
+  const photoDlg = $("cv-photo-dlg");
+  const photoErr = $("cv-photo-err");
+
+  function openPhotoDialog(plate) {
+    photoPlate = plate;
+    $("cv-photo-plate").textContent = plate;
+    photoErr.textContent = "";
+    photoDlg.showModal();
+    $("cv-drop").focus();
+  }
+
+  async function savePhoto(blob) {
+    if (!blob || !photoPlate) return;
+    if (!String(blob.type || "").startsWith("image/")) {
+      photoErr.textContent = "Eso no es una imagen. Haz el recorte y vuelve a pegar.";
+      return;
+    }
     try {
-      const src = await cvCompressImage(f);
+      const src = await cvCompressImage(blob);
       const data = cvLoadLocal();
       data.photos[photoPlate] = src;
       if (!cvSaveLocal(data)) {
-        alert("No hay espacio para guardar más fotos en este navegador. Quita fotos de vehículos que ya no estén.");
+        photoErr.textContent = "No hay espacio para más fotos en este navegador. Quita fotos de vehículos que ya no estén.";
         return;
       }
+      photoDlg.close();
       render();
     } catch (e) {
-      alert(String(e?.message || e));
+      photoErr.textContent = String(e?.message || e);
+    }
+  }
+
+  const imageFrom = (items) => {
+    for (const it of items || []) {
+      if (it.kind === "file" && it.type.startsWith("image/")) return it.getAsFile();
+    }
+    return null;
+  };
+
+  document.addEventListener("paste", (e) => {
+    if (!photoDlg.open) return;
+    e.preventDefault();
+    const img = imageFrom(e.clipboardData?.items);
+    if (img) savePhoto(img);
+    else photoErr.textContent = "No hay ninguna imagen copiada. Haz el recorte con Windows + Shift + S y vuelve a pulsar Ctrl + V.";
+  });
+
+  $("cv-photo-paste").addEventListener("click", async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const it of items) {
+        const type = it.types.find((ty) => ty.startsWith("image/"));
+        if (type) return savePhoto(await it.getType(type));
+      }
+      photoErr.textContent = "No hay ninguna imagen copiada. Haz el recorte con Windows + Shift + S.";
+    } catch {
+      photoErr.textContent = "El navegador no deja leer el portapapeles con el botón: pulsa Ctrl + V.";
     }
   });
+
+  const drop = $("cv-drop");
+  drop.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    drop.classList.add("is-over");
+  });
+  drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.classList.remove("is-over");
+    const f = e.dataTransfer?.files?.[0];
+    if (f) savePhoto(f);
+  });
+
+  $("cv-photo-file").addEventListener("click", () => {
+    $("cv-file").value = "";
+    $("cv-file").click();
+  });
+  $("cv-photo-cancel").addEventListener("click", () => photoDlg.close());
+  $("cv-file").addEventListener("change", () => savePhoto($("cv-file").files?.[0]));
 
   function process() {
     const found = cvParseLog($("cv-input").value);
