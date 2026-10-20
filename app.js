@@ -3234,8 +3234,17 @@ function setupEmployeesAdminModal({ onChanged }) {
       iInput.value = getEmployeeIban(full);
       const npInput = tr.querySelector(".emp-nopay-input");
       npInput.checked = isEmployeeNoPay(full);
+      // "No cobra" solo lo cambia el Jefe Aguila (tambien lo exige la base).
+      if (!AUTH.aguila) {
+        npInput.disabled = true;
+        npInput.title = "Solo el Jefe Aguila puede cambiar quién cobra";
+      }
       npInput.addEventListener("change", async () => {
         if (readOnly) return;
+        if (!AUTH.aguila) {
+          npInput.checked = isEmployeeNoPay(full);
+          return;
+        }
         if (!unlocked) {
           alert("Primero desbloquea con la contrasena.");
           npInput.checked = isEmployeeNoPay(full);

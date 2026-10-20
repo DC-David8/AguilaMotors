@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 45 · 20 de octubre de 2026
+- Gestión de empleados: la casilla **No cobra** solo la puede cambiar el **Jefe Aguila** (también lo impide la base con `proteger_rangos`).
+
 ### Versión 44 · 20 de octubre de 2026
 - Caja: las pestañas **Camiones** y **Aéreos** pasan a llamarse **Gama Camiones** y **Gama Aéreos** (también en el nombre de sus piezas).
 - **Gama VIP**: aviso de que todos los vehículos por donación (Prime, Deluxe, VIP, únicos, coleccionista y personalizados) se cobran igual, sea moto, coche, avión o camión. También en su **Full Tuning**.
