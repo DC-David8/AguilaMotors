@@ -378,8 +378,8 @@ const PRODUCT_CATEGORIES = [
   { key: "gama_media", label: "Gama Media" },
   { key: "gama_alta", label: "Gama Alta" },
   { key: "gama_vip", label: "Gama VIP" },
-  { key: "camiones", label: "Camiones" },
-  { key: "aereos", label: "Aéreos" },
+  { key: "camiones", label: "Gama Camiones" },
+  { key: "aereos", label: "Gama Aéreos" },
   { key: "full_tuning", label: "Full Tuning" },
   { key: "servicios_taller", label: "Servicios (Taller)" },
   { key: "servicios_grua", label: "Servicios (Grúa)" },
@@ -420,9 +420,12 @@ const GAMAS = [
   { key: "gama_media", label: "Gama Media" },
   { key: "gama_alta", label: "Gama Alta" },
   { key: "gama_vip", label: "Gama VIP" },
-  { key: "camiones", label: "Camiones" },
-  { key: "aereos", label: "Aéreos" },
+  { key: "camiones", label: "Gama Camiones" },
+  { key: "aereos", label: "Gama Aéreos" },
 ];
+
+// Aviso de la Gama VIP (en su pestana y en su Full Tuning).
+const VIP_NOTE = "💎 Vehículos por donación al servidor (Prime, Deluxe, VIP, únicos, de coleccionista y personalizados): da igual si es moto, coche, avión o camión, todos se cobran con los precios de la Gama VIP.";
 
 // Precio de cada pieza (mismo orden que TUNING_PIECES) por gama.
 const TUNING_PRICES = {
@@ -511,6 +514,7 @@ function buildTuningProducts() {
       out.push({
         name: `${piece} (${gama.label})`,
         price: prices[i],
+        note: gama.key === "gama_vip" && piece === "Full Tuning" ? "Cualquier vehículo por donación: Prime, Deluxe, VIP, únicos, coleccionista y personalizados (moto, coche, avión o camión)" : undefined,
         category,
         short: PIECE_SHORT[piece] || piece,
         group: GAMA_SHORT[gama.key] || "",
@@ -1783,7 +1787,10 @@ function setupCaja() {
       catNoteEl.textContent =
         state.activeCategory === "nitro"
           ? "⚠ Venta restringida: verifica bien a quién se lo vendes."
-          : "";
+          : state.activeCategory === "gama_vip"
+            ? VIP_NOTE
+            : "";
+      catNoteEl.classList.toggle("cat-note-box", !!catNoteEl.textContent);
     }
   }
 

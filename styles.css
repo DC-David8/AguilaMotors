@@ -1391,3 +1391,7 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .pg-warn-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .pg-warn-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border-radius: 999px; background: #1d0f0b; border: 1px solid #5c2a1f; font-size: 0.82rem; }
 .pg-warn-chip b { color: #fff; font-weight: 700; }
+
+/* Aviso de categoria (Gama VIP / Nitro) (v44) */
+#cat-note.cat-note-box { margin: 10px 0 4px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(249, 125, 2, 0.45);
+  background: linear-gradient(90deg, rgba(249, 125, 2, 0.14), rgba(249, 125, 2, 0.04)); color: #ffcf94; font-weight: 600; line-height: 1.45; }

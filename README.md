@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 44 · 20 de octubre de 2026
+- Caja: las pestañas **Camiones** y **Aéreos** pasan a llamarse **Gama Camiones** y **Gama Aéreos** (también en el nombre de sus piezas).
+- **Gama VIP**: aviso de que todos los vehículos por donación (Prime, Deluxe, VIP, únicos, coleccionista y personalizados) se cobran igual, sea moto, coche, avión o camión. También en su **Full Tuning**.
+
 ### Versión 43 · 19 de octubre de 2026
 - **Aviso de warn por no facturar**: quien no facturó nada en la semana (y no está como «No cobra») lleva `⚠️ **Aplicar warn** (no facturó)` en el mensaje de pagas, sale marcado en Totales y en un apartado **⚠️ Sin facturar esta semana** debajo del ranking. Solo aparece cuando ya se pegó el log.
 
