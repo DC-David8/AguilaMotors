@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 46 · 20 de octubre de 2026
+- Servicios (Taller): nuevo pack **Repostaje + Limpieza** ($ 650).
+
 ### Versión 45 · 20 de octubre de 2026
 - Gestión de empleados: la casilla **No cobra** solo la puede cambiar el **Jefe Aguila** (también lo impide la base con `proteger_rangos`).
 

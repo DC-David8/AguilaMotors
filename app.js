@@ -479,6 +479,7 @@ const SERVICE_SHORT = {
   "Reparación + Repostaje (Taller)": ["Rep+Gas", "T"],
   "Reparación + Limpieza + Repostaje (Taller)": ["Rep+Limp+Gas", "T"],
   "Repostaje (Taller)": ["Gas", "T"],
+  "Repostaje + Limpieza (Taller)": ["Gas+Limp", "T"],
   "Bayetas o Limpieza (Grúa)": ["Limp", "G"],
   "Reparación (Grúa)": ["Rep", "G"],
   "Reparación + Limpieza (Grúa)": ["Rep+Limp", "G"],
@@ -533,6 +534,7 @@ const SERVICE_PRODUCTS = [
   { name: "Reparación + Repostaje (Taller)", price: 1200, category: "servicios_taller" },
   { name: "Reparación + Limpieza + Repostaje (Taller)", price: 1250, category: "servicios_taller" },
   { name: "Repostaje (Taller)", price: 300, category: "servicios_taller" },
+  { name: "Repostaje + Limpieza (Taller)", price: 650, category: "servicios_taller" },
 
   // Servicios fuera del taller (grua)
   { name: "Bayetas o Limpieza (Grúa)", price: 400, category: "servicios_grua" },
