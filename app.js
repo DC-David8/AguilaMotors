@@ -429,13 +429,13 @@ const VIP_NOTE = "💎 Vehículos por donación al servidor (Prime, Deluxe, VIP,
 
 // Precio de cada pieza (mismo orden que TUNING_PIECES) por gama.
 const TUNING_PRICES = {
-  motos:      [800, 800, 800, 800, 800, 650, 800, 800, 900, 900, 900, 900, 900, 900, 10000],
-  gama_baja:  [600, 600, 600, 600, 600, 450, 600, 600, 700, 700, 700, 700, 700, 700, 10000],
-  gama_media: [950, 950, 950, 950, 950, 750, 950, 950, 1100, 1100, 1100, 1100, 1100, 1100, 20000],
-  gama_alta:  [1550, 1550, 1550, 1550, 1550, 1150, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
-  gama_vip:   [1550, 1550, 1550, 1550, 1550, 1150, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
+  motos:      [800, 800, 800, 800, 800, 600, 800, 800, 900, 900, 900, 900, 900, 900, 10000],
+  gama_baja:  [600, 600, 600, 600, 600, 400, 600, 600, 700, 700, 700, 700, 700, 700, 10000],
+  gama_media: [900, 900, 900, 900, 900, 700, 900, 900, 1100, 1100, 1100, 1100, 1100, 1100, 20000],
+  gama_alta:  [1500, 1500, 1500, 1500, 1500, 1100, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
+  gama_vip:   [1500, 1500, 1500, 1500, 1500, 1100, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
   // Camiones: mismos precios que Gama Alta (su precio de compra es parecido).
-  camiones:   [1550, 1550, 1550, 1550, 1550, 1150, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
+  camiones:   [1500, 1500, 1500, 1500, 1500, 1100, 1500, 1500, 1600, 1600, 1600, 1600, 1600, 1600, 40000],
   aereos:     [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 10000, 10000, 10000, 10000, 10000, 10000, 50000],
 };
 
@@ -530,19 +530,20 @@ const SERVICE_PRODUCTS = [
   // desde el menu de kits del juego (no por datafono) y se cuentan en Pagos → Venta de Kits.
   { name: "Limpieza (Taller)", price: 400, category: "servicios_taller" },
   { name: "Reparación (Taller)", price: 800, category: "servicios_taller" },
+  // Packs: siempre mas baratos que por separado; los de 3 servicios, mas que cualquiera de 2.
   { name: "Reparación + Limpieza (Taller)", price: 1000, category: "servicios_taller" },
-  { name: "Reparación + Repostaje (Taller)", price: 1200, category: "servicios_taller" },
-  { name: "Reparación + Limpieza + Repostaje (Taller)", price: 1250, category: "servicios_taller" },
+  { name: "Reparación + Repostaje (Taller)", price: 900, category: "servicios_taller" },
+  { name: "Reparación + Limpieza + Repostaje (Taller)", price: 1200, category: "servicios_taller" },
   { name: "Repostaje (Taller)", price: 300, category: "servicios_taller" },
-  { name: "Repostaje + Limpieza (Taller)", price: 650, category: "servicios_taller" },
+  { name: "Repostaje + Limpieza (Taller)", price: 600, category: "servicios_taller" },
 
   // Servicios fuera del taller (grua)
   { name: "Bayetas o Limpieza (Grúa)", price: 400, category: "servicios_grua" },
   { name: "Reparación (Grúa)", price: 800, category: "servicios_grua" },
-  { name: "Reparación + Limpieza (Grúa)", price: 1100, category: "servicios_grua" },
-  { name: "Reparación + Repostaje (Grúa)", price: 1300, category: "servicios_grua" },
-  { name: "Reparación + Limpieza + Repostaje (Grúa)", price: 1350, category: "servicios_grua" },
-  { name: "Repostaje (Grúa)", price: 350, category: "servicios_grua" },
+  { name: "Reparación + Limpieza (Grúa)", price: 1000, category: "servicios_grua" },
+  { name: "Reparación + Repostaje (Grúa)", price: 900, category: "servicios_grua" },
+  { name: "Reparación + Limpieza + Repostaje (Grúa)", price: 1200, category: "servicios_grua" },
+  { name: "Repostaje (Grúa)", price: 300, category: "servicios_grua" },
   { name: "Grúa Terrestre", price: 1500, category: "servicios_grua" },
   { name: "Grúa Aérea", price: 3500, category: "servicios_grua" },
   { name: "Rescate Aéreo Completo", price: 4500, category: "servicios_grua", note: "Incluye grúa aérea, reparación, limpieza y repostaje" },

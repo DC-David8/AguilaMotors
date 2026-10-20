@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 47 · 20 de octubre de 2026
+- **Precios que terminaban en 50, redondeados a la baja** (a favor del cliente): tuning de Motos, Gama Baja, Media, Alta, VIP y Camiones (950 → 900, 1550 → 1500, 1150 → 1100, 750 → 700, 650 → 600, 450 → 400) y Repostaje (Grúa) 350 → 300.
+- **Packs con sentido** (Taller y Grúa): Reparación + Limpieza $ 1000 · Reparación + Repostaje $ 900 · Repostaje + Limpieza $ 600 · los tres $ 1200. Siempre más baratos que por separado.
+
 ### Versión 46 · 20 de octubre de 2026
 - Servicios (Taller): nuevo pack **Repostaje + Limpieza** ($ 650).
 
