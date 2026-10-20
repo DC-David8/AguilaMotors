@@ -486,6 +486,7 @@ const SERVICE_SHORT = {
   "Reparación + Repostaje (Grúa)": ["Rep+Gas", "G"],
   "Reparación + Limpieza + Repostaje (Grúa)": ["Rep+Limp+Gas", "G"],
   "Repostaje (Grúa)": ["Gas", "G"],
+  "Repostaje + Limpieza (Grúa)": ["Gas+Limp", "G"],
   "Grúa Terrestre": ["Grua", "G"],
   "Grúa Aérea": ["Grua aerea", ""],
   "Rescate Aéreo Completo": ["Rescate aereo", ""],
@@ -528,22 +529,24 @@ function buildTuningProducts() {
 const SERVICE_PRODUCTS = [
   // Servicios dentro del taller. Los kits de reparacion no estan aqui: se venden
   // desde el menu de kits del juego (no por datafono) y se cuentan en Pagos → Venta de Kits.
-  { name: "Limpieza (Taller)", price: 400, category: "servicios_taller" },
+  // Orden: Reparacion, Limpieza, Repostaje y luego los packs de menor a mayor.
+  // Packs: siempre mas baratos que por separado; el de 3 servicios, mas que cualquiera de 2.
   { name: "Reparación (Taller)", price: 800, category: "servicios_taller" },
-  // Packs: siempre mas baratos que por separado; los de 3 servicios, mas que cualquiera de 2.
-  { name: "Reparación + Limpieza (Taller)", price: 1000, category: "servicios_taller" },
-  { name: "Reparación + Repostaje (Taller)", price: 900, category: "servicios_taller" },
-  { name: "Reparación + Limpieza + Repostaje (Taller)", price: 1200, category: "servicios_taller" },
+  { name: "Limpieza (Taller)", price: 400, category: "servicios_taller" },
   { name: "Repostaje (Taller)", price: 300, category: "servicios_taller" },
   { name: "Repostaje + Limpieza (Taller)", price: 600, category: "servicios_taller" },
+  { name: "Reparación + Repostaje (Taller)", price: 900, category: "servicios_taller" },
+  { name: "Reparación + Limpieza (Taller)", price: 1000, category: "servicios_taller" },
+  { name: "Reparación + Limpieza + Repostaje (Taller)", price: 1200, category: "servicios_taller" },
 
   // Servicios fuera del taller (grua)
-  { name: "Bayetas o Limpieza (Grúa)", price: 400, category: "servicios_grua" },
   { name: "Reparación (Grúa)", price: 800, category: "servicios_grua" },
-  { name: "Reparación + Limpieza (Grúa)", price: 1000, category: "servicios_grua" },
-  { name: "Reparación + Repostaje (Grúa)", price: 900, category: "servicios_grua" },
-  { name: "Reparación + Limpieza + Repostaje (Grúa)", price: 1200, category: "servicios_grua" },
+  { name: "Bayetas o Limpieza (Grúa)", price: 400, category: "servicios_grua" },
   { name: "Repostaje (Grúa)", price: 300, category: "servicios_grua" },
+  { name: "Repostaje + Limpieza (Grúa)", price: 600, category: "servicios_grua" },
+  { name: "Reparación + Repostaje (Grúa)", price: 900, category: "servicios_grua" },
+  { name: "Reparación + Limpieza (Grúa)", price: 1000, category: "servicios_grua" },
+  { name: "Reparación + Limpieza + Repostaje (Grúa)", price: 1200, category: "servicios_grua" },
   { name: "Grúa Terrestre", price: 1500, category: "servicios_grua" },
   { name: "Grúa Aérea", price: 3500, category: "servicios_grua" },
   { name: "Rescate Aéreo Completo", price: 4500, category: "servicios_grua", note: "Incluye grúa aérea, reparación, limpieza y repostaje" },
