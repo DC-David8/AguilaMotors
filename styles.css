@@ -1395,3 +1395,27 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 /* Aviso de categoria (Gama VIP / Nitro) (v44) */
 #cat-note.cat-note-box { margin: 10px 0 4px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(249, 125, 2, 0.45);
   background: linear-gradient(90deg, rgba(249, 125, 2, 0.14), rgba(249, 125, 2, 0.04)); color: #ffcf94; font-weight: 600; line-height: 1.45; }
+
+/* Ascensos y descensos (v49) */
+.pg-promos { margin-top: 16px; padding-top: 6px; border-top: 1px dashed #3a2c1d; }
+.pg-promo-rules { font-size: 0.75rem; }
+.pg-promo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pg-promo-col { padding: 12px; border-radius: 12px; border: 1px solid #2e241a; background: #120e0a; display: flex; flex-direction: column; gap: 8px; }
+.pg-promo-col.up { border-color: rgba(80, 220, 140, 0.35); }
+.pg-promo-col.down { border-color: rgba(255, 112, 90, 0.35); }
+.pg-promo-col h4 { margin: 0; font-size: 0.95rem; }
+.pg-promo-col.up h4 { color: #7fe0a8; } .pg-promo-col.down h4 { color: #ff9b8a; }
+.pg-promo-col > button { margin-top: auto; }
+.pg-promo-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; background: #1a140e; cursor: pointer; }
+.pg-promo-row input { margin-top: 3px; }
+.pg-promo-row span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pg-promo-row b { color: #fff; }
+.pg-promo-ranks { color: #ffb15c; font-weight: 700; font-size: 0.85rem; }
+.pg-promo-row small { color: var(--muted); font-size: 0.75rem; }
+.pg-promo-empty { margin: 4px 0; font-size: 0.85rem; }
+.pg-promo-cand { margin: 2px 0 0; font-size: 0.8rem; color: #ffcf94; }
+.pg-promo-actions { margin-top: 10px; }
+.pg-rules-box { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 10px; padding: 12px; border-radius: 12px; border: 1px solid #3a2c1d; background: #120e0a; }
+.pg-rules-box label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); }
+.pg-rules-box button { align-self: end; }
+@media (max-width: 700px) { .pg-promo-grid { grid-template-columns: 1fr; } }

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=48" />
+  <link rel="stylesheet" href="styles.css?v=49" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=48" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=49" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -202,6 +202,38 @@
             <button type="button" id="conta-manage-employees" class="ghost">Gestión de empleados</button>
           </div>
           <p class="muted pg-copied" id="pg-copy-status" role="status"></p>
+
+          <section class="pg-promos" id="pg-promos" hidden>
+            <div class="pg-sec">
+              <h3>📊 Ascensos y descensos de la semana</h3>
+              <span class="muted pg-promo-rules" id="pg-promo-rules"></span>
+            </div>
+            <div class="pg-promo-grid">
+              <div class="pg-promo-col up">
+                <h4>⬆️ Ascensos <span id="pg-up-count"></span></h4>
+                <div id="pg-up-list"></div>
+                <button type="button" id="pg-copy-up">📋 Copiar ascensos</button>
+              </div>
+              <div class="pg-promo-col down">
+                <h4>⬇️ Descensos <span id="pg-down-count"></span></h4>
+                <div id="pg-down-list"></div>
+                <button type="button" id="pg-copy-down">📋 Copiar descensos</button>
+              </div>
+            </div>
+            <div class="pg-actions pg-promo-actions">
+              <button type="button" id="pg-apply-ranks" class="ghost">✅ Aplicar rangos en Gestión</button>
+              <button type="button" id="pg-rules-edit" class="ghost" hidden>⚙️ Umbrales</button>
+            </div>
+            <p class="muted pg-copied" id="pg-promo-status" role="status"></p>
+            <div class="pg-rules-box" id="pg-rules-box" hidden>
+              <label>Mínimo para mantener el rango ($) <input id="rr-min" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Chalán → Mecánico ($) <input id="rr-chalan" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Mecánico → Experimentado ($) <input id="rr-mecanico" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Experimentado → Subjefe ($) <input id="rr-exp" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Subjefe: candidato a Jefe ($) <input id="rr-cand" class="text-input" type="number" min="0" step="1000" /></label>
+              <button type="button" id="rr-save">Guardar umbrales</button>
+            </div>
+          </section>
 
           <div class="shared-box">
             <h3>Datos compartidos</h3>
@@ -513,7 +545,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 48 - Aguila Motors</footer>
+    <footer class="app-version">Versión 49 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -765,6 +797,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=48"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>

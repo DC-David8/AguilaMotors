@@ -227,6 +227,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 49 · 21 de octubre de 2026
+- Pagos: apartado **📊 Ascensos y descensos de la semana**, calculado con lo facturado (facturas + kits):
+  - **Mínimo $ 40.000** para mantener el rango (los Chalanes no bajan). **Metas de ascenso:** Chalán $ 60.000 → Mecánico · Mecánico $ 120.000 → Experimentado · Experimentado $ 200.000 → Subjefe. Subjefe con $ 300.000 o más: «⭐ candidato a Jefe» (solo aviso).
+  - Nunca se proponen Jefe, Mano Derecha ni Jefe Aguila; quedan fuera los «No cobra».
+  - Casillas para quitar a alguien, **Copiar ascensos / descensos** (mensaje para Discord con `@silent`, menciones del empleado y de los roles) y **Aplicar rangos en Gestión**.
+  - El Jefe Aguila puede cambiar los umbrales (⚙️ Umbrales, guardados en línea).
+
 ### Versión 48 · 20 de octubre de 2026
 - Servicios (Taller) y (Grúa) ordenados: **Reparación, Limpieza, Repostaje** y después los packs de menor a mayor precio.
 - Servicios (Grúa): nuevo pack **Repostaje + Limpieza** ($ 600).

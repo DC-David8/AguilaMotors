@@ -616,6 +616,41 @@ function rankLabel(rank) {
 // sin contar al Jefe Aguila (con el 100 % ganaria siempre). Si hay empate,
 // cada ganador recibe el bono completo.
 const WEEK_BONUS = 10000;
+
+// ---------------------------------------------------------------------------
+// Ascensos y descensos: se mide lo FACTURADO en la semana (facturas + kits).
+// Minimo igual para todos para mantener el rango (los Chalanes no bajan) y
+// una meta por rango para ascender. Jefe, Mano Derecha y Jefe Aguila los da
+// solo el Jefe Aguila: aqui nunca se proponen. Los umbrales los cambia el
+// Jefe Aguila (se guardan en linea, app_settings "rank_rules").
+// ---------------------------------------------------------------------------
+const RANK_ROLE_IDS = {
+  "Chalán": "1263156546532151376",
+  "Mecánico": "1263156546532151377",
+  "Experimentado": "1263156546532151378",
+  "Subjefe": "1263156546532151383",
+  "Jefe": "1263156546532151385",
+};
+const RANK_RULES_DEFAULT = { min: 40000, up: { "Chalán": 60000, "Mecánico": 120000, "Experimentado": 200000 }, candidate: 300000 };
+let RANK_RULES = JSON.parse(JSON.stringify(RANK_RULES_DEFAULT));
+const PROMO_LADDER = ["Chalán", "Mecánico", "Experimentado", "Subjefe"];
+const UP_REASONS = [
+  "por su excelente labor y compromiso con el taller. 🏆",
+  "por su gran rendimiento esta semana. 🔧",
+  "por su constancia y dedicación. 💪",
+  "por estar a la altura y dar siempre el máximo. 🔥",
+];
+const DOWN_REASON = "por no alcanzar el mínimo de facturación de su rango.";
+
+async function loadRankRules() {
+  try {
+    const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.rank_rules");
+    const v = rows?.[0]?.value;
+    if (v && typeof v === "object") RANK_RULES = { ...RANK_RULES_DEFAULT, ...v, up: { ...RANK_RULES_DEFAULT.up, ...(v.up || {}) } };
+  } catch {
+    // se quedan los de por defecto
+  }
+}
 // Quien no factura nada en la semana (y si cobra) se lleva un warn.
 const WARN_TEXT = "⚠️ **Aplicar warn** (no facturó)";
 const fmtBonus = (n) => `$ ${Number(n).toLocaleString("en-US")}`;
@@ -2510,6 +2545,7 @@ function setupContabilidad() {
     byId("pg-kpi-top-sub").textContent = top ? `${fmtMoney(top.total)} facturados` : "-";
     byId("pg-total-label").textContent = paying ? `TOTAL A PAGAR · ${paying} ${paying === 1 ? "empleado" : "empleados"}` : "TOTAL A PAGAR";
 
+    renderPromos(rows, employees);
     list.textContent = "";
     if (!rows.length) {
       const p = document.createElement("p");
@@ -2579,6 +2615,175 @@ function setupContabilidad() {
       list.appendChild(box);
     }
   }
+
+  // ---------- Ascensos y descensos ----------
+  let promo = { up: [], down: [], cand: [], week: "" };
+  // Quien ya cambio de rango con "Aplicar" no vuelve a salir hasta otra semana (otro log).
+  let promoApplied = new Set();
+  let promoLogKey = "";
+
+  function weekRange() {
+    const ds = [];
+    for (const v of Object.values(state.invoices)) {
+      const m = String(v.paid_at || v.sent_at || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (m) ds.push(new Date(+m[3], +m[2] - 1, +m[1]));
+    }
+    if (!ds.length) return "";
+    const f = (d) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const a = new Date(Math.min(...ds)), b = new Date(Math.max(...ds));
+    return +a === +b ? `Semana del ${f(a)}` : `Semana del ${f(a)} al ${f(b)}`;
+  }
+
+  function renderPromos(rows, employees) {
+    const box = byId("pg-promos");
+    if (!box) return;
+    const hasData = rows.some((r) => r.total > 0);
+    box.hidden = !hasData || !hasAccess();
+    if (box.hidden) return;
+    const billed = new Map(rows.map((r) => [normalizeKeySimple(r.name), r.total]));
+    const R = RANK_RULES;
+    promo = { up: [], down: [], cand: [], week: weekRange() };
+    const logKey = Object.keys(state.invoices).sort().join("|");
+    if (logKey !== promoLogKey) {
+      promoLogKey = logKey;
+      promoApplied = new Set();
+    }
+    for (const e of employees) {
+      const name = fullName(e);
+      if (isEmployeeNoPay(name) || promoApplied.has(normalizeKeySimple(name))) continue;
+      const i = PROMO_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(e.rank));
+      if (i < 0) continue; // sin rango, Jefe, Mano Derecha y Jefe Aguila: fuera
+      const rank = PROMO_LADDER[i];
+      const total = billed.get(normalizeKeySimple(name)) || 0;
+      const item = { id: e.id, name, discord: getEmployeeDiscord(name), from: rank, total, on: true };
+      const goal = R.up[rank];
+      if (goal && total >= goal) promo.up.push({ ...item, to: PROMO_LADDER[i + 1], goal });
+      else if (i > 0 && total < R.min) promo.down.push({ ...item, to: PROMO_LADDER[i - 1], goal: R.min });
+      else if (rank === "Subjefe" && total >= R.candidate) promo.cand.push(item);
+    }
+    promo.up.sort((a, b) => b.total - a.total);
+    promo.down.sort((a, b) => a.total - b.total);
+    byId("pg-promo-rules").textContent =
+      `Mínimo ${fmtMoney(R.min)} · Metas: Chalán ${fmtMoney(R.up["Chalán"])} · Mecánico ${fmtMoney(R.up["Mecánico"])} · Experimentado ${fmtMoney(R.up["Experimentado"])}`;
+    const draw = (listId, items, kind) => {
+      const list = byId(listId);
+      list.textContent = "";
+      if (!items.length) {
+        const p = document.createElement("p");
+        p.className = "muted pg-promo-empty";
+        p.textContent = kind === "up" ? "Nadie alcanza la meta esta semana." : "Todos superan el mínimo. 👏";
+        list.appendChild(p);
+      }
+      for (const it of items) {
+        const row = document.createElement("label");
+        row.className = "pg-promo-row";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = it.on;
+        cb.addEventListener("change", () => (it.on = cb.checked));
+        const txt = document.createElement("span");
+        const n = document.createElement("b");
+        n.textContent = it.name;
+        const ranks = document.createElement("span");
+        ranks.className = "pg-promo-ranks";
+        ranks.textContent = `${rankLabel(it.from)} → ${rankLabel(it.to)}`;
+        const meta = document.createElement("small");
+        meta.textContent = `${fmtMoney(it.total)} facturados · ${kind === "up" ? "meta" : "mínimo"} ${fmtMoney(it.goal)}`;
+        txt.append(n, ranks, meta);
+        row.append(cb, txt);
+        list.appendChild(row);
+      }
+      if (kind === "up") {
+        for (const c of promo.cand) {
+          const p = document.createElement("p");
+          p.className = "pg-promo-cand";
+          p.textContent = `⭐ ${c.name} (${rankLabel(c.from)}) es candidato a Jefe: ${fmtMoney(c.total)} facturados. Lo decide el Jefe Aguila.`;
+          list.appendChild(p);
+        }
+      }
+    };
+    draw("pg-up-list", promo.up, "up");
+    draw("pg-down-list", promo.down, "down");
+    byId("pg-up-count").textContent = `(${promo.up.length})`;
+    byId("pg-down-count").textContent = `(${promo.down.length})`;
+    byId("pg-rules-edit").hidden = !AUTH.aguila;
+  }
+
+  function promoText(kind) {
+    const items = (kind === "up" ? promo.up : promo.down).filter((x) => x.on);
+    if (!items.length) return "";
+    const who = (it) => (it.discord ? `<@${it.discord}>` : `**${it.name}**`);
+    const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r)}**`);
+    const lines = items.map((it, i) =>
+      kind === "up"
+        ? `⬆️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${UP_REASONS[i % UP_REASONS.length]}`
+        : `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${DOWN_REASON}`
+    );
+    const week = promo.week ? `${promo.week} · ` : "";
+    return kind === "up"
+      ? `@silent\n# 📈 ASCENSOS DE LA SEMANA\n-# ${week}Aguila Motors 🦅\n\n${lines.join("\n")}\n\n-# ¡Enhorabuena y a seguir así! 🔥`
+      : `@silent\n# 📉 DESCENSOS DE LA SEMANA\n-# ${week}Aguila Motors 🦅\n\n${lines.join("\n")}\n\n-# Cada semana es una nueva oportunidad para volver a subir. 💪`;
+  }
+
+  const promoStatus = (t) => {
+    const s = byId("pg-promo-status");
+    if (!s) return;
+    s.textContent = t;
+    setTimeout(() => (s.textContent = ""), 5000);
+  };
+  for (const kind of ["up", "down"]) {
+    byId(kind === "up" ? "pg-copy-up" : "pg-copy-down")?.addEventListener("click", async () => {
+      const text = promoText(kind);
+      if (!text) return alert(kind === "up" ? "No hay ascensos marcados." : "No hay descensos marcados.");
+      const ok = await copyText(text);
+      if (!ok) openCopyFallback(text);
+      else promoStatus(`✔ Copiados los ${kind === "up" ? "ascensos" : "descensos"}. Pégalos en su canal de Discord.`);
+    });
+  }
+  byId("pg-apply-ranks")?.addEventListener("click", async () => {
+    const items = [...promo.up, ...promo.down].filter((x) => x.on);
+    if (!items.length) return alert("No hay cambios marcados.");
+    const list = items.map((x) => `• ${x.name}: ${rankLabel(x.from)} → ${rankLabel(x.to)}`).join("\n");
+    if (!confirm(`¿Cambiar estos rangos en Gestión de empleados?\n\n${list}`)) return;
+    const btn = byId("pg-apply-ranks");
+    btn.disabled = true;
+    let done = 0;
+    try {
+      for (const it of items) {
+        await updateEmployee(it.id, { rank: it.to }, "jefe");
+        promoApplied.add(normalizeKeySimple(it.name));
+        done++;
+      }
+      promoStatus(`✔ ${done} ${done === 1 ? "rango actualizado" : "rangos actualizados"} en Gestión de empleados.`);
+    } catch (err) {
+      alert(`Se aplicaron ${done} de ${items.length}. Error: ${err.message || err}`);
+    } finally {
+      btn.disabled = false;
+      await refresh();
+    }
+  });
+  byId("pg-rules-edit")?.addEventListener("click", () => {
+    const box = byId("pg-rules-box");
+    box.hidden = !box.hidden;
+    byId("rr-min").value = RANK_RULES.min;
+    byId("rr-chalan").value = RANK_RULES.up["Chalán"];
+    byId("rr-mecanico").value = RANK_RULES.up["Mecánico"];
+    byId("rr-exp").value = RANK_RULES.up["Experimentado"];
+    byId("rr-cand").value = RANK_RULES.candidate;
+  });
+  byId("rr-save")?.addEventListener("click", async () => {
+    const n = (id) => Math.max(0, Math.round(Number(byId(id).value) || 0));
+    const rules = { min: n("rr-min"), up: { "Chalán": n("rr-chalan"), "Mecánico": n("rr-mecanico"), "Experimentado": n("rr-exp") }, candidate: n("rr-cand") };
+    try {
+      await cvCloud.upsert("app_settings", [{ key: "rank_rules", value: rules }], "key");
+      RANK_RULES = rules;
+      byId("pg-rules-box").hidden = true;
+      promoStatus("✔ Umbrales guardados.");
+      await refresh();
+    } catch (err) {
+      alert(`No se pudieron guardar: ${err.message || err}`);
+    }
+  });
 
   async function refresh() {
     const invSummary = {
@@ -4010,7 +4215,7 @@ Promise.allSettled([
   }),
   Promise.resolve()
     .then(() => authInit())
-    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null])),
+    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null])),
 ])
   .finally(() => {
     setupCaja();
