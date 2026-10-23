@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 56 · 22 de octubre de 2026
+- Copiador de kits: instrucciones para **Chrome, Firefox, Opera y Brave** además de Edge (cómo mostrar la barra de favoritos/marcadores en cada uno).
+
 ### Versión 55 · 22 de octubre de 2026
 - Pagos: **🦅 Copiador de kits**, un marcador para la barra de favoritos de Edge. En el canal de kits del Discord de la ciudad (discord.com) recoge las ventas de la semana (hora de España) mientras subes con la rueda, avisa cuando la semana está completa y las copia. Sin bot ni permisos: solo lee lo que ya ves en pantalla y no se desplaza solo.
 - Botón **Copiador de kits** en el cuadro de facturas, con las instrucciones para instalarlo y usarlo.

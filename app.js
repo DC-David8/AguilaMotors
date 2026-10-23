@@ -6064,7 +6064,7 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
 // semana (hora de España) mientras subes con la rueda y los copia.
 function aguilaKitsCopier() {
   if (window.__aguilaKits) { window.__aguilaKits.show(); return; }
-  if (!/discord\.com$/.test(location.hostname)) { alert("Abre el canal de kits en discord.com (en Edge) y pulsa otra vez el marcador."); return; }
+  if (!/discord\.com$/.test(location.hostname)) { alert("Abre el canal de kits en discord.com (en el navegador, no en la aplicación) y pulsa otra vez el marcador."); return; }
   const EPOCH = 1420070400000n;
   const seen = new Map();
   const tsOf = (id) => { try { return Number((BigInt(id) >> 22n) + EPOCH); } catch { return 0; } };
