@@ -5965,13 +5965,20 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
   from.value = isoU(startDay);
   to.value = isoU(new Date(startDay.getTime() + 6 * 86400000));
   const rangeBox = byId("dlog-range");
-  const fmtLocal = (ms) =>
-    new Date(ms).toLocaleString("es-GT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+  // Banderas en SVG: Windows no dibuja los emojis de banderas (salen "ES"/"GT").
+  const FLAG_ES = '<svg class="flag" viewBox="0 0 30 20" aria-label="España"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></svg>';
+  const FLAG_GT = '<svg class="flag" viewBox="0 0 30 20" aria-label="Guatemala"><rect width="30" height="20" fill="#4997d0"/><rect x="10" width="10" height="20" fill="#fff"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#6a9a3a" stroke-width="1.1"/></svg>';
+  const fmtIn = (ms, tz) =>
+    new Date(ms).toLocaleString("es-ES", { timeZone: tz, weekday: "long", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).replace(/,/g, "").replace(/ (\d{2}:\d{2})$/, " a las $1");
   const showRange = () => {
     if (!from.value || !to.value || !rangeBox) return;
     const s = dlogMadridMidnight(from.value);
     const e = dlogMadridMidnight(to.value, 1);
-    rangeBox.textContent = `🕓 En tu hora: del ${fmtLocal(s)} al ${fmtLocal(e)}`;
+    const esFrom = fmtIn(s, "Europe/Madrid");
+    const esTo = fmtIn(e - 60000, "Europe/Madrid").replace(/23:59$/, "24:00");
+    rangeBox.innerHTML =
+      `<div class="dlog-tz">${FLAG_ES}<span><b>España:</b> del ${esFrom} al ${esTo}</span></div>` +
+      `<div class="dlog-tz">${FLAG_GT}<span><b>Guatemala:</b> del ${fmtIn(s, "America/Guatemala")} al ${fmtIn(e, "America/Guatemala")}</span></div>`;
   };
   from.addEventListener("change", showRange);
   to.addEventListener("change", showRange);

@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 54 · 22 de octubre de 2026
+- Pagos → Facturas desde Discord: el corte de la semana se muestra en los dos países, con su bandera: **España** (del domingo 00:00 al sábado 24:00) y **Guatemala** (del sábado 16:00 al sábado 16:00, o 17:00 con el horario de invierno de España). Se ve igual desde cualquier país. Explicación corta debajo.
+- Banderas dibujadas en la página (en Windows los emojis de banderas salen como letras).
+
 ### Versión 53 · 22 de octubre de 2026
 - Pagos: los **warns pasan a ser strikes** y se acumulan semana a semana.
   - Strike si en la semana **no factura nada o no llega al mínimo** ($ 40.000, facturas + kits; el mismo mínimo de Ascensos y descensos). Los que no cobran no reciben strikes.
