@@ -1034,7 +1034,6 @@ html, body {
 @media (max-width: 700px) {
   .topbar { padding-bottom: 12px; }
   .topbar::after { height: 4px; border-radius: 0; }
-  .add-toast { display: none; }
   .card::before, .card::after { top: 7px; width: 5px; height: 5px; }
   .card::before { left: 7px; }
   .card::after { right: 7px; }
@@ -1458,9 +1457,9 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .dlog-kits-link { display: inline-block; padding: 5px 10px; border-radius: 8px; background: #5865f2; color: #fff !important; font-weight: 600; font-size: 12.5px; text-decoration: none; }
 .dlog-kits-link:hover { background: #4752c4; }
 
-/* v59 · Avisos de los botones del ticket tambien en el movil, encima de la barra del ticket */
+/* v59-60 · Avisos de la Caja tambien en el movil, encima de la barra del ticket */
 @media (max-width: 700px) {
-  .add-toast.act {
+  .add-toast {
     display: flex;
     left: 12px;
     right: 12px;

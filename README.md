@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 60 · 23 de octubre de 2026
+- Caja en el móvil: el aviso **«✔ Añadido»** también sale en el móvil, encima de la barra del ticket, igual que los de los botones.
+
 ### Versión 59 · 23 de octubre de 2026
 - Caja en el móvil: los avisos de **Deshacer, Quitar, Limpiar, Copiar total y Copiar concepto** salen también en el móvil, justo encima de la barra del ticket. El de «Añadido» sigue solo en PC (en el móvil ya lo muestra la barra).
 

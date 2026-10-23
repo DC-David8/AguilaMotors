@@ -1755,7 +1755,6 @@ function setupCaja() {
       el.append(b);
     }
     if (tail) el.append(tail);
-    // En el movil solo se ven los avisos de los botones (el de añadir ya lo muestra la barra del ticket).
     el.classList.toggle("act", isAction);
     el.classList.add("is-visible");
     clearTimeout(toastTimer);
