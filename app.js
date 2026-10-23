@@ -2229,7 +2229,15 @@ const RE_BUYER = /^\s*Comprador:\s*(.+?)\s*$/i;
 const RE_KITS_QTY = /^\s*Cantidad:\s*`?(\d+)`?\s*$/i;
 
 function processText(rawText) {
-  const lines = rawText.split(/\r?\n/);
+  // Limpia lo que a veces llega en crudo desde Discord: colores ANSI
+  // ("[36mComercio:[0m"), la linea "ansi" del bloque de codigo, titulos "# "
+  // y asteriscos de negrita/cursiva.
+  const lines = rawText
+    .replace(/\u001b?\[[\d;]*m/g, "")
+    .replace(/```[a-z]*/gi, "")
+    .split(/\r?\n/)
+    .filter((l) => !/^\s*ansi\s*$/i.test(l))
+    .map((l) => l.replace(/^[ \t]*(?:-#|#{1,3})[ \t]+/, "").replace(/\*/g, ""));
   const invoices = {};
   const kitsSales = [];
   let currentKind = null; // "sent" | "paid" | "datafono" | "kits"
@@ -5715,10 +5723,11 @@ function setupCompraventa() {
 
 function dlogClean(t) {
   return String(t || "")
-    .replace(/\*\*|__|~~|`/g, "")
-    .replace(/^\s*>\s?/gm, "")
-    .replace(/^\s*[*_]\s*/gm, "")
-    .replace(/\s*[*_]\s*$/gm, "");
+    .replace(/\u001b?\[[\d;]*m/g, "") // colores ANSI del bloque ```ansi
+    .replace(/```[a-z]*[ \t]*\n?/gi, "") // aperturas/cierres de bloque de codigo
+    .replace(/\*|__|~~|`/g, "")
+    .replace(/^[ \t]*(?:-#|#{1,3})[ \t]+/gm, "") // titulos "# 150000€" y subtexto "-#"
+    .replace(/^\s*>\s?/gm, "");
 }
 
 function dlogDate(iso) {

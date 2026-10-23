@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 52 · 22 de octubre de 2026
+- Pagos: el lector entiende el **formato nuevo del Datáfono**: importe como título (`# 150000€`), `Concepto` en cursiva y Comercio/Cobrador/Cliente dentro de un bloque `ansi` con colores. Se limpian los códigos de color (`[36m`…`[0m`), la línea `ansi`, los `#` y los asteriscos, tanto al traerlas con el bot como al pegarlas a mano.
+
 ### Versión 51 · 22 de octubre de 2026
 - Pagos → Facturas desde Discord: las fechas cuentan en **hora de España**. La semana va del **domingo 00:00 al sábado 24:00** (España), que en Guatemala es el **sábado a las 16:00** (o a las 17:00 cuando España está en horario de invierno). El cambio de hora se calcula solo.
 - Debajo de las fechas se ve el corte en tu hora («del sáb 17 oct 16:00 al sáb 24 oct 16:00»).
