@@ -5756,6 +5756,32 @@ function dlogMessageText(m) {
   return out.join("\n");
 }
 
+// Partes de una fecha vista en hora de España (Europe/Madrid).
+function dlogMadridParts(ms) {
+  const parts = {};
+  for (const p of new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Madrid", year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "numeric", second: "numeric", weekday: "short", hourCycle: "h23",
+  }).formatToParts(new Date(ms))) parts[p.type] = p.value;
+  return {
+    y: +parts.year, m: +parts.month, d: +parts.day, h: +parts.hour % 24, mi: +parts.minute, s: +parts.second,
+    wd: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.weekday),
+  };
+}
+
+// Instante (ms) de las 00:00 en España del dia "AAAA-MM-DD" (+ addDays).
+function dlogMadridMidnight(isoDay, addDays = 0) {
+  const [y, m, d] = isoDay.split("-").map(Number);
+  const target = Date.UTC(y, m - 1, d + addDays);
+  let guess = target;
+  for (let i = 0; i < 3; i++) {
+    const p = dlogMadridParts(guess);
+    const seen = Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, p.s);
+    guess += target - seen;
+  }
+  return guess;
+}
+
 function dlogToText(rows) {
   return rows.map(dlogMessageText).filter(Boolean).join("\n\n");
 }
@@ -5769,12 +5795,29 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
   const to = byId("dlog-to");
   const btn = byId("dlog-load");
   const status = byId("dlog-status");
-  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  // Por defecto: los ultimos 7 dias (hoy incluido).
-  const today = new Date();
-  const weekAgo = new Date(today.getTime() - 6 * 86400000);
-  to.value = iso(today);
-  from.value = iso(weekAgo);
+  // Semana de pago: domingo 00:00 a sabado 24:00 en hora de ESPAÑA (se paga
+  // el domingo). En Guatemala el cierre cae el sabado a las 16:00 (verano
+  // europeo) o a las 17:00 (invierno europeo); el calculo lo hace solo.
+  // Por defecto: si en España ya es domingo, la semana que acaba de cerrar;
+  // si no, la semana en curso.
+  const md = dlogMadridParts(Date.now());
+  const todayUtc = Date.UTC(md.y, md.m - 1, md.d);
+  const startDay = md.wd === 0 ? new Date(todayUtc - 7 * 86400000) : new Date(todayUtc - md.wd * 86400000);
+  const isoU = (d) => d.toISOString().slice(0, 10);
+  from.value = isoU(startDay);
+  to.value = isoU(new Date(startDay.getTime() + 6 * 86400000));
+  const rangeBox = byId("dlog-range");
+  const fmtLocal = (ms) =>
+    new Date(ms).toLocaleString("es-GT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+  const showRange = () => {
+    if (!from.value || !to.value || !rangeBox) return;
+    const s = dlogMadridMidnight(from.value);
+    const e = dlogMadridMidnight(to.value, 1);
+    rangeBox.textContent = `🕓 En tu hora: del ${fmtLocal(s)} al ${fmtLocal(e)}`;
+  };
+  from.addEventListener("change", showRange);
+  to.addEventListener("change", showRange);
+  showRange();
   const say = (msg, kind = "") => {
     status.className = `dlog-status ${kind}`;
     status.innerHTML = msg;
@@ -5782,9 +5825,8 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
 
   btn.addEventListener("click", async () => {
     if (!from.value || !to.value) return say("Elige las dos fechas.", "err");
-    const start = new Date(`${from.value}T00:00:00`);
-    const end = new Date(`${to.value}T00:00:00`);
-    end.setDate(end.getDate() + 1);
+    const start = new Date(dlogMadridMidnight(from.value));
+    const end = new Date(dlogMadridMidnight(to.value, 1));
     if (end <= start) return say("La fecha <b>Hasta</b> debe ser igual o posterior a <b>Desde</b>.", "err");
     btn.disabled = true;
     try {

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=50" />
+  <link rel="stylesheet" href="styles.css?v=51" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=50" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=51" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -148,11 +148,12 @@
           <div id="dlog-box" class="dlog-box hidden">
             <div class="dlog-title">📥 Facturas desde el Discord del taller</div>
             <div class="dlog-row">
-              <label>Desde <input type="date" id="dlog-from"></label>
-              <label>Hasta <input type="date" id="dlog-to"></label>
+              <label>Desde (domingo) <input type="date" id="dlog-from"></label>
+              <label>Hasta (sábado) <input type="date" id="dlog-to"></label>
               <button id="dlog-load" class="primary">Traer facturas</button>
             </div>
-            <div id="dlog-status" class="dlog-status">Elige las fechas de la semana. Después pega los kits con <strong>Pegar + Procesar</strong>.</div>
+            <div id="dlog-range" class="dlog-range"></div>
+            <div id="dlog-status" class="dlog-status">Las fechas cuentan en <b>hora de España</b> (cierre el sábado a las 24:00). Después pega los kits con <strong>Pegar + Procesar</strong>.</div>
           </div>
           <textarea id="conta-input" class="terminal-input" rows="14" placeholder="Pega aqui el texto y pulsa Procesar"></textarea>
           <div class="actions">
@@ -554,7 +555,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 50 - Aguila Motors</footer>
+    <footer class="app-version">Versión 51 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -806,6 +807,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=50"></script>
+  <script src="app.js?v=51"></script>
 </body>
 </html>

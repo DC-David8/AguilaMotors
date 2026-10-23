@@ -1430,3 +1430,5 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .dlog-status { font-size: 12.5px; margin-top: 8px; opacity: .85; line-height: 1.4; }
 .dlog-status.ok { color: #6fdc8c; opacity: 1; }
 .dlog-status.err { color: #ff8a7a; opacity: 1; }
+
+.dlog-range { font-size: 12.5px; margin-top: 8px; font-weight: 600; }

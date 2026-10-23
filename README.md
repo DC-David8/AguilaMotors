@@ -227,6 +227,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 51 · 22 de octubre de 2026
+- Pagos → Facturas desde Discord: las fechas cuentan en **hora de España**. La semana va del **domingo 00:00 al sábado 24:00** (España), que en Guatemala es el **sábado a las 16:00** (o a las 17:00 cuando España está en horario de invierno). El cambio de hora se calcula solo.
+- Debajo de las fechas se ve el corte en tu hora («del sáb 17 oct 16:00 al sáb 24 oct 16:00»).
+- Por defecto se elige la semana en curso; si en España ya es domingo, la semana que acaba de cerrar.
+
 ### Versión 50 · 22 de octubre de 2026
 - Pagos: nuevo cuadro **📥 Facturas desde el Discord del taller** (solo Jefes). Eliges **Desde / Hasta** y pulsa **Traer facturas**: la página pide al bot que copie lo último del canal y carga las facturas de esas fechas ya procesadas.
 - Después, **Pegar + Procesar** añade el log de **kits** debajo (ya no borra las facturas traídas). **Limpiar** lo vacía todo.
