@@ -227,6 +227,14 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 53 · 22 de octubre de 2026
+- Pagos: los **warns pasan a ser strikes** y se acumulan semana a semana.
+  - Strike si en la semana **no factura nada o no llega al mínimo** ($ 40.000, facturas + kits; el mismo mínimo de Ascensos y descensos). Los que no cobran no reciben strikes.
+  - Una semana en la que llega al mínimo **pone su cuenta a cero**. Con **3 strikes seguidos** la página avisa «🚫 Strike 3/3 · despido» (el despido lo haces tú).
+  - Se ven en el aviso de la semana (con lo facturado o «Sin facturar»), en Totales, en **Copiar para Discord** y en **Gestión de empleados** junto al nombre.
+- Nuevo recuadro **🔒 Cierre de semana**: guarda en Supabase lo que facturó y cobró cada uno y quién llevó strike (tabla `pagos_semanas`, solo Jefes). Solo cuentan las semanas cerradas. Se puede **Volver a guardar** o **Reabrir**.
+- SQL nuevo: `bot-facturas/4_semanas_strikes.sql`.
+
 ### Versión 52 · 22 de octubre de 2026
 - Pagos: el lector entiende el **formato nuevo del Datáfono**: importe como título (`# 150000€`), `Concepto` en cursiva y Comercio/Cobrador/Cliente dentro de un bloque `ansi` con colores. Se limpian los códigos de color (`[36m`…`[0m`), la línea `ansi`, los `#` y los asteriscos, tanto al traerlas con el bot como al pegarlas a mano.
 

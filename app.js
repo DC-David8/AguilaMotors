@@ -651,8 +651,58 @@ async function loadRankRules() {
     // se quedan los de por defecto
   }
 }
-// Quien no factura nada en la semana (y si cobra) se lleva un warn.
-const WARN_TEXT = "⚠️ **Aplicar warn** (no facturó)";
+// Strikes: quien no factura nada o no llega al minimo de la semana
+// (RANK_RULES.min, facturas + kits) y si cobra, se lleva un strike.
+// Se acumulan semana a semana (semanas cerradas en Pagos) y se borran en
+// cuanto la persona factura algo. Con STRIKE_MAX toca despido.
+const STRIKE_MAX = 3;
+let STRIKE_HIST = []; // semanas cerradas (tabla pagos_semanas), la mas reciente primero
+
+async function loadStrikeHist() {
+  try {
+    const r = await cvCloud.req("/rest/v1/pagos_semanas?select=semana,desde,hasta,datos,cerrada_por,created_at&order=semana.desc&limit=30");
+    STRIKE_HIST = Array.isArray(r) ? r : [];
+  } catch {
+    STRIKE_HIST = [];
+  }
+}
+
+function strikeRowIn(week, id, name) {
+  const key = normalizeKeySimple(name);
+  return (week?.datos?.rows || []).find((r) => (id != null && r.id != null && String(r.id) === String(id)) || normalizeKeySimple(r.name) === key);
+}
+
+// Strikes seguidos en semanas cerradas anteriores a "beforeWeek" (AAAA-MM-DD;
+// vacio = todas). Una semana en la que facturo corta la cuenta.
+function strikesBefore(id, name, beforeWeek = "") {
+  let n = 0;
+  for (const w of STRIKE_HIST) {
+    if (beforeWeek && String(w.semana) >= beforeWeek) continue;
+    const r = strikeRowIn(w, id, name);
+    if (!r || r.noPay) continue; // no estaba o no cobraba: no cuenta
+    if (r.strike) n++;
+    else break;
+  }
+  return n;
+}
+
+function strikeLabel(n) {
+  return n >= STRIKE_MAX ? `Strike ${n}/${STRIKE_MAX} · despido` : `Strike ${n}/${STRIKE_MAX}`;
+}
+
+// Motivo del strike: no facturar nada o no llegar al minimo de la semana.
+function strikeReason(gross) {
+  return gross > 0 ? `no llegó al mínimo: ${fmtMoney(gross)} de ${fmtMoney(RANK_RULES.min)}` : "no facturó";
+}
+
+function strikeText(n, gross = 0) {
+  return `${n >= STRIKE_MAX ? "🚫" : "⚠️"} **${strikeLabel(n)}** (${strikeReason(gross)})`;
+}
+
+// Semana que se esta revisando en Pagos (domingo, del cuadro de fechas).
+function payWeekKey() {
+  return byId("dlog-from")?.value || "";
+}
 const fmtBonus = (n) => `$ ${Number(n).toLocaleString("en-US")}`;
 
 function weekWinners(rows, isRegistered = () => true) {
@@ -2505,6 +2555,7 @@ function setupContabilidad() {
 
   function renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar: baseTotal }) {
     let totalAPagar = baseTotal;
+    lastSnapshot = null;
     const list = byId("pg-ranking");
     if (!list) return;
     const byKey = new Map();
@@ -2604,25 +2655,120 @@ function setupContabilidad() {
       list.appendChild(card);
     }
 
-    // Sin facturar esta semana: solo tienen derecho los que no cobran.
-    const billed = new Set(rows.filter((r) => r.total > 0).map((r) => normalizeKeySimple(r.name)));
+    // Strike: no facturar o no llegar al minimo (solo se libran los que no cobran).
+    const grossOf = (e) => rows.find((x) => x.emp === e)?.total || 0;
     const idle = employees
-      .filter((e) => !isEmployeeNoPay(fullName(e)) && !billed.has(normalizeKeySimple(fullName(e))))
+      .filter((e) => !isEmployeeNoPay(fullName(e)) && grossOf(e) < RANK_RULES.min)
       .sort(byRankThenName);
+    const wk = payWeekKey();
+    lastSnapshot = {
+      rows: employees.map((e) => {
+        const name = fullName(e);
+        const r = rows.find((x) => x.emp === e);
+        const noPay = isEmployeeNoPay(name);
+        return {
+          id: e.id ?? null,
+          name,
+          rank: e.rank || "",
+          gross: r ? r.total : 0,
+          payout: r && !noPay ? r.payout + (winners.has(r) ? WEEK_BONUS : 0) : 0,
+          bonus: r && winners.has(r) && !noPay ? WEEK_BONUS : 0,
+          noPay,
+          strike: !noPay && (r ? r.total : 0) < RANK_RULES.min,
+        };
+      }),
+      total: invSummary.total + kitsSummary.total,
+      facturas: invSummary.count,
+    };
     if (idle.length) {
       const box = el("div", "pg-warn-box");
-      box.appendChild(el("div", "pg-warn-head", `⚠️ Sin facturar esta semana · aplicar warn (${idle.length})`));
+      box.appendChild(el("div", "pg-warn-head", `⚠️ Strikes de esta semana · no facturaron o no llegaron a ${fmtMoney(RANK_RULES.min)} (${idle.length})`));
       const chips = el("div", "pg-warn-list");
       for (const e of idle) {
-        const chip = el("span", "pg-warn-chip");
+        const n = strikesBefore(e.id, fullName(e), wk) + 1;
+        const chip = el("span", "pg-warn-chip" + (n >= STRIKE_MAX ? " max" : ""));
         chip.appendChild(el("b", "", fullName(e)));
         if (e.rank) chip.appendChild(el("span", "pg-badge " + (RANK_BADGE[normalizeKeySimple(e.rank)] || ""), rankLabel(e.rank)));
+        const g = grossOf(e);
+        chip.appendChild(el("span", "pg-strike-why", g > 0 ? `${fmtMoney(g)} de ${fmtMoney(RANK_RULES.min)}` : "Sin facturar"));
+        chip.appendChild(el("span", "pg-strike" + (n >= STRIKE_MAX ? " max" : ""), n >= STRIKE_MAX ? `🚫 ${strikeLabel(n)}` : strikeLabel(n)));
         chips.appendChild(chip);
       }
       box.appendChild(chips);
       list.appendChild(box);
     }
   }
+
+  // ---------- Cierre de semana (guarda la semana para contar strikes) ----------
+  let lastSnapshot = null;
+  const fmtDay = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "");
+  function renderClose() {
+    const box = byId("pg-close");
+    if (!box) return;
+    box.hidden = !hasAccess();
+    if (box.hidden) return;
+    const wk = payWeekKey();
+    const to = byId("dlog-to")?.value || "";
+    const done = STRIKE_HIST.find((w) => String(w.semana) === wk);
+    const hasData = !!(lastSnapshot && lastSnapshot.rows.length && (lastSnapshot.total > 0));
+    byId("pg-close-week").textContent = wk ? `dom ${fmtDay(wk)} – sáb ${fmtDay(to)}` : "";
+    const btn = byId("pg-close-btn");
+    const reopen = byId("pg-reopen-btn");
+    const info = byId("pg-close-info");
+    reopen.hidden = !done;
+    btn.disabled = !hasData || !wk;
+    btn.textContent = done ? "Volver a guardar" : "Cerrar semana";
+    if (done) {
+      const n = (done.datos?.rows || []).filter((r) => r.strike).length;
+      const when = done.created_at ? new Date(done.created_at).toLocaleString("es-GT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+      info.textContent = `✅ Cerrada${when ? ` el ${when}` : ""}${done.cerrada_por ? ` por ${done.cerrada_por}` : ""} · ${n} ${n === 1 ? "strike" : "strikes"} guardados.`;
+    } else if (!hasData) {
+      info.textContent = "Carga las facturas y los kits de la semana para poder cerrarla.";
+    } else {
+      info.textContent = "Cuando hayas pagado, ciérrala: así se guardan los strikes para las próximas semanas.";
+    }
+  }
+
+  byId("pg-close-btn")?.addEventListener("click", async () => {
+    const wk = payWeekKey();
+    const to = byId("dlog-to")?.value || "";
+    if (!wk || !lastSnapshot) return;
+    const strikes = lastSnapshot.rows.filter((r) => r.strike).map((r) => `${r.name} (${strikeLabel(strikesBefore(r.id, r.name, wk) + 1)})`);
+    const msg = `¿Cerrar la semana del domingo ${fmtDay(wk)} al sábado ${fmtDay(to)}?\n\n` +
+      (strikes.length ? `Strikes que se guardan:\n• ${strikes.join("\n• ")}` : "Nadie recibe strike esta semana.");
+    if (!confirm(msg)) return;
+    const btn = byId("pg-close-btn");
+    btn.disabled = true;
+    try {
+      await cvCloud.req("/rest/v1/pagos_semanas?on_conflict=semana", {
+        method: "POST",
+        auth: true,
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: { semana: wk, desde: wk, hasta: to || wk, datos: lastSnapshot, cerrada_por: AUTH.name || "", created_at: new Date().toISOString() },
+      });
+      await loadStrikeHist();
+      refresh();
+    } catch (e) {
+      alert(`No se pudo cerrar la semana: ${e.message}\n\n¿Ejecutaste el SQL de la tabla pagos_semanas?`);
+    } finally {
+      renderClose();
+    }
+  });
+
+  byId("pg-reopen-btn")?.addEventListener("click", async () => {
+    const wk = payWeekKey();
+    if (!wk || !confirm(`¿Reabrir la semana del ${fmtDay(wk)}? Se borran sus strikes guardados.`)) return;
+    try {
+      await cvCloud.req(`/rest/v1/pagos_semanas?semana=eq.${wk}`, { method: "DELETE", auth: true });
+      await loadStrikeHist();
+      refresh();
+    } catch (e) {
+      alert(`No se pudo reabrir: ${e.message}`);
+    } finally {
+      renderClose();
+    }
+  });
+  for (const id of ["dlog-from", "dlog-to"]) byId(id)?.addEventListener("change", () => refresh());
 
   // ---------- Ascensos y descensos ----------
   let promo = { up: [], down: [], cand: [], week: "" };
@@ -2888,6 +3034,7 @@ function setupContabilidad() {
     refs.footer.textContent = footerText;
     refs.loaded.textContent = invSummary.count || kitsSummary.count ? "Datos cargados" : "Sin datos";
     renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar });
+    renderClose();
   }
 
   function clearState() {
@@ -3016,7 +3163,8 @@ function setupEmployeesModal(state, refreshPagos) {
     const winners = weekWinners(totalsRows);
     const hasData = totalsRows.some((r) => r.gross > 0);
     for (const r of totalsRows) {
-      r.warn = hasData && !r.noPay && r.gross === 0;
+      r.warn = hasData && !r.noPay && r.gross < RANK_RULES.min;
+      r.strikeN = r.warn ? strikesBefore(r.id, r.name, payWeekKey()) + 1 : 0;
       r.base = r.payout;
       r.week = winners.has(r);
       r.bonus = r.week ? WEEK_BONUS : 0;
@@ -3032,7 +3180,7 @@ function setupEmployeesModal(state, refreshPagos) {
       const tr = document.createElement("tr");
       if (row.id === selectedId) tr.classList.add("is-selected");
       tr.innerHTML = `
-        <td>${row.name}${row.warn ? `<br><small class="warn">⚠️ Aplicar warn (no facturó)</small>` : ""}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
+        <td>${row.name}${row.warn ? `<br><small class="warn">${row.strikeN >= STRIKE_MAX ? "🚫" : "⚠️"} ${strikeLabel(row.strikeN)} (${strikeReason(row.gross)})</small>` : ""}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
         <td>${row.rank ? rankLabel(row.rank) : "-"}</td>
         <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
         <td class="num">${fmtMoney(row.gross)}</td>
@@ -3119,7 +3267,7 @@ function setupEmployeesModal(state, refreshPagos) {
           ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
           : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
         if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
-        if (r.warn) line += ` ${WARN_TEXT}`;
+        if (r.warn) line += ` ${strikeText(r.strikeN, r.gross)}`;
         if (r.bonus && !r.noPay) line += `\n  ↳ 🏆 Incluye bono de Empleado de la Semana: ${fmtMoneyPlain(r.bonus)}`;
         return line;
       })
@@ -3419,8 +3567,9 @@ function setupEmployeesAdminModal({ onChanged }) {
       const full = `${e.name} ${e.surname}`.replace(/\s+/g, " ").trim();
       const pct = pctForRank(e.rank);
       const pctText = e.rank ? (pct ? `${Math.round(pct * 100)}%` : "0%") : "-";
+      const sN = hasAccess() ? strikesBefore(e.id, full) : 0;
       tr.innerHTML = `
-        <td>${full}</td>
+        <td>${full}${sN ? ` <span class="pg-strike${sN >= STRIKE_MAX ? " max" : ""}" title="Strikes seguidos: semanas cerradas sin facturar o sin llegar al mínimo">${sN >= STRIKE_MAX ? "🚫 " : "⚠️ "}${sN}/${STRIKE_MAX}</span>` : ""}</td>
         <td><select class="text-input emp-rank-select" data-id="${String(e.id)}"></select></td>
         <td class="num" data-pct-cell="${String(e.id)}">${pctText}</td>
         <td><input class="text-input emp-discord-input" type="text" inputmode="numeric" placeholder="ID de Discord" title="ID de Discord: clic derecho sobre la persona → Copiar ID de usuario" /></td>
@@ -4229,7 +4378,7 @@ Promise.allSettled([
   }),
   Promise.resolve()
     .then(() => authInit())
-    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null])),
+    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null])),
 ])
   .finally(() => {
     setupCaja();

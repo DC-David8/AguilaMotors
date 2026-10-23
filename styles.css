@@ -1432,3 +1432,14 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .dlog-status.err { color: #ff8a7a; opacity: 1; }
 
 .dlog-range { font-size: 12.5px; margin-top: 8px; font-weight: 600; }
+
+/* v53 · Strikes y cierre de semana */
+.pg-strike { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: rgba(255,176,32,.16); color: #ffb020; margin-left: 4px; white-space: nowrap; }
+.pg-strike.max { background: rgba(255,80,60,.2); color: #ff6b5a; }
+.pg-warn-chip.max { border-color: rgba(255,80,60,.6) !important; }
+.pg-close { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line, #333); border-radius: 12px; background: rgba(255,255,255,.03); }
+.pg-close[hidden] { display: none; }
+.pg-close-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.pg-close-head span { font-size: 13px; opacity: .8; }
+.pg-close-info { font-size: 12.5px; margin: 6px 0 8px; }
+.pg-strike-why { font-size: 11.5px; opacity: .8; }

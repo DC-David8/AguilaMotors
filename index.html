@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=52" />
+  <link rel="stylesheet" href="styles.css?v=53" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=52" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=53" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -212,6 +212,15 @@
             <button type="button" id="conta-manage-employees" class="ghost">Gestión de empleados</button>
           </div>
           <p class="muted pg-copied" id="pg-copy-status" role="status"></p>
+
+          <div class="pg-close" id="pg-close" hidden>
+            <div class="pg-close-head"><b>🔒 Cierre de semana</b> <span id="pg-close-week"></span></div>
+            <div class="pg-close-info muted" id="pg-close-info"></div>
+            <div class="pg-actions">
+              <button type="button" id="pg-close-btn" disabled>Cerrar semana</button>
+              <button type="button" id="pg-reopen-btn" class="ghost" hidden>Reabrir</button>
+            </div>
+          </div>
 
           <section class="pg-promos" id="pg-promos" hidden>
             <div class="pg-sec">
@@ -555,7 +564,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 52 - Aguila Motors</footer>
+    <footer class="app-version">Versión 53 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -807,6 +816,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=52"></script>
+  <script src="app.js?v=53"></script>
 </body>
 </html>
