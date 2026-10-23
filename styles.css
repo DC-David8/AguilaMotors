@@ -1457,3 +1457,17 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .kits-bm { display: inline-block; margin-left: 6px; padding: 5px 12px; border-radius: 8px; background: #f08a24; color: #1b1714 !important; font-weight: 700; text-decoration: none; cursor: grab; }
 .dlog-kits-link { display: inline-block; padding: 5px 10px; border-radius: 8px; background: #5865f2; color: #fff !important; font-weight: 600; font-size: 12.5px; text-decoration: none; }
 .dlog-kits-link:hover { background: #4752c4; }
+
+/* v59 · Avisos de los botones del ticket tambien en el movil, encima de la barra del ticket */
+@media (max-width: 700px) {
+  .add-toast.act {
+    display: flex;
+    left: 12px;
+    right: 12px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    justify-content: center;
+    flex-wrap: wrap;
+    text-align: center;
+    font-size: 0.88rem;
+  }
+}

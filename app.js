@@ -1738,7 +1738,7 @@ function setupCaja() {
   // Aviso breve abajo a la derecha al anadir un producto (solo en PC).
   let toastTimer = null;
   // Mismo aviso para los botones del ticket: showToast("✔ Añadido", nombre, " · $ 800").
-  function showToast(lead, bold = "", tail = "") {
+  function showToast(lead, bold = "", tail = "", isAction = true) {
     let el = byId("add-toast");
     if (!el) {
       el = document.createElement("div");
@@ -1755,12 +1755,14 @@ function setupCaja() {
       el.append(b);
     }
     if (tail) el.append(tail);
+    // En el movil solo se ven los avisos de los botones (el de añadir ya lo muestra la barra del ticket).
+    el.classList.toggle("act", isAction);
     el.classList.add("is-visible");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove("is-visible"), 1600);
   }
   function showAddedToast(name, price) {
-    showToast("✔ Añadido", name, ` · ${fmtMoney(price)}`);
+    showToast("✔ Añadido", name, ` · ${fmtMoney(price)}`, false);
   }
 
   function addItemDelta(name, price, delta) {

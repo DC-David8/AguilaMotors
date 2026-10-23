@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 59 · 23 de octubre de 2026
+- Caja en el móvil: los avisos de **Deshacer, Quitar, Limpiar, Copiar total y Copiar concepto** salen también en el móvil, justo encima de la barra del ticket. El de «Añadido» sigue solo en PC (en el móvil ya lo muestra la barra).
+
 ### Versión 58 · 22 de octubre de 2026
 - Caja: el aviso de abajo a la derecha (el de «✔ Añadido») sale también con **Deshacer** (qué se deshizo), **Quitar** (qué se quitó, o que selecciones una línea), **Limpiar**, **Copiar total** (el importe copiado) y **Copiar concepto** (el concepto copiado). Con el ticket vacío avisa en vez de sacar una ventana.
 
