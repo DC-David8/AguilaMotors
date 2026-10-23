@@ -227,6 +227,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 50 · 22 de octubre de 2026
+- Pagos: nuevo cuadro **📥 Facturas desde el Discord del taller** (solo Jefes). Eliges **Desde / Hasta** y pulsa **Traer facturas**: la página pide al bot que copie lo último del canal y carga las facturas de esas fechas ya procesadas.
+- Después, **Pegar + Procesar** añade el log de **kits** debajo (ya no borra las facturas traídas). **Limpiar** lo vacía todo.
+- Carpeta `bot-facturas/`: tabla `discord_log` (solo la leen los Jefes), la función de Supabase `leer-logs` que lee el canal con el bot, y el aviso cada 5 minutos. El token del bot va solo en los secretos de Supabase.
+
 ### Versión 49 · 21 de octubre de 2026
 - Pagos: apartado **📊 Ascensos y descensos de la semana**, calculado con lo facturado (facturas + kits):
   - **Mínimo $ 40.000** para mantener el rango (los Chalanes no bajan). **Metas de ascenso:** Chalán $ 60.000 → Mecánico · Mecánico $ 120.000 → Experimentado · Experimentado $ 200.000 → Subjefe. Subjefe con $ 300.000 o más: «⭐ candidato a Jefe» (solo aviso).

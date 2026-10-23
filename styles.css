@@ -1419,3 +1419,14 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .pg-rules-box label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); }
 .pg-rules-box button { align-self: end; }
 @media (max-width: 700px) { .pg-promo-grid { grid-template-columns: 1fr; } }
+
+/* v50 · Facturas desde Discord */
+.dlog-box { border: 1px solid var(--line, #333); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: rgba(255,255,255,.03); }
+.dlog-box.hidden { display: none; }
+.dlog-title { font-weight: 700; margin-bottom: 8px; }
+.dlog-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.dlog-row label { display: flex; flex-direction: column; font-size: 12px; opacity: .85; gap: 3px; }
+.dlog-row input[type=date] { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line, #444); background: transparent; color: inherit; color-scheme: dark; }
+.dlog-status { font-size: 12.5px; margin-top: 8px; opacity: .85; line-height: 1.4; }
+.dlog-status.ok { color: #6fdc8c; opacity: 1; }
+.dlog-status.err { color: #ff8a7a; opacity: 1; }

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=49" />
+  <link rel="stylesheet" href="styles.css?v=50" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=49" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=50" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -145,6 +145,15 @@
       <div class="split">
         <section class="card">
           <h2>Texto de Discord</h2>
+          <div id="dlog-box" class="dlog-box hidden">
+            <div class="dlog-title">📥 Facturas desde el Discord del taller</div>
+            <div class="dlog-row">
+              <label>Desde <input type="date" id="dlog-from"></label>
+              <label>Hasta <input type="date" id="dlog-to"></label>
+              <button id="dlog-load" class="primary">Traer facturas</button>
+            </div>
+            <div id="dlog-status" class="dlog-status">Elige las fechas de la semana. Después pega los kits con <strong>Pegar + Procesar</strong>.</div>
+          </div>
           <textarea id="conta-input" class="terminal-input" rows="14" placeholder="Pega aqui el texto y pulsa Procesar"></textarea>
           <div class="actions">
             <button id="conta-paste">Pegar + Procesar</button>
@@ -153,7 +162,7 @@
             <button id="conta-export">Exportar CSV</button>
           </div>
           <div class="pg-steps">
-            <div class="pg-step"><b>1</b>Copia los mensajes del canal de facturas y de kits en Discord</div>
+            <div class="pg-step"><b>1</b>Pulsa <strong>Traer facturas</strong> (o cópialas a mano) y copia el log de kits en Discord</div>
             <div class="pg-step"><b>2</b>Pulsa <strong>Pegar + Procesar</strong></div>
             <div class="pg-step"><b>3</b>Revisa el ranking y pulsa <strong>Copiar para Discord</strong></div>
           </div>
@@ -545,7 +554,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 49 - Aguila Motors</footer>
+    <footer class="app-version">Versión 50 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -797,6 +806,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=49"></script>
+  <script src="app.js?v=50"></script>
 </body>
 </html>

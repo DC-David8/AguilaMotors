@@ -2915,8 +2915,10 @@ function setupContabilidad() {
   byId("conta-process").addEventListener("click", processCurrent);
   byId("conta-clear").addEventListener("click", () => {
     refs.input.value = "";
+    delete refs.input.dataset.discord;
     clearState();
   });
+  setupDiscordLog(refs, processCurrent, () => Object.keys(state.invoices || {}).length);
   refs.kitPrice?.addEventListener("change", () => {
     setKitPrice(refs.kitPrice.value);
     refs.kitPrice.value = getKitPrice();
@@ -2924,7 +2926,11 @@ function setupContabilidad() {
   });
   byId("conta-paste").addEventListener("click", async () => {
     try {
-      refs.input.value = await navigator.clipboard.readText();
+      const clip = await navigator.clipboard.readText();
+      // Si ya se trajeron las facturas del Discord, lo pegado (los kits) se
+      // añade debajo en vez de reemplazarlas.
+      const keep = refs.input.dataset.discord === "1" ? refs.input.value.trim() : "";
+      refs.input.value = keep ? `${keep}\n\n${clip}` : clip;
       await processCurrent();
     } catch {
       alert("No se pudo leer el portapapeles.");
@@ -5698,5 +5704,131 @@ function setupCompraventa() {
   });
   document.querySelector('.tab[data-tab-target="tab-cv"]')?.addEventListener("click", () => {
     if (!busy && canSeeStock() && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
+  });
+}
+
+
+// ===================== Facturas desde el Discord del taller =====================
+// Un bot (funcion "leer-logs" en Supabase) copia el canal de facturas a la
+// tabla discord_log. Aqui se traen por fechas y se convierten al mismo texto
+// que sale al copiar a mano desde Discord, para usar el lector de siempre.
+
+function dlogClean(t) {
+  return String(t || "")
+    .replace(/\*\*|__|~~|`/g, "")
+    .replace(/^\s*>\s?/gm, "")
+    .replace(/^\s*[*_]\s*/gm, "")
+    .replace(/\s*[*_]\s*$/gm, "");
+}
+
+function dlogDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function dlogMessageText(m) {
+  const out = [];
+  const push = (t) => {
+    const c = dlogClean(t).trim();
+    if (c) out.push(c);
+  };
+  push(m.content);
+  for (const e of Array.isArray(m.embeds) ? m.embeds : []) {
+    push(e.author?.name);
+    push(e.title);
+    push(e.description);
+    for (const f of e.fields || []) {
+      const name = dlogClean(f.name).trim().replace(/:\s*$/, "");
+      const value = dlogClean(f.value).trim();
+      if (!name || name === "​") push(value);
+      else if (!value || value === "​") push(name);
+      else if (/^[\d.,]+\s*€$/.test(value) || value.includes("\n")) {
+        push(name);
+        push(value);
+      } else push(`${name}: ${value}`);
+    }
+    const foot = dlogClean(e.footer?.text).trim();
+    const when = dlogDate(e.timestamp || m.ts);
+    if (foot) out.push(foot.includes("•") && when && !/\d{1,2}[/:]\d{2}/.test(foot.split("•").pop()) ? `${foot} • ${when}` : foot);
+  }
+  return out.join("\n");
+}
+
+function dlogToText(rows) {
+  return rows.map(dlogMessageText).filter(Boolean).join("\n\n");
+}
+
+function setupDiscordLog(refs, processCurrent, invoiceCount) {
+  const box = byId("dlog-box");
+  if (!box) return;
+  if (!hasAccess()) return; // solo Jefes (la tabla tampoco deja leer a nadie mas)
+  box.classList.remove("hidden");
+  const from = byId("dlog-from");
+  const to = byId("dlog-to");
+  const btn = byId("dlog-load");
+  const status = byId("dlog-status");
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  // Por defecto: los ultimos 7 dias (hoy incluido).
+  const today = new Date();
+  const weekAgo = new Date(today.getTime() - 6 * 86400000);
+  to.value = iso(today);
+  from.value = iso(weekAgo);
+  const say = (msg, kind = "") => {
+    status.className = `dlog-status ${kind}`;
+    status.innerHTML = msg;
+  };
+
+  btn.addEventListener("click", async () => {
+    if (!from.value || !to.value) return say("Elige las dos fechas.", "err");
+    const start = new Date(`${from.value}T00:00:00`);
+    const end = new Date(`${to.value}T00:00:00`);
+    end.setDate(end.getDate() + 1);
+    if (end <= start) return say("La fecha <b>Hasta</b> debe ser igual o posterior a <b>Desde</b>.", "err");
+    btn.disabled = true;
+    try {
+      // 1) Pide al bot que copie lo ultimo del canal (si falla, se usa lo ya guardado).
+      say("Actualizando desde Discord…");
+      let botNote = "";
+      try {
+        const tok = await cvCloud.token();
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 60000);
+        const r = await fetch(`${CV_CLOUD_URL}/functions/v1/leer-logs`, {
+          method: "POST",
+          headers: { apikey: CV_CLOUD_KEY, Authorization: `Bearer ${tok || CV_CLOUD_KEY}`, "Content-Type": "application/json" },
+          body: "{}",
+          signal: ctl.signal,
+        }).finally(() => clearTimeout(timer));
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || j.ok === false) botNote = " ⚠ El bot no respondió bien; se usó lo ya guardado.";
+      } catch {
+        botNote = " ⚠ No se pudo avisar al bot; se usó lo ya guardado.";
+      }
+      // 2) Lee los mensajes del rango, por paginas de 1000.
+      say("Leyendo facturas…");
+      const rows = [];
+      for (let off = 0; ; off += 1000) {
+        const q = `/rest/v1/discord_log?select=id,ts,author,content,embeds&ts=gte.${encodeURIComponent(start.toISOString())}&ts=lt.${encodeURIComponent(end.toISOString())}&order=ts.asc,id.asc&limit=1000&offset=${off}`;
+        const part = await cvCloud.req(q, { auth: true });
+        if (!Array.isArray(part)) break;
+        rows.push(...part);
+        if (part.length < 1000) break;
+      }
+      if (!rows.length) {
+        say(`No hay mensajes guardados entre esas fechas.${botNote}`, "err");
+        return;
+      }
+      refs.input.value = dlogToText(rows);
+      refs.input.dataset.discord = "1";
+      await processCurrent();
+      const n = invoiceCount();
+      say(`✅ ${rows.length} mensajes · <b>${n}</b> facturas cargadas. Ahora copia el log de <b>kits</b> y pulsa <strong>Pegar + Procesar</strong> (se añade debajo).${botNote}`, "ok");
+    } catch (e) {
+      say(`No se pudieron traer: ${String(e.message).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c])}`, "err");
+    } finally {
+      btn.disabled = false;
+    }
   });
 }
