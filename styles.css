@@ -1446,3 +1446,12 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .dlog-tz { display: flex; align-items: center; gap: 7px; font-weight: 500; margin-top: 3px; }
 .dlog-tz b { font-weight: 700; }
 .dlog-tz .flag { width: 20px; height: 14px; border-radius: 2px; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.15); }
+
+/* v55 · Copiador de kits */
+.dlog-kits { margin-top: 10px; font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dlog-kits button { padding: 5px 10px; font-size: 12.5px; }
+.kits-card { max-width: 560px; }
+.kits-card h4 { margin: 14px 0 6px; }
+.kits-card ol { margin: 0; padding-left: 20px; line-height: 1.6; }
+.kits-card kbd { background: rgba(255,255,255,.1); border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+.kits-bm { display: inline-block; margin-left: 6px; padding: 5px 12px; border-radius: 8px; background: #f08a24; color: #1b1714 !important; font-weight: 700; text-decoration: none; cursor: grab; }

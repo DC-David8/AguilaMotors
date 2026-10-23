@@ -227,6 +227,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 55 · 22 de octubre de 2026
+- Pagos: **🦅 Copiador de kits**, un marcador para la barra de favoritos de Edge. En el canal de kits del Discord de la ciudad (discord.com) recoge las ventas de la semana (hora de España) mientras subes con la rueda, avisa cuando la semana está completa y las copia. Sin bot ni permisos: solo lee lo que ya ves en pantalla y no se desplaza solo.
+- Botón **Copiador de kits** en el cuadro de facturas, con las instrucciones para instalarlo y usarlo.
+- El lector junta las etiquetas que llegan solas en una línea (`Vendedor:` y el nombre debajo).
+
 ### Versión 54 · 22 de octubre de 2026
 - Pagos → Facturas desde Discord: el corte de la semana se muestra en los dos países, con su bandera: **España** (del domingo 00:00 al sábado 24:00) y **Guatemala** (del sábado 16:00 al sábado 16:00, o 17:00 con el horario de invierno de España). Se ve igual desde cualquier país. Explicación corta debajo.
 - Banderas dibujadas en la página (en Windows los emojis de banderas salen como letras).
