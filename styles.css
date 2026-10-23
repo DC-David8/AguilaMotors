@@ -1455,3 +1455,5 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .kits-card ol { margin: 0; padding-left: 20px; line-height: 1.6; }
 .kits-card kbd { background: rgba(255,255,255,.1); border-radius: 4px; padding: 1px 5px; font-size: 12px; }
 .kits-bm { display: inline-block; margin-left: 6px; padding: 5px 12px; border-radius: 8px; background: #f08a24; color: #1b1714 !important; font-weight: 700; text-decoration: none; cursor: grab; }
+.dlog-kits-link { display: inline-block; padding: 5px 10px; border-radius: 8px; background: #5865f2; color: #fff !important; font-weight: 600; font-size: 12.5px; text-decoration: none; }
+.dlog-kits-link:hover { background: #4752c4; }
