@@ -1737,7 +1737,8 @@ function setupCaja() {
 
   // Aviso breve abajo a la derecha al anadir un producto (solo en PC).
   let toastTimer = null;
-  function showAddedToast(name, price) {
+  // Mismo aviso para los botones del ticket: showToast("✔ Añadido", nombre, " · $ 800").
+  function showToast(lead, bold = "", tail = "") {
     let el = byId("add-toast");
     if (!el) {
       el = document.createElement("div");
@@ -1747,13 +1748,19 @@ function setupCaja() {
       document.body.appendChild(el);
     }
     el.innerHTML = "";
-    el.append("✔ Añadido ");
-    const b = document.createElement("b");
-    b.textContent = name;
-    el.append(b, ` · ${fmtMoney(price)}`);
+    el.append(`${lead} `);
+    if (bold) {
+      const b = document.createElement("b");
+      b.textContent = bold.length > 60 ? `${bold.slice(0, 57)}…` : bold;
+      el.append(b);
+    }
+    if (tail) el.append(tail);
     el.classList.add("is-visible");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove("is-visible"), 1600);
+  }
+  function showAddedToast(name, price) {
+    showToast("✔ Añadido", name, ` · ${fmtMoney(price)}`);
   }
 
   function addItemDelta(name, price, delta) {
@@ -1915,8 +1922,12 @@ function setupCaja() {
 
   byId("btn-undo").addEventListener("click", () => {
     const op = state.history.pop();
-    if (!op) return;
+    if (!op) {
+      showToast("↩ Nada que deshacer");
+      return;
+    }
     const [name, delta] = op;
+    showToast(delta > 0 ? "↩ Deshecho: quitado" : "↩ Deshecho: vuelto a añadir", name);
     const item = state.cart[name];
     const price = getAllProducts().find((p) => p.name === name)?.price || 0;
     if (!item) {
@@ -1930,12 +1941,18 @@ function setupCaja() {
   });
 
   byId("btn-remove").addEventListener("click", () => {
-    if (!state.selected) return;
-    const price = getAllProducts().find((p) => p.name === state.selected)?.price || 0;
-    addItemDelta(state.selected, price, -1);
+    if (!state.selected) {
+      showToast("☝ Selecciona una línea del ticket para quitarla");
+      return;
+    }
+    const name = state.selected;
+    const price = getAllProducts().find((p) => p.name === name)?.price || 0;
+    addItemDelta(name, price, -1);
+    showToast("➖ Quitado", name, ` · ${fmtMoney(price)}`);
   });
 
   byId("btn-clear").addEventListener("click", () => {
+    showToast(Object.keys(state.cart).length ? "🧹 Ticket limpio" : "🧹 El ticket ya estaba vacío");
     state.cart = {};
     state.history = [];
     state.selected = null;
@@ -1946,12 +1963,13 @@ function setupCaja() {
     const total = Object.values(state.cart).reduce((acc, r) => acc + r.price * r.qty, 0);
     const ok = await copyText(String(total));
     if (!ok) openCopyFallback(String(total));
+    else showToast("📋 Total copiado", fmtMoney(total));
   });
 
   byId("btn-copy-concept").addEventListener("click", async () => {
     const plan = conceptPlan();
     if (plan.kind === "empty") {
-      alert("El ticket esta vacio.");
+      showToast("📋 El ticket está vacío: no hay concepto que copiar");
       return;
     }
     if (plan.kind === "split") {
@@ -1960,6 +1978,7 @@ function setupCaja() {
     }
     const ok = await copyText(plan.text);
     if (!ok) openCopyFallback(plan.text);
+    else showToast("📋 Concepto copiado", plan.text);
   });
 
   setupProductsAdminModal(renderProductGrid);

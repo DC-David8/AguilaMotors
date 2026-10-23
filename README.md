@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 58 · 22 de octubre de 2026
+- Caja: el aviso de abajo a la derecha (el de «✔ Añadido») sale también con **Deshacer** (qué se deshizo), **Quitar** (qué se quitó, o que selecciones una línea), **Limpiar**, **Copiar total** (el importe copiado) y **Copiar concepto** (el concepto copiado). Con el ticket vacío avisa en vez de sacar una ventana.
+
 ### Versión 57 · 22 de octubre de 2026
 - Pagos: botón **Abrir canal Venta de Kits ↗** junto al Copiador de kits; abre el canal de kits del Discord de la ciudad en una pestaña nueva.
 
