@@ -227,6 +227,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 61 · 25 de octubre de 2026
+- Gestión de empleados: **Despedir** sustituye a Eliminar. Pide el motivo (si lleva 3 strikes ya viene escrito) y deja a la persona en el **registro de despidos** con fecha, quién la despidió y por qué. Sale de la plantilla, de Pagos y pierde el acceso a la página al instante (se le aparta el Discord).
+- Lista **🚪 Despedidos** al final de Gestión: **Readmitir** le devuelve su rango y su Discord. Solo el Jefe Aguila ve **Borrar registro** (para errores o duplicados).
+- Si se intenta añadir de nuevo a alguien despedido, la página pide usar Readmitir para conservar su historial.
+- No se puede despedir al Jefe Aguila ni a uno mismo. Los rangos altos solo los despide o readmite el Jefe Aguila (también lo impide la base).
+- SQL nuevo: `bot-facturas/5_despidos.sql`.
+
 ### Versión 60 · 23 de octubre de 2026
 - Caja en el móvil: el aviso **«✔ Añadido»** también sale en el móvil, encima de la barra del ticket, igual que los de los botones.
 

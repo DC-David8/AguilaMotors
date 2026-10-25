@@ -3612,7 +3612,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         <td><input class="text-input emp-iban-input" type="text" placeholder="J000000" maxlength="9" title="IBAN del banco del servidor (una letra y 6 números)" /></td>
         <td class="center"><input class="emp-nopay-input" type="checkbox" title="No cobra la nómina: no se le pide IBAN y no suma al Total a Pagar" /></td>
         <td class="num">
-          <button type="button" class="danger" data-del="${String(e.id)}">Eliminar</button>
+          <button type="button" class="danger" data-del="${String(e.id)}">${empCloudOn() ? "Despedir" : "Eliminar"}</button>
         </td>
       `;
       body.appendChild(tr);
@@ -3663,6 +3663,10 @@ function setupEmployeesAdminModal({ onChanged }) {
         setEmployeeNoPay(full, npInput.checked);
         await (onChanged?.());
       });
+      // Ni el Jefe Aguila ni uno mismo pueden ser despedidos (se quedarian sin acceso).
+      if (empCloudOn() && (normalizeKeySimple(e.rank) === normalizeKeySimple("Jefe Aguila") || (AUTH.discordId && e.discord === AUTH.discordId))) {
+        tr.querySelector("button[data-del]")?.remove();
+      }
       if (locked) {
         dInput.readOnly = true; // cambiar su Discord le daria el acceso a otra persona
         dInput.title = "Solo el Jefe Aguila puede cambiar el Discord de este rango";
@@ -3754,6 +3758,28 @@ function setupEmployeesAdminModal({ onChanged }) {
           return;
         }
         const label = emp ? `${emp.name} ${emp.surname}` : `ID ${id}`;
+        if (empCloudOn() && emp) {
+          if (normalizeKeySimple(emp.rank) === normalizeKeySimple("Jefe Aguila") || (AUTH.discordId && emp.discord === AUTH.discordId)) {
+            alert("No puedes despedirte a ti mismo ni al Jefe Aguila: perderías el acceso a la página.");
+            return;
+          }
+          const n = hasAccess() ? strikesBefore(emp.id, fullName(emp)) : 0;
+          const reason = prompt(
+            `Despedir a ${label}${emp.rank ? ` (${rankLabel(emp.rank)})` : ""}.\n\n` +
+              `Queda en el registro de despedidos y pierde el acceso a la página. Se puede readmitir.\n\n` +
+              `Motivo del despido:`,
+            n >= STRIKE_MAX ? `${n} strikes seguidos sin llegar al mínimo` : ""
+          );
+          if (reason === null) return;
+          try {
+            await empCloudFire(emp, reason.trim());
+            await refresh();
+            await (onChanged?.());
+          } catch (err) {
+            alert(`No se pudo despedir: ${empFireError(err)}`);
+          }
+          return;
+        }
         if (!confirm(`Eliminar a ${label}?`)) return;
         try {
           await deleteEmployee(id, adminPass);
@@ -3771,6 +3797,78 @@ function setupEmployeesAdminModal({ onChanged }) {
     });
   }
 
+  function renderFired() {
+    const box = byId("emp-fired");
+    const list = byId("emp-fired-list");
+    if (!box || !list) return;
+    const fired = empCloudOn() || EMP_CLOUD.fired.length ? EMP_CLOUD.fired : [];
+    box.hidden = !hasAccess() || !fired.length;
+    byId("emp-fired-n").textContent = String(fired.length);
+    list.innerHTML = "";
+    for (const f of fired) {
+      const row = document.createElement("div");
+      row.className = "emp-fired-row";
+      const when = f.firedAt ? new Date(f.firedAt).toLocaleString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+      const info = document.createElement("div");
+      info.className = "emp-fired-info";
+      const head = document.createElement("div");
+      const b = document.createElement("b");
+      b.textContent = fullName(f);
+      head.append(b);
+      if (f.rank) head.append(` · ${rankLabel(f.rank)}`);
+      const meta = document.createElement("div");
+      meta.className = "muted";
+      meta.textContent = `🚪 ${when}${f.firedBy ? ` · por ${f.firedBy}` : ""}`;
+      info.append(head, meta);
+      if (f.firedReason) {
+        const why = document.createElement("div");
+        why.className = "emp-fired-why";
+        why.textContent = `Motivo: ${f.firedReason}`;
+        info.append(why);
+      }
+      const acts = document.createElement("div");
+      acts.className = "emp-fired-acts";
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "ghost";
+      back.textContent = "Readmitir";
+      if (isTopRank(f.rank) && !AUTH.aguila) {
+        back.disabled = true;
+        back.title = "Solo el Jefe Aguila puede readmitir ese rango";
+      }
+      back.addEventListener("click", async () => {
+        if (!confirm(`¿Readmitir a ${fullName(f)}${f.rank ? ` como ${rankLabel(f.rank)}` : ""}?${f.discordPrev ? " Recupera también su Discord (y su acceso)." : ""}`)) return;
+        try {
+          await empCloudReadmit(f);
+          await refresh();
+          await (onChanged?.());
+        } catch (err) {
+          alert(`No se pudo readmitir: ${empFireError(err)}`);
+        }
+      });
+      acts.append(back);
+      if (AUTH.aguila) {
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "danger";
+        del.textContent = "Borrar registro";
+        del.title = "Borra a esta persona por completo (solo para errores o duplicados)";
+        del.addEventListener("click", async () => {
+          if (!confirm(`¿Borrar por completo a ${fullName(f)} del registro? No se puede deshacer.`)) return;
+          try {
+            await deleteEmployee(f.id, adminPass);
+            await refresh();
+          } catch (err) {
+            alert(String(err?.message || err || "Error"));
+          }
+        });
+        acts.append(del);
+      }
+      row.append(info, acts);
+      list.appendChild(row);
+    }
+  }
+
   async function refresh() {
     try {
       if (EMP_CLOUD.tried) await empCloudLoad();
@@ -3778,6 +3876,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       employees = await listEmployees();
       employees.sort(byRankThenName);
       renderList();
+      renderFired();
     } catch {
       alert("No se pudieron cargar los empleados.");
     }
@@ -3825,6 +3924,11 @@ function setupEmployeesAdminModal({ onChanged }) {
     }
     if (isTopRank(rank) && !AUTH.aguila) {
       alert(`Solo el Jefe Aguila puede dar el rango ${rankLabel(rank)}.`);
+      return;
+    }
+    const wasFired = EMP_CLOUD.fired.find((f) => normalizeKeySimple(fullName(f)) === normalizeKeySimple(`${name} ${surname}`));
+    if (wasFired) {
+      alert(`${fullName(wasFired)} está en el registro de despedidos. Para volver a contratarle, pulsa «Readmitir» en la lista de Despedidos (así conserva su historial).`);
       return;
     }
     try {
@@ -4943,7 +5047,7 @@ const cvCloud = {
 // tiene empleados, manda sobre datos.js y sobre lo guardado en la PC. Leer
 // es libre; cambiar exige la sesion de encargado (la misma de Compraventa).
 // ---------------------------------------------------------------------------
-const EMP_CLOUD = { ok: false, tried: false, error: "", list: [] };
+const EMP_CLOUD = { ok: false, tried: false, error: "", list: [], fired: [] };
 
 function empCloudOn() {
   return EMP_CLOUD.ok && EMP_CLOUD.list.length > 0;
@@ -4952,7 +5056,7 @@ function empCloudOn() {
 async function empCloudLoad() {
   try {
     const rows = await cvCloud.selectAll("employees", "surname.asc,name.asc");
-    EMP_CLOUD.list = rows
+    const all = rows
       .map((r) => ({
         id: String(r.id),
         name: String(r.name || "").trim(),
@@ -4961,8 +5065,15 @@ async function empCloudLoad() {
         discord: String(r.discord || ""),
         iban: String(r.iban || ""),
         noPay: r.no_pay === true,
+        firedAt: r.despedido_at || "",
+        firedBy: String(r.despedido_por || ""),
+        firedReason: String(r.despedido_motivo || ""),
+        discordPrev: String(r.discord_previo || ""),
       }))
       .filter((e) => e.name && e.surname);
+    // Los despedidos quedan en la tabla como registro, pero fuera de la plantilla.
+    EMP_CLOUD.fired = all.filter((e) => e.firedAt).sort((x, y) => String(y.firedAt).localeCompare(String(x.firedAt)));
+    EMP_CLOUD.list = all.filter((e) => !e.firedAt);
     EMP_CLOUD.ok = true;
     EMP_CLOUD.error = "";
   } catch (e) {
@@ -4997,6 +5108,39 @@ const empCloudRow = (e) => ({
 async function empCloudSave(e) {
   empCloudRequireSession();
   await cvCloud.upsert("employees", [empCloudRow(e)], "id");
+}
+
+// Despedir: no se borra. Se guarda fecha, quien y motivo, y se le quita el
+// Discord (asi pierde el acceso a la pagina al instante). El Discord queda
+// apartado en discord_previo por si se le readmite.
+function empFireError(err) {
+  const m = String(err?.message || err || "");
+  if (/despedido_|discord_previo|column/i.test(m)) return "Falta ejecutar en Supabase el SQL de despidos (5_despidos.sql).";
+  return m;
+}
+
+async function empCloudFire(e, reason) {
+  empCloudRequireSession();
+  await cvCloud.upsert("employees", [{
+    ...empCloudRow(e),
+    discord: "",
+    discord_previo: e.discord || "",
+    despedido_at: new Date().toISOString(),
+    despedido_por: AUTH.name || "",
+    despedido_motivo: reason || "",
+  }], "id");
+}
+
+async function empCloudReadmit(f) {
+  empCloudRequireSession();
+  await cvCloud.upsert("employees", [{
+    ...empCloudRow(f),
+    discord: f.discordPrev || "",
+    discord_previo: null,
+    despedido_at: null,
+    despedido_por: null,
+    despedido_motivo: null,
+  }], "id");
 }
 
 // Para Discord / IBAN / No cobra (se llaman sin esperar): guarda y avisa si falla.

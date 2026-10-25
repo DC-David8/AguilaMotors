@@ -1470,3 +1470,14 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
     font-size: 0.88rem;
   }
 }
+
+/* v61 · Registro de despidos */
+.emp-fired { margin-top: 14px; border: 1px solid var(--line, #333); border-radius: 12px; padding: 8px 12px; background: rgba(255,255,255,.02); }
+.emp-fired[hidden] { display: none; }
+.emp-fired summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+.emp-fired-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.emp-fired-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); }
+.emp-fired-info { font-size: 13px; line-height: 1.45; min-width: 0; }
+.emp-fired-why { font-size: 12.5px; opacity: .9; }
+.emp-fired-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.emp-fired-acts button { padding: 5px 10px; font-size: 12.5px; }
