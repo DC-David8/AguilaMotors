@@ -5597,7 +5597,31 @@ function setupCompraventa() {
       for (const v of vals) sel.appendChild(new Option(v, v));
     };
     opts($("cvc-cat"), [...new Set(list.map((v) => v.categoria).filter(Boolean))].sort((x, y) => x.localeCompare(y, "es")), "Todas las categorías");
-    opts($("cvc-dealer"), [...new Set(list.map((v) => v.concesionario).filter(Boolean))].sort((x, y) => x.localeCompare(y, "es")), "Todos los concesionarios");
+    // Concesionarios: casillas para elegir uno, varios o todos.
+    const box = $("cvc-dealer-list");
+    box.innerHTML = "";
+    const dealers = [...new Set(list.map((v) => v.concesionario).filter(Boolean))].sort((x, y) => x.localeCompare(y, "es"));
+    for (const d of dealers) {
+      const n = list.filter((v) => v.concesionario === d).length;
+      const lab = el("label", "cvc-multi-opt");
+      const cb = el("input");
+      cb.type = "checkbox";
+      cb.value = d;
+      cb.addEventListener("change", () => {
+        updateDealerLabel();
+        renderCatalog();
+      });
+      lab.append(cb, el("span", "", d), el("small", "", String(n)));
+      box.appendChild(lab);
+    }
+  }
+  function selectedDealers() {
+    return [...($("cvc-dealer-list")?.querySelectorAll("input:checked") || [])].map((c) => c.value);
+  }
+  function updateDealerLabel() {
+    const s = selectedDealers();
+    $("cvc-dealer-label").textContent = !s.length ? "Todos los concesionarios" : s.length <= 2 ? s.join(", ") : `${s.length} concesionarios`;
+    $("cvc-dealer-btn").classList.toggle("is-on", s.length > 0);
   }
   function renderMargins() {
     const m = CV_MARGINS;
@@ -5612,12 +5636,12 @@ function setupCompraventa() {
     renderMargins();
     const q = normalizeKeySimple($("cvc-q").value);
     const fc = $("cvc-cat").value;
-    const fd = $("cvc-dealer").value;
+    const fd = selectedDealers();
     const sort = $("cvc-sort").value;
     let list = catVehicles().filter(
       (v) =>
         (!fc || v.categoria === fc) &&
-        (!fd || v.concesionario === fd) &&
+        (!fd.length || fd.includes(v.concesionario)) &&
         (!q || normalizeKeySimple(`${v.nombre} ${v.modelo || ""} ${v.categoria} ${v.concesionario}`).includes(q))
     );
     const price = (v) => (typeof v.precio === "number" ? v.precio : -1);
@@ -5669,7 +5693,26 @@ function setupCompraventa() {
   }
   if ($("cv-p-cat")) {
     if (!catVehicles().length) root.querySelector('[data-cv="cv-p-cat"]')?.setAttribute("hidden", "");
-    for (const id of ["cvc-q", "cvc-cat", "cvc-dealer", "cvc-sort"]) $(id).addEventListener(id === "cvc-q" ? "input" : "change", renderCatalog);
+    for (const id of ["cvc-q", "cvc-cat", "cvc-sort"]) $(id).addEventListener(id === "cvc-q" ? "input" : "change", renderCatalog);
+    const pop = $("cvc-dealer-pop");
+    const btnD = $("cvc-dealer-btn");
+    const setOpen = (open) => {
+      pop.hidden = !open;
+      btnD.setAttribute("aria-expanded", String(open));
+    };
+    btnD.addEventListener("click", () => setOpen(pop.hidden));
+    $("cvc-dealer-ok").addEventListener("click", () => setOpen(false));
+    $("cvc-dealer-all").addEventListener("click", () => {
+      $("cvc-dealer-list").querySelectorAll("input").forEach((c) => (c.checked = false));
+      updateDealerLabel();
+      renderCatalog();
+    });
+    document.addEventListener("click", (ev) => {
+      if (!pop.hidden && !$("cvc-dealer-box").contains(ev.target)) setOpen(false);
+    });
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape" && !pop.hidden) setOpen(false);
+    });
     root.querySelector('[data-cv="cv-p-cat"]')?.addEventListener("click", renderCatalog);
     $("cvc-margins-edit").addEventListener("click", () => {
       const box = $("cvc-margins-form");

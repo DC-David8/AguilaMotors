@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=63" />
+  <link rel="stylesheet" href="styles.css?v=64" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=63" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=64" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -527,7 +527,13 @@
           <div class="cvc-filters">
             <input id="cvc-q" class="text-input cv-search" type="search" placeholder="Buscar por nombre o modelo" />
             <select id="cvc-cat" class="text-input"></select>
-            <select id="cvc-dealer" class="text-input"></select>
+            <div class="cvc-multi" id="cvc-dealer-box">
+              <button type="button" class="text-input cvc-multi-btn" id="cvc-dealer-btn" aria-haspopup="true" aria-expanded="false"><span id="cvc-dealer-label">Todos los concesionarios</span><span aria-hidden="true">▾</span></button>
+              <div class="cvc-multi-pop" id="cvc-dealer-pop" hidden>
+                <div class="cvc-multi-list" id="cvc-dealer-list"></div>
+                <div class="cvc-multi-acts"><button type="button" class="ghost small" id="cvc-dealer-all">Todos</button><button type="button" class="small" id="cvc-dealer-ok">Listo</button></div>
+              </div>
+            </div>
             <select id="cvc-sort" class="text-input">
               <option value="name">Nombre (A-Z)</option>
               <option value="asc">Precio: menor a mayor</option>
@@ -603,7 +609,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 63 - Aguila Motors</footer>
+    <footer class="app-version">Versión 64 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -888,7 +894,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=63"></script>
-  <script src="app.js?v=63"></script>
+  <script src="catalogo/vehiculos.js?v=64"></script>
+  <script src="app.js?v=64"></script>
 </body>
 </html>

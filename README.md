@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 64 · 26 de octubre de 2026
+- Compraventa → Catálogo: el filtro de **concesionarios** permite marcar **uno, varios o todos** (casillas con el número de vehículos de cada uno). El botón muestra los elegidos («Central, Fox» o «3 concesionarios»); **Todos** quita la selección.
+
 ### Versión 63 · 26 de octubre de 2026
 - **Catálogo de vehículos del servidor** (280 vehículos con foto, modelo, precio de concesionario, categoría y concesionario) en `catalogo/vehiculos.js` y `catalogo/fotos/`.
 - **Caja:** buscador **🔍 Buscar vehículo** (por nombre o modelo, con teclado ↑ ↓ Enter). Muestra foto, modelo (se copia con un clic), categoría, concesionario y **precio de concesionario**. Si la categoría corresponde a una gama de tuning (Motos, Gama Baja/Media/Alta, Camiones, Aviones y Helicópteros → Aéreos) **salta sola a esa pestaña**; si no, avisa de que elijas la gama. Limpiar el ticket quita el vehículo.

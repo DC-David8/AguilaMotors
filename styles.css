@@ -1553,3 +1553,20 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
   #tab-cv .sx-subtabs { flex-wrap: wrap; }
   #tab-cv .sx-subtab { flex: 1 1 40%; }
 }
+
+/* v64 · Catálogo: varios concesionarios a la vez */
+.cvc-multi { position: relative; flex: 0 1 220px; }
+.cvc-multi-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500; box-shadow: none; }
+.cvc-multi-btn span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cvc-multi-btn.is-on { border-color: #f97d02; color: #ffb15c; }
+.cvc-multi-pop { position: absolute; z-index: 45; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 280px; background: #1c150f; border: 1px solid var(--line, #3a2f25); border-radius: 12px; box-shadow: 0 14px 34px rgba(0,0,0,.6); padding: 6px; }
+.cvc-multi-pop[hidden] { display: none; }
+.cvc-multi-list { display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; }
+.cvc-multi-opt { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.cvc-multi-opt:hover { background: rgba(249,125,2,.12); }
+.cvc-multi-opt input { accent-color: #f97d02; width: 16px; height: 16px; }
+.cvc-multi-opt span { flex: 1; }
+.cvc-multi-opt small { opacity: .6; font-size: 12px; }
+.cvc-multi-acts { display: flex; justify-content: space-between; gap: 6px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 6px; margin-top: 4px; }
+.cvc-multi-acts button { padding: 5px 12px; font-size: 12.5px; }
+@media (max-width: 700px) { .cvc-multi { flex: 1 1 100%; } .cvc-multi-pop { width: 100%; max-width: none; } }
