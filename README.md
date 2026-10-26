@@ -227,6 +227,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 63 · 26 de octubre de 2026
+- **Catálogo de vehículos del servidor** (280 vehículos con foto, modelo, precio de concesionario, categoría y concesionario) en `catalogo/vehiculos.js` y `catalogo/fotos/`.
+- **Caja:** buscador **🔍 Buscar vehículo** (por nombre o modelo, con teclado ↑ ↓ Enter). Muestra foto, modelo (se copia con un clic), categoría, concesionario y **precio de concesionario**. Si la categoría corresponde a una gama de tuning (Motos, Gama Baja/Media/Alta, Camiones, Aviones y Helicópteros → Aéreos) **salta sola a esa pestaña**; si no, avisa de que elijas la gama. Limpiar el ticket quita el vehículo.
+- **Compraventa → 📖 Catálogo** (solo Jefes): buscador, filtros por categoría y concesionario, orden por precio. Cada vehículo muestra precio de concesionario, **comprar** (50–60 %), **vender** (75–80 %) y **margen**. El Jefe Aguila cambia los % con **✏️ Cambiar %** (se guardan en línea, `app_settings` → `cv_margins`).
+- **Almacén:** cada coche muestra su ficha del catálogo (precio nuevo, a cuánto venderlo y la ganancia sobre lo que se pagó) y, si no tiene foto propia, la del catálogo.
+- Los 15 vehículos de Air Sea salen como «Pendiente» hasta tener modelo y precio.
+
 ### Versión 62 · 25 de octubre de 2026
 - Gestión de empleados: el **Jefe Aguila** puede **cambiar el nombre y apellido** de cualquier empleado con el lápiz ✏️ junto al nombre (por ejemplo, tras un CK). Conserva rango, Discord, IBAN, No cobra y strikes. Avisa si el nombre nuevo ya existe (también entre los despedidos).
 - Nadie más ve el lápiz, y la base también lo impide (SQL `bot-facturas/6_nombres.sql`, disparador `proteger_nombres`).

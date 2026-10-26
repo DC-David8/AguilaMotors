@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=62" />
+  <link rel="stylesheet" href="styles.css?v=63" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=62" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=63" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -88,6 +88,11 @@
           <div class="card-head-row">
             <h2>Productos y Servicios</h2>
             <button type="button" id="btn-add-product" class="ghost small">Gestión de Productos</button>
+          </div>
+          <div class="veh-search" id="veh-search">
+            <input id="veh-q" class="text-input" type="search" placeholder="🔍 Buscar vehículo por nombre o modelo…" autocomplete="off" aria-label="Buscar vehículo" />
+            <div id="veh-results" class="veh-results" hidden></div>
+            <div id="veh-card" class="veh-card" hidden></div>
           </div>
           <div id="cat-tabs" class="cat-tabs"></div>
           <button type="button" class="m-cat-btn" id="m-cat-btn">
@@ -461,6 +466,7 @@
       <nav class="sx-subtabs" aria-label="Secciones de compraventa">
         <button type="button" class="sx-subtab is-active" data-cv="cv-p-stock">Almacén</button>
         <button type="button" class="sx-subtab" data-cv="cv-p-hist">Historial</button>
+        <button type="button" class="sx-subtab" data-cv="cv-p-cat">📖 Catálogo</button>
         <button type="button" class="sx-subtab" data-cv="cv-p-log" id="cv-tab-log">Procesar log</button>
       </nav>
 
@@ -498,6 +504,38 @@
             </table>
           </div>
           <p class="muted cv-empty" id="cv-hist-empty" hidden>No hay transacciones.</p>
+        </section>
+      </div>
+
+      <div id="cv-p-cat" class="sx-pane">
+        <section class="card">
+          <div class="card-head-row">
+            <h2>Catálogo de vehículos</h2>
+            <span class="muted" id="cvc-count"></span>
+          </div>
+          <div class="cvc-margins">
+            <span id="cvc-margins-txt"></span>
+            <button type="button" id="cvc-margins-edit" class="ghost small" hidden>✏️ Cambiar %</button>
+          </div>
+          <div class="cvc-margins-form" id="cvc-margins-form" hidden>
+            <label>Comprar desde <input id="cvc-bmin" class="text-input" type="number" min="1" max="200" step="1"> %</label>
+            <label>hasta <input id="cvc-bmax" class="text-input" type="number" min="1" max="200" step="1"> %</label>
+            <label>Vender desde <input id="cvc-smin" class="text-input" type="number" min="1" max="200" step="1"> %</label>
+            <label>hasta <input id="cvc-smax" class="text-input" type="number" min="1" max="200" step="1"> %</label>
+            <button type="button" id="cvc-margins-save">Guardar</button>
+          </div>
+          <div class="cvc-filters">
+            <input id="cvc-q" class="text-input cv-search" type="search" placeholder="Buscar por nombre o modelo" />
+            <select id="cvc-cat" class="text-input"></select>
+            <select id="cvc-dealer" class="text-input"></select>
+            <select id="cvc-sort" class="text-input">
+              <option value="name">Nombre (A-Z)</option>
+              <option value="asc">Precio: menor a mayor</option>
+              <option value="desc">Precio: mayor a menor</option>
+            </select>
+          </div>
+          <div class="cv-grid" id="cvc-grid"></div>
+          <p class="muted cv-empty" id="cvc-empty" hidden>Ningún vehículo coincide con la búsqueda.</p>
         </section>
       </div>
 
@@ -565,7 +603,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 62 - Aguila Motors</footer>
+    <footer class="app-version">Versión 63 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -850,6 +888,7 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=62"></script>
+  <script src="catalogo/vehiculos.js?v=63"></script>
+  <script src="app.js?v=63"></script>
 </body>
 </html>

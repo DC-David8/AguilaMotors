@@ -1921,6 +1921,16 @@ function setupCaja() {
   }
   renderProductGrid();
 
+  // Buscador de vehiculo: al elegirlo salta a su gama de tuning (si se sabe).
+  const vehSearch = setupVehicleSearch({
+    onGama: (key) => {
+      if (getAllProducts().some((p) => (p.category || "otros") === key)) {
+        state.activeCategory = key;
+        renderProductGrid();
+      }
+    },
+  });
+
   byId("btn-undo").addEventListener("click", () => {
     const op = state.history.pop();
     if (!op) {
@@ -1955,6 +1965,7 @@ function setupCaja() {
   byId("btn-clear").addEventListener("click", () => {
     showToast(Object.keys(state.cart).length ? "🧹 Ticket limpio" : "🧹 El ticket ya estaba vacío");
     state.cart = {};
+    vehSearch.clear();
     state.history = [];
     state.selected = null;
     renderTicket();
@@ -4560,7 +4571,7 @@ Promise.allSettled([
   }),
   Promise.resolve()
     .then(() => authInit())
-    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null])),
+    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, hasAccess() ? loadCvMargins() : null])),
 ])
   .finally(() => {
     setupCaja();
@@ -5576,6 +5587,117 @@ function setupCompraventa() {
   }
   root.querySelectorAll(".sx-subtab").forEach((b) => b.addEventListener("click", () => showPane(b.dataset.cv)));
 
+  // ---------- Catalogo con precios de referencia ----------
+  let catReady = false;
+  function fillCatFilters() {
+    const list = catVehicles();
+    const opts = (sel, vals, all) => {
+      sel.innerHTML = "";
+      sel.appendChild(new Option(all, ""));
+      for (const v of vals) sel.appendChild(new Option(v, v));
+    };
+    opts($("cvc-cat"), [...new Set(list.map((v) => v.categoria).filter(Boolean))].sort((x, y) => x.localeCompare(y, "es")), "Todas las categorías");
+    opts($("cvc-dealer"), [...new Set(list.map((v) => v.concesionario).filter(Boolean))].sort((x, y) => x.localeCompare(y, "es")), "Todos los concesionarios");
+  }
+  function renderMargins() {
+    const m = CV_MARGINS;
+    $("cvc-margins-txt").innerHTML = `Comprar al <b>${pctTxt(m.buyMin)}–${pctTxt(m.buyMax)} %</b> · Vender al <b>${pctTxt(m.sellMin)}–${pctTxt(m.sellMax)} %</b> <span class="muted">del precio de concesionario</span>`;
+    $("cvc-margins-edit").hidden = !AUTH.aguila;
+  }
+  function renderCatalog() {
+    if (!catReady) {
+      fillCatFilters();
+      catReady = true;
+    }
+    renderMargins();
+    const q = normalizeKeySimple($("cvc-q").value);
+    const fc = $("cvc-cat").value;
+    const fd = $("cvc-dealer").value;
+    const sort = $("cvc-sort").value;
+    let list = catVehicles().filter(
+      (v) =>
+        (!fc || v.categoria === fc) &&
+        (!fd || v.concesionario === fd) &&
+        (!q || normalizeKeySimple(`${v.nombre} ${v.modelo || ""} ${v.categoria} ${v.concesionario}`).includes(q))
+    );
+    const price = (v) => (typeof v.precio === "number" ? v.precio : -1);
+    if (sort === "asc") list = list.slice().sort((x, y) => (price(x) < 0) - (price(y) < 0) || price(x) - price(y));
+    else if (sort === "desc") list = list.slice().sort((x, y) => price(y) - price(x));
+    else list = list.slice().sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), "es"));
+    const grid = $("cvc-grid");
+    grid.innerHTML = "";
+    $("cvc-count").textContent = `${list.length} de ${catVehicles().length} vehículos`;
+    for (const v of list) {
+      const c = el("article", "cv-car cvc-car");
+      const pic = el("div", "cv-pic");
+      if (catPhoto(v)) {
+        const img = el("img");
+        img.src = catPhoto(v);
+        img.alt = v.nombre;
+        img.loading = "lazy";
+        img.addEventListener("click", () => {
+          $("cv-view-img").src = catPhoto(v);
+          $("cv-view-cap").textContent = `${v.nombre}${v.modelo ? ` · ${v.modelo}` : ""}`;
+          $("cv-view").showModal();
+        });
+        pic.appendChild(img);
+      }
+      if (v.modelo) pic.appendChild(el("span", "cv-plate", v.modelo));
+      c.appendChild(pic);
+      const body = el("div", "cv-body");
+      body.appendChild(el("h4", "", v.nombre));
+      body.appendChild(el("div", "cvc-meta", [v.categoria, v.concesionario, v.seccion].filter(Boolean).join(" · ")));
+      const dl = el("dl");
+      const row = (k, val, cls = "") => {
+        dl.appendChild(el("dt", "", k));
+        dl.appendChild(el("dd", cls, val));
+      };
+      const ref = cvRef(v.precio);
+      if (!ref) {
+        row("Concesionario", "Pendiente", "cvc-pend");
+      } else {
+        row("Concesionario", fmtMoney(v.precio), "cvc-new");
+        row("Comprar", moneyRange(ref.buy), "cvc-buy");
+        row("Vender", moneyRange(ref.sell), "cvc-sell");
+        row("Margen", moneyRange(ref.margin), "cvc-margin");
+      }
+      body.appendChild(dl);
+      c.appendChild(body);
+      grid.appendChild(c);
+    }
+    $("cvc-empty").hidden = list.length > 0;
+  }
+  if ($("cv-p-cat")) {
+    if (!catVehicles().length) root.querySelector('[data-cv="cv-p-cat"]')?.setAttribute("hidden", "");
+    for (const id of ["cvc-q", "cvc-cat", "cvc-dealer", "cvc-sort"]) $(id).addEventListener(id === "cvc-q" ? "input" : "change", renderCatalog);
+    root.querySelector('[data-cv="cv-p-cat"]')?.addEventListener("click", renderCatalog);
+    $("cvc-margins-edit").addEventListener("click", () => {
+      const box = $("cvc-margins-form");
+      box.hidden = !box.hidden;
+      const m = CV_MARGINS;
+      $("cvc-bmin").value = pctTxt(m.buyMin);
+      $("cvc-bmax").value = pctTxt(m.buyMax);
+      $("cvc-smin").value = pctTxt(m.sellMin);
+      $("cvc-smax").value = pctTxt(m.sellMax);
+    });
+    $("cvc-margins-save").addEventListener("click", async () => {
+      const n = (id) => Number($(id).value) / 100;
+      const m = { buyMin: n("cvc-bmin"), buyMax: n("cvc-bmax"), sellMin: n("cvc-smin"), sellMax: n("cvc-smax") };
+      if (Object.values(m).some((x) => !Number.isFinite(x) || x <= 0 || x > 2)) return alert("Pon porcentajes entre 1 y 200.");
+      if (m.buyMin > m.buyMax || m.sellMin > m.sellMax) return alert("El mínimo no puede ser mayor que el máximo.");
+      if (m.buyMax >= m.sellMin) return alert("La compra máxima debe ser menor que la venta mínima (si no, no hay margen).");
+      try {
+        await cvCloud.upsert("app_settings", [{ key: "cv_margins", value: m }], "key");
+        CV_MARGINS = m;
+        $("cvc-margins-form").hidden = true;
+        renderCatalog();
+        render();
+      } catch (e) {
+        alert(`No se pudo guardar: ${e.message}`);
+      }
+    });
+  }
+
   function setStatus(msg) {
     $("cv-status").textContent = msg;
   }
@@ -5636,6 +5758,14 @@ function setupCompraventa() {
         $("cv-view").showModal();
       });
       pic.appendChild(img);
+    } else if (hasAccess() && catPhoto(catFind(t.model))) {
+      // Sin foto propia: la del catalogo como referencia.
+      const img = el("img");
+      img.src = catPhoto(catFind(t.model));
+      img.alt = t.model;
+      img.loading = "lazy";
+      pic.appendChild(img);
+      pic.appendChild(el("span", "cv-pic-tag", "Foto de catálogo"));
     } else {
       pic.innerHTML =
         '<svg viewBox="0 0 64 32" aria-hidden="true"><path d="M6 22h52M10 22l4-8c1-2 3-3 5-3h18c2 0 4 1 6 3l7 6 6 1c2 0 3 1 3 3v2H4v-2c0-1 1-2 2-2"/><circle cx="18" cy="24" r="4"/><circle cx="48" cy="24" r="4"/></svg>';
@@ -5655,6 +5785,18 @@ function setupCompraventa() {
     row("Mediador", cvDisplayName(t.mediator));
     row("Fecha", t.ts || "Sin fecha");
     body.appendChild(dl);
+    // Referencia del catalogo (solo Jefes): precio nuevo y a cuanto revenderlo.
+    const cv = hasAccess() ? catFind(t.model) : null;
+    const ref = cv ? cvRef(cv.precio) : null;
+    if (ref) {
+      const box = el("div", "cv-ref");
+      box.appendChild(el("div", "cv-ref-name", `📖 ${cv.nombre}`));
+      box.appendChild(el("div", "", `Concesionario ${fmtMoney(cv.precio)}`));
+      box.appendChild(el("div", "cv-ref-sell", `Vender a ${moneyRange(ref.sell)}`));
+      const gain = [ref.sell[0] - t.price, ref.sell[1] - t.price];
+      box.appendChild(el("div", gain[1] >= 0 ? "cv-ref-ok" : "cv-ref-bad", `Ganancia ${gain[0] < 0 ? "- " + fmtMoney(-gain[0]) : fmtMoney(gain[0])} – ${gain[1] < 0 ? "- " + fmtMoney(-gain[1]) : fmtMoney(gain[1])}`));
+      body.appendChild(box);
+    }
     if (canEdit()) {
       const acts = el("div", "cv-acts");
       const up = el("button", "ghost", photos[t.plate] ? "📷 Cambiar foto" : "📷 Subir foto");
@@ -6389,4 +6531,217 @@ function setupKitsCopier() {
     const ok = await copyText(link.href);
     byId("kits-copy-code").textContent = ok ? "✅ Código copiado" : "No se pudo copiar";
   });
+}
+
+
+// ===================== Catálogo de vehículos del servidor =====================
+// Datos en catalogo/vehiculos.js (window.AGUILA_CATALOGO) y fotos en catalogo/fotos.
+// Se usa en la Caja (buscar el vehículo que se tunea) y en Compraventa (precios
+// de referencia para comprar y revender).
+
+// Categoría del catálogo -> pestaña de tuning de la Caja (solo las que son seguras).
+const CAT_GAMA = {
+  motos: "motos",
+  "gama baja": "gama_baja",
+  "gama media": "gama_media",
+  "gama alta": "gama_alta",
+  camiones: "camiones",
+  aviones: "aereos",
+  helicopteros: "aereos",
+};
+
+function catVehicles() {
+  return Array.isArray(window.AGUILA_CATALOGO?.vehiculos) ? window.AGUILA_CATALOGO.vehiculos : [];
+}
+
+function catGamaKey(v) {
+  return CAT_GAMA[normalizeKeySimple(v?.categoria)] || "";
+}
+
+// Busca por nombre o modelo. Primero lo que empieza igual, luego lo que lo contiene.
+function catSearch(q, limit = 8) {
+  const k = normalizeKeySimple(q);
+  if (!k) return [];
+  const out = [];
+  for (const v of catVehicles()) {
+    const name = normalizeKeySimple(v.nombre);
+    const model = normalizeKeySimple(v.modelo);
+    let score = -1;
+    if (model && model === k) score = 0;
+    else if (name.startsWith(k) || (model && model.startsWith(k))) score = 1;
+    else if (name.split(" ").some((w) => w.startsWith(k))) score = 2;
+    else if (name.includes(k) || (model && model.includes(k)) || normalizeKeySimple(v.categoria).includes(k)) score = 3;
+    if (score >= 0) out.push({ v, score });
+  }
+  out.sort((x, y) => x.score - y.score || String(x.v.nombre).localeCompare(String(y.v.nombre), "es"));
+  return out.slice(0, limit).map((x) => x.v);
+}
+
+// El log de compraventa trae el modelo (codigo de spawn) o el nombre.
+function catFind(model) {
+  const k = normalizeKeySimple(model);
+  if (!k) return null;
+  const list = catVehicles();
+  return list.find((v) => v.modelo && normalizeKeySimple(v.modelo) === k) || list.find((v) => normalizeKeySimple(v.nombre) === k) || null;
+}
+
+// Margenes de compraventa (% del precio de concesionario). Los cambia el Jefe Aguila.
+const CV_MARGINS_DEFAULT = { buyMin: 0.5, buyMax: 0.6, sellMin: 0.75, sellMax: 0.8 };
+let CV_MARGINS = { ...CV_MARGINS_DEFAULT };
+
+async function loadCvMargins() {
+  try {
+    const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.cv_margins");
+    const v = rows?.[0]?.value;
+    if (v && typeof v === "object") CV_MARGINS = { ...CV_MARGINS_DEFAULT, ...v };
+  } catch {
+    // se quedan los de por defecto
+  }
+}
+
+function cvRef(price) {
+  if (typeof price !== "number" || !(price > 0)) return null;
+  const m = CV_MARGINS;
+  const r = (x) => Math.round(price * x);
+  return {
+    buy: [r(m.buyMin), r(m.buyMax)],
+    sell: [r(m.sellMin), r(m.sellMax)],
+    // Margen: peor caso (comprar caro y vender barato) y mejor caso.
+    margin: [r(m.sellMin) - r(m.buyMax), r(m.sellMax) - r(m.buyMin)],
+  };
+}
+
+const pctTxt = (x) => `${Math.round(x * 100)}`;
+const moneyRange = ([a, b]) => (a === b ? fmtMoney(a) : `${fmtMoney(a)} – ${fmtMoney(b)}`);
+
+function catPhoto(v) {
+  return v?.foto || "";
+}
+
+// ---------- Caja: buscador de vehículo ----------
+function setupVehicleSearch({ onGama } = {}) {
+  const q = byId("veh-q");
+  const results = byId("veh-results");
+  const card = byId("veh-card");
+  if (!q || !results || !card) return { clear() {} };
+  if (!catVehicles().length) {
+    byId("veh-search")?.setAttribute("hidden", "");
+    return { clear() {} };
+  }
+  let items = [];
+  let idx = -1;
+  let picked = null;
+
+  const closeList = () => {
+    results.hidden = true;
+    results.innerHTML = "";
+    idx = -1;
+  };
+  const renderList = () => {
+    items = catSearch(q.value, 8);
+    results.innerHTML = "";
+    if (!q.value.trim()) return closeList();
+    if (!items.length) {
+      results.innerHTML = '<div class="veh-none">Ningún vehículo coincide.</div>';
+      results.hidden = false;
+      return;
+    }
+    items.forEach((v, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "veh-opt" + (i === idx ? " is-active" : "");
+      b.innerHTML = `<img alt="" loading="lazy"><span class="veh-opt-txt"><b></b><small></small></span><span class="veh-opt-price"></span>`;
+      const img = b.querySelector("img");
+      if (catPhoto(v)) img.src = catPhoto(v);
+      else img.remove();
+      b.querySelector("b").textContent = v.nombre;
+      b.querySelector("small").textContent = [v.modelo, v.categoria].filter(Boolean).join(" · ");
+      b.querySelector(".veh-opt-price").textContent = typeof v.precio === "number" ? fmtMoney(v.precio) : "Pendiente";
+      b.addEventListener("mousedown", (ev) => ev.preventDefault());
+      b.addEventListener("click", () => pick(v));
+      results.appendChild(b);
+    });
+    results.hidden = false;
+  };
+
+  function pick(v) {
+    picked = v;
+    q.value = "";
+    closeList();
+    const gama = catGamaKey(v);
+    const gamaLabel = gama ? categoryLabel(gama) : "";
+    card.innerHTML = `
+      <div class="veh-pic"></div>
+      <div class="veh-info">
+        <div class="veh-name"></div>
+        <div class="veh-meta"></div>
+        <div class="veh-price"><span>Precio de concesionario</span><b></b></div>
+        <div class="veh-gama"></div>
+      </div>
+      <button type="button" class="veh-x" aria-label="Quitar vehículo">✕</button>`;
+    const pic = card.querySelector(".veh-pic");
+    if (catPhoto(v)) {
+      const img = document.createElement("img");
+      img.src = catPhoto(v);
+      img.alt = v.nombre;
+      pic.appendChild(img);
+    }
+    card.querySelector(".veh-name").textContent = v.nombre;
+    const meta = card.querySelector(".veh-meta");
+    if (v.modelo) {
+      const code = document.createElement("button");
+      code.type = "button";
+      code.className = "veh-code";
+      code.title = "Copiar modelo";
+      code.textContent = v.modelo;
+      code.addEventListener("click", async () => {
+        if (await copyText(v.modelo)) code.textContent = "✔ copiado";
+        setTimeout(() => (code.textContent = v.modelo), 1200);
+      });
+      meta.appendChild(code);
+    }
+    meta.append(` ${[v.categoria, v.concesionario].filter(Boolean).join(" · ")}`);
+    card.querySelector(".veh-price b").textContent = typeof v.precio === "number" ? fmtMoney(v.precio) : "Pendiente";
+    const g = card.querySelector(".veh-gama");
+    if (gama) {
+      g.innerHTML = `🛠️ Se cobra con <b></b>`;
+      g.querySelector("b").textContent = gamaLabel;
+      g.className = "veh-gama ok";
+      onGama?.(gama);
+    } else {
+      g.textContent = `⚠ «${v.categoria || "Sin categoría"}»: elige tú la gama de tuning.`;
+      g.className = "veh-gama warn";
+    }
+    card.querySelector(".veh-x").addEventListener("click", clear);
+    card.hidden = false;
+  }
+
+  function clear() {
+    picked = null;
+    card.hidden = true;
+    card.innerHTML = "";
+  }
+
+  q.addEventListener("input", () => {
+    idx = -1;
+    renderList();
+  });
+  q.addEventListener("keydown", (ev) => {
+    if (results.hidden && ev.key !== "Enter") return;
+    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+      ev.preventDefault();
+      if (!items.length) return;
+      idx = ev.key === "ArrowDown" ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length;
+      renderList();
+    } else if (ev.key === "Enter") {
+      ev.preventDefault();
+      if (items.length) pick(items[Math.max(0, idx)]);
+    } else if (ev.key === "Escape") {
+      q.value = "";
+      closeList();
+    }
+  });
+  q.addEventListener("blur", () => setTimeout(closeList, 120));
+  q.addEventListener("focus", () => q.value.trim() && renderList());
+  return { clear, get picked() { return picked; } };
 }
