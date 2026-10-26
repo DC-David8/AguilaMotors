@@ -3605,7 +3605,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       const pctText = e.rank ? (pct ? `${Math.round(pct * 100)}%` : "0%") : "-";
       const sN = hasAccess() ? strikesBefore(e.id, full) : 0;
       tr.innerHTML = `
-        <td>${full}${sN ? ` <span class="pg-strike${sN >= STRIKE_MAX ? " max" : ""}" title="Strikes seguidos: semanas cerradas sin facturar o sin llegar al mínimo">${sN >= STRIKE_MAX ? "🚫 " : "⚠️ "}${sN}/${STRIKE_MAX}</span>` : ""}</td>
+        <td class="emp-name-cell"><span class="emp-name-text">${full}</span>${empCloudOn() && AUTH.aguila && !readOnly ? ` <button type="button" class="emp-rename" title="Cambiar nombre (por ejemplo, tras un CK)">✏️</button>` : ""}${sN ? ` <span class="pg-strike${sN >= STRIKE_MAX ? " max" : ""}" title="Strikes seguidos: semanas cerradas sin facturar o sin llegar al mínimo">${sN >= STRIKE_MAX ? "🚫 " : "⚠️ "}${sN}/${STRIKE_MAX}</span>` : ""}</td>
         <td><select class="text-input emp-rank-select" data-id="${String(e.id)}"></select></td>
         <td class="num" data-pct-cell="${String(e.id)}">${pctText}</td>
         <td><input class="text-input emp-discord-input" type="text" inputmode="numeric" placeholder="ID de Discord" title="ID de Discord: clic derecho sobre la persona → Copiar ID de usuario" /></td>
@@ -3616,6 +3616,48 @@ function setupEmployeesAdminModal({ onChanged }) {
         </td>
       `;
       body.appendChild(tr);
+
+      // Cambiar nombre y apellido: solo el Jefe Aguila (por ejemplo, tras un CK).
+      tr.querySelector(".emp-rename")?.addEventListener("click", () => {
+        const cell = tr.querySelector(".emp-name-cell");
+        const keep = cell.innerHTML;
+        cell.innerHTML = `
+          <div class="emp-rename-form">
+            <input class="text-input" data-n type="text" placeholder="Nombre" />
+            <input class="text-input" data-s type="text" placeholder="Apellido" />
+            <span class="emp-rename-acts"><button type="button" data-ok>Guardar</button><button type="button" class="ghost" data-no>Cancelar</button></span>
+          </div>`;
+        const nIn = cell.querySelector("[data-n]");
+        const sIn = cell.querySelector("[data-s]");
+        nIn.value = e.name;
+        sIn.value = e.surname;
+        nIn.focus();
+        cell.querySelector("[data-no]").addEventListener("click", () => renderList());
+        const save = async () => {
+          const name = nIn.value.trim().replace(/\s+/g, " ");
+          const surname = sIn.value.trim().replace(/\s+/g, " ");
+          if (!name || !surname) return alert("Pon Nombre y Apellido.");
+          const newFull = `${name} ${surname}`;
+          if (normalizeKeySimple(newFull) === normalizeKeySimple(full) && newFull === full) return renderList();
+          const clash = [...EMP_CLOUD.list, ...EMP_CLOUD.fired].find((x) => String(x.id) !== String(e.id) && normalizeKeySimple(fullName(x)) === normalizeKeySimple(newFull));
+          if (clash) return alert(`Ya hay alguien llamado ${fullName(clash)}${clash.firedAt ? " (en Despedidos)" : ""}.`);
+          if (!confirm(`¿Cambiar el nombre de ${full} a ${newFull}?\n\nConserva su rango, Discord, IBAN y strikes. Las facturas nuevas deben salir en Discord con el nombre nuevo.`)) return;
+          try {
+            empCloudRequireSession();
+            await cvCloud.upsert("employees", [{ ...empCloudRow(e), name, surname }], "id");
+            await refresh();
+            await (onChanged?.());
+          } catch (err) {
+            alert(`No se pudo cambiar el nombre: ${err.message || err}`);
+            cell.innerHTML = keep;
+          }
+        };
+        cell.querySelector("[data-ok]").addEventListener("click", save);
+        for (const inp of [nIn, sIn]) inp.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") { ev.preventDefault(); save(); }
+          if (ev.key === "Escape") { ev.preventDefault(); renderList(); }
+        });
+      });
 
       const select = tr.querySelector(".emp-rank-select");
       const blank = document.createElement("option");

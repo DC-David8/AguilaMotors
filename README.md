@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 62 · 25 de octubre de 2026
+- Gestión de empleados: el **Jefe Aguila** puede **cambiar el nombre y apellido** de cualquier empleado con el lápiz ✏️ junto al nombre (por ejemplo, tras un CK). Conserva rango, Discord, IBAN, No cobra y strikes. Avisa si el nombre nuevo ya existe (también entre los despedidos).
+- Nadie más ve el lápiz, y la base también lo impide (SQL `bot-facturas/6_nombres.sql`, disparador `proteger_nombres`).
+
 ### Versión 61 · 25 de octubre de 2026
 - Gestión de empleados: **Despedir** sustituye a Eliminar. Pide el motivo (si lleva 3 strikes ya viene escrito) y deja a la persona en el **registro de despidos** con fecha, quién la despidió y por qué. Sale de la plantilla, de Pagos y pierde el acceso a la página al instante (se le aparta el Discord).
 - Lista **🚪 Despedidos** al final de Gestión: **Readmitir** le devuelve su rango y su Discord. Solo el Jefe Aguila ve **Borrar registro** (para errores o duplicados).
