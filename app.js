@@ -6185,6 +6185,12 @@ function setupCompraventa() {
     const q = normalizeKeySimple($("cv-stock-q").value);
     const shown = stock.filter((t) => !q || normalizeKeySimple(`${t.model} ${t.plate} ${t.owner} ${t.mediator}`).includes(q));
     shown.forEach((t) => grid.appendChild(card(t, photos)));
+    // Cuantos hay (para cuadrarlo con el almacen del juego).
+    const cnt = $("cv-stock-count");
+    if (cnt) {
+      const n = stock.length;
+      cnt.textContent = q && shown.length !== n ? `${shown.length} de ${n}` : `${n} ${n === 1 ? "vehículo" : "vehículos"}`;
+    }
     $("cv-stock-empty").hidden = shown.length > 0;
     $("cv-stock-empty").textContent = stock.length
       ? "Ningún vehículo coincide con la búsqueda."

@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 70 · 26 de octubre de 2026
+- Almacén: junto al título se ve **cuántos vehículos hay** («5 vehículos»), para cuadrarlo con el almacén del juego. Al buscar muestra «2 de 5».
+
 ### Versión 69 · 26 de octubre de 2026
 - Almacén: cuando el log trae un modelo que no está tal cual en el catálogo (a veces lo corta, p. ej. «drafterhatc»), el Jefe Aguila ve **«¿Es alguno de estos?»** con los vehículos parecidos, o **🔎 Buscar en el catálogo**. Al elegir uno queda **asociado para siempre** (y para todos los coches con ese modelo): sale su foto de catálogo, precio y a cuánto venderlo.
 - **🔗 Cambiar** en cualquier ficha para corregir una asociación o quitarla. Se guardan en línea (`app_settings` → `cv_alias`).

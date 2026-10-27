@@ -1605,3 +1605,4 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .cv-guess, .cv-link-btn, .cv-linker .text-input { box-sizing: border-box; max-width: 100%; min-width: 0; }
 .cv-linker { min-width: 0; }
 .cv-guess span { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
+.cv-stock-count { display: inline-block; vertical-align: middle; margin-left: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(249,125,2,.16); color: #ffb15c; font-size: 0.8rem; letter-spacing: .02em; }
