@@ -6111,7 +6111,15 @@ function setupCompraventa() {
     row("Pagado", fmtMoney(t.price));
     row("Mediador", cvDisplayName(t.mediator));
     row("Fecha", t.ts || "Sin fecha");
+    // A cuanto se puede revender (todos los que ven el almacen).
+    const sellRef = named ? cvRef(named.precio) : null;
     body.appendChild(dl);
+    if (sellRef) {
+      const rs = el("div", "cv-resale");
+      rs.appendChild(el("span", "", "💰 Revender a"));
+      rs.appendChild(el("b", "", moneyRange(sellRef.sell)));
+      body.appendChild(rs);
+    }
     // Ficha del catalogo (precio nuevo, a cuanto revenderlo, ganancia y asociar): solo el Jefe Aguila.
     const cv = AUTH.aguila ? catFind(t.model) : null;
     const ref = cv ? cvRef(cv.precio) : null;

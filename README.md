@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 76 · 26 de octubre de 2026
+- Almacén: cada coche muestra **💰 Revender a** (el rango de venta recomendado según el catálogo y los % de venta). Lo ven todos los que tienen acceso al almacén. Si el modelo no está asociado al catálogo, no sale hasta asociarlo.
+
 ### Versión 75 · 26 de octubre de 2026
 - **Separador universal 🦅** (el GIF de cierre del Aguila, `…/1211602620565950514/image0.gif`): marca los cierres en los canales.
   - **Pagos → Traer facturas → Hasta dónde:** *Por fechas*, *Entre los dos últimos separadores* (el cierre de la semana) o *Desde el último separador* (lo que va de semana).
