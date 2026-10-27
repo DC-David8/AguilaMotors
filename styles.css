@@ -1625,3 +1625,4 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 /* v76 · Almacén: precio de reventa para todos */
 .cv-resale { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 8px; padding: 7px 10px; border-radius: 10px; background: rgba(111,220,140,.1); border: 1px solid rgba(111,220,140,.35); color: #6fdc8c; font-size: 0.82rem; }
 .cv-resale b { font-size: 0.98rem; white-space: nowrap; }
+.cv-tags, .cv-pic-tag { pointer-events: none; }

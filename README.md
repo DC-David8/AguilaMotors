@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 77 · 26 de octubre de 2026
+- Almacén: las **fotos de catálogo** también se amplían al hacer clic (antes solo las fotos subidas). El pie de la foto ampliada muestra el nombre del catálogo y la matrícula.
+
 ### Versión 76 · 26 de octubre de 2026
 - Almacén: cada coche muestra **💰 Revender a** (el rango de venta recomendado según el catálogo y los % de venta). Lo ven todos los que tienen acceso al almacén. Si el modelo no está asociado al catálogo, no sale hasta asociarlo.
 

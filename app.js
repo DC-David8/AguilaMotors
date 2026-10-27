@@ -6068,16 +6068,22 @@ function setupCompraventa() {
       img.loading = "lazy";
       img.addEventListener("click", () => {
         $("cv-view-img").src = photos[t.plate];
-        $("cv-view-cap").textContent = `${t.model.toUpperCase()} · ${t.plate}`;
+        $("cv-view-cap").textContent = `${(canSeeCv() && catFind(t.model)?.nombre) || t.model.toUpperCase()} · ${t.plate}`;
         $("cv-view").showModal();
       });
       pic.appendChild(img);
     } else if (canSeeCv() && catPhoto(catFind(t.model))) {
       // Sin foto propia: la del catalogo como referencia.
       const img = el("img");
-      img.src = catPhoto(catFind(t.model));
+      const src = catPhoto(catFind(t.model));
+      img.src = src;
       img.alt = t.model;
       img.loading = "lazy";
+      img.addEventListener("click", () => {
+        $("cv-view-img").src = src;
+        $("cv-view-cap").textContent = `${catFind(t.model)?.nombre || t.model.toUpperCase()} · ${t.plate} (foto de catálogo)`;
+        $("cv-view").showModal();
+      });
       pic.appendChild(img);
       pic.appendChild(el("span", "cv-pic-tag", "Foto de catálogo"));
     } else {
