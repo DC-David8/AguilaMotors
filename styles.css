@@ -1619,3 +1619,5 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 /* v74 · Catálogo: rangos largos (millones) bajan de línea en vez de salirse */
 .cvc-car .cv-body dd { white-space: normal; overflow-wrap: anywhere; }
 .cvc-car .cv-body dl { grid-template-columns: auto minmax(0, 1fr); }
+.dlog-date[hidden], .dlog-range[hidden] { display: none !important; }
+.dlog-row select { padding: 6px 8px; border-radius: 8px; }

@@ -6681,6 +6681,8 @@ function dlogToText(rows) {
   return rows.map(dlogMessageText).filter(Boolean).join("\n\n");
 }
 
+const DLOG_SEP = "1211602620565950514"; // id del GIF separador del Aguila
+
 function setupDiscordLog(refs, processCurrent, invoiceCount) {
   const box = byId("dlog-box");
   if (!box) return;
@@ -6725,11 +6727,25 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
     status.innerHTML = msg;
   };
 
+  // Separador universal (el GIF del Aguila): marca los cierres en los canales.
+  const modeSel = byId("dlog-mode");
+  const syncMode = () => {
+    const dates = !modeSel || modeSel.value === "dates";
+    box.querySelectorAll(".dlog-date").forEach((x) => (x.hidden = !dates));
+    if (rangeBox) rangeBox.hidden = !dates;
+  };
+  modeSel?.addEventListener("change", syncMode);
+  syncMode();
+
   btn.addEventListener("click", async () => {
-    if (!from.value || !to.value) return say("Elige las dos fechas.", "err");
-    const start = new Date(dlogMadridMidnight(from.value));
-    const end = new Date(dlogMadridMidnight(to.value, 1));
-    if (end <= start) return say("La fecha <b>Hasta</b> debe ser igual o posterior a <b>Desde</b>.", "err");
+    const sepMode = modeSel && modeSel.value !== "dates";
+    let start, end;
+    if (!sepMode) {
+      if (!from.value || !to.value) return say("Elige las dos fechas.", "err");
+      start = new Date(dlogMadridMidnight(from.value));
+      end = new Date(dlogMadridMidnight(to.value, 1));
+      if (end <= start) return say("La fecha <b>Hasta</b> debe ser igual o posterior a <b>Desde</b>.", "err");
+    }
     btn.disabled = true;
     try {
       // 1) Pide al bot que copie lo ultimo del canal (si falla, se usa lo ya guardado).
@@ -6750,11 +6766,29 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
       } catch {
         botNote = " ⚠ No se pudo avisar al bot; se usó lo ya guardado.";
       }
+      // 1b) Con separadores: busca los dos ultimos GIF de cierre.
+      let gtOp = "gte";
+      if (sepMode) {
+        const sp = (await cvCloud.req(`/rest/v1/discord_log?select=id,ts&content=ilike.*${DLOG_SEP}*&order=ts.desc&limit=2`, { auth: true })) || [];
+        const need = modeSel.value === "between" ? 2 : 1;
+        if (sp.length < need) {
+          say(`No encuentro ${need === 2 ? "dos separadores" : "ningún separador"} 🦅 en el canal de facturas. Ponlo en el canal (pegando su enlace) y vuelve a intentarlo.${botNote}`, "err");
+          return;
+        }
+        if (need === 2) {
+          start = new Date(sp[1].ts);
+          end = new Date(sp[0].ts);
+        } else {
+          start = new Date(sp[0].ts);
+          end = new Date(Date.now() + 86400000);
+        }
+        gtOp = "gt";
+      }
       // 2) Lee los mensajes del rango, por paginas de 1000.
       say("Leyendo facturas…");
       const rows = [];
       for (let off = 0; ; off += 1000) {
-        const q = `/rest/v1/discord_log?select=id,ts,author,content,embeds&ts=gte.${encodeURIComponent(start.toISOString())}&ts=lt.${encodeURIComponent(end.toISOString())}&order=ts.asc,id.asc&limit=1000&offset=${off}`;
+        const q = `/rest/v1/discord_log?select=id,ts,author,content,embeds&ts=${gtOp}.${encodeURIComponent(start.toISOString())}&ts=lt.${encodeURIComponent(end.toISOString())}&order=ts.asc,id.asc&limit=1000&offset=${off}`;
         const part = await cvCloud.req(q, { auth: true });
         if (!Array.isArray(part)) break;
         rows.push(...part);
@@ -6764,7 +6798,7 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
         say(`No hay mensajes guardados entre esas fechas.${botNote}`, "err");
         return;
       }
-      refs.input.value = dlogToText(rows);
+      refs.input.value = dlogToText(rows.filter((r) => !String(r.content || "").includes(DLOG_SEP)));
       refs.input.dataset.discord = "1";
       await processCurrent();
       const n = invoiceCount();
@@ -6791,6 +6825,8 @@ function aguilaKitsCopier() {
     cv: { re: /transacci[oó]n de veh[ií]culo/i, what: "transacciones de vehículos", btn: "Copiar compraventa" },
   };
   let mode = "";
+  const SEP = "1211602620565950514";
+  const seps = new Set();
   const pad2 = (n) => String(n).padStart(2, "0");
   const stamp = (ms) => { const d = new Date(ms); return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
   const textOf = (li) => {
@@ -6830,11 +6866,12 @@ function aguilaKitsCopier() {
   let chan = "";
   const grab = () => {
     const cur = (location.pathname.match(/\/channels\/[^/]+\/(\d+)/) || [])[1] || "";
-    if (cur !== chan) { chan = cur; seen.clear(); }
+    if (cur !== chan) { chan = cur; seen.clear(); seps.clear(); }
     for (const li of document.querySelectorAll('li[id^="chat-messages-"]')) {
       const parts = li.id.split("-");
       const id = parts.pop();
       if (!/^\d+$/.test(id) || (chan && parts.pop() !== chan)) continue;
+      if (li.innerHTML.includes(SEP)) { seps.add(id); seen.delete(id); continue; }
       const txt = textOf(li);
       if (txt) {
         // La fecha exacta del mensaje, justo antes de "Transaccion..." / "Venta de kits"
@@ -6853,7 +6890,8 @@ function aguilaKitsCopier() {
   box.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="font-size:14px">🦅 Copiador de logs</b><button data-x style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer">×</button></div>
     <label style="display:block;font-size:11px;opacity:.8;margin-bottom:6px">Qué copiar<select data-k style="width:100%;margin-top:2px;background:#2a2420;color:#fff;border:1px solid #555;border-radius:6px;padding:4px"><option value="kits">🧩 Venta de kits</option><option value="cv">🚗 Compraventa de vehículos</option></select></label>
-    <div style="display:flex;gap:8px;margin-bottom:6px">
+    <label style="display:block;font-size:11px;opacity:.8;margin-bottom:6px">Hasta dónde<select data-r style="width:100%;margin-top:2px;background:#2a2420;color:#fff;border:1px solid #555;border-radius:6px;padding:4px"><option value="dates">📅 Por fechas</option><option value="between">🦅 Entre los dos últimos separadores (cierre)</option><option value="last">🦅 Desde el último separador hasta ahora</option></select></label>
+    <div data-dates style="display:flex;gap:8px;margin-bottom:6px">
       <label style="flex:1;font-size:11px;opacity:.8">Desde (domingo)<input data-f type="date" style="width:100%;margin-top:2px;background:#2a2420;color:#fff;border:1px solid #555;border-radius:6px;padding:4px;color-scheme:dark"></label>
       <label style="flex:1;font-size:11px;opacity:.8">Hasta (sábado)<input data-t type="date" style="width:100%;margin-top:2px;background:#2a2420;color:#fff;border:1px solid #555;border-radius:6px;padding:4px;color-scheme:dark"></label>
     </div>
@@ -6866,13 +6904,18 @@ function aguilaKitsCopier() {
   $("[data-t]").value = iso(new Date(startDay.getTime() + 6 * 86400000));
 
   const inRange = () => {
-    const a = midnight($("[data-f]").value), b = midnight($("[data-t]").value, 1);
+    const r = $("[data-r]").value;
     const list = [...seen.entries()].map(([id, t]) => ({ id, t, ts: tsOf(id) })).sort((x, y) => x.ts - y.ts);
-    return { a, b, list, sel: list.filter((m) => m.ts >= a && m.ts < b) };
+    const sp = [...seps].map(tsOf).sort((x, y) => x - y);
+    let a, b, need = 0;
+    if (r === "last") { a = sp.length ? sp[sp.length - 1] + 1 : Infinity; b = Infinity; need = 1; }
+    else if (r === "between") { a = sp.length >= 2 ? sp[sp.length - 2] + 1 : Infinity; b = sp.length ? sp[sp.length - 1] : -Infinity; need = 2; }
+    else { a = midnight($("[data-f]").value); b = midnight($("[data-t]").value, 1); }
+    return { r, a, b, list, need, nsep: sp.length, sel: list.filter((m) => m.ts >= a && m.ts < b) };
   };
   function update() {
     if (!$("[data-f]").value || !$("[data-t]").value) return;
-    const { a, b, list, sel } = inRange();
+    const { r, a, b, list, sel, need, nsep } = inRange();
     const oldest = list[0]?.ts, newest = list[list.length - 1]?.ts;
     if (!mode) {
       const nk = list.filter((m) => MODES.kits.re.test(m.t)).length;
@@ -6881,8 +6924,13 @@ function aguilaKitsCopier() {
     }
     const M = MODES[mode || "kits"];
     const kits = sel.filter((m) => M.re.test(m.t)).length;
-    let s = `<b>${kits}</b> ${M.what} recogidas de esas fechas.<br>`;
+    let s = `<b>${kits}</b> ${M.what} recogidas.<br>`;
     if (!list.length) s += "⏳ No veo mensajes: abre el canal de kits o de compraventa.";
+    else if (r !== "dates") {
+      s += nsep >= need
+        ? `<span style="color:#6fdc8c">✅ Separador${need > 1 ? "es" : ""} encontrado${need > 1 ? "s" : ""}. Pulsa Copiar.</span>`
+        : `<span style="color:#ffb020">⬆ Sube hasta ver ${need - nsep === 2 ? "los dos últimos separadores" : need > 1 ? "el separador anterior" : "el último separador"} 🦅.</span>`;
+    }
     else if (oldest >= a) s += `<span style="color:#ffb020">⬆ Sigue subiendo hasta pasar el <b>${fmt(a)}</b> (tu hora). Ahora llegas al ${fmt(oldest)}.</span>`;
     else if (newest < b && b < Date.now() - 60000) s += `<span style="color:#ffb020">⬇ Baja hasta pasar el <b>${fmt(b)}</b> (tu hora).</span>`;
     else s += `<span style="color:#6fdc8c">✅ Fechas completas. Pulsa Copiar.</span>`;
@@ -6890,6 +6938,7 @@ function aguilaKitsCopier() {
   }
 
   $("[data-k]").addEventListener("change", () => { mode = $("[data-k]").value; $("[data-c]").textContent = MODES[mode].btn; update(); });
+  $("[data-r]").addEventListener("change", () => { $("[data-dates]").style.display = $("[data-r]").value === "dates" ? "flex" : "none"; update(); });
   $("[data-f]").addEventListener("change", update);
   $("[data-t]").addEventListener("change", update);
   $("[data-x]").addEventListener("click", () => { box.style.display = "none"; });

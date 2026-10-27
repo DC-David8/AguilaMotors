@@ -227,6 +227,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 75 · 26 de octubre de 2026
+- **Separador universal 🦅** (el GIF de cierre del Aguila, `…/1211602620565950514/image0.gif`): marca los cierres en los canales.
+  - **Pagos → Traer facturas → Hasta dónde:** *Por fechas*, *Entre los dos últimos separadores* (el cierre de la semana) o *Desde el último separador* (lo que va de semana).
+  - **Copiador de logs → Hasta dónde:** lo mismo para kits y compraventa. Avisa de que subas hasta ver el separador y no copia el GIF.
+- Hay que **volver a arrastrar el marcador** para tener esta opción.
+
 ### Versión 74 · 26 de octubre de 2026
 - Catálogo: los precios de millones (p. ej. «$ 5.000.000 – $ 6.000.000») bajan de línea dentro de la tarjeta en vez de salirse.
 

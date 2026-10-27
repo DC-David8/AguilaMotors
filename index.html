@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=74" />
+  <link rel="stylesheet" href="styles.css?v=75" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=74" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=75" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -153,8 +153,13 @@
           <div id="dlog-box" class="dlog-box hidden">
             <div class="dlog-title">📥 Facturas desde el Discord del taller</div>
             <div class="dlog-row">
-              <label>Desde (domingo) <input type="date" id="dlog-from"></label>
-              <label>Hasta (sábado) <input type="date" id="dlog-to"></label>
+              <label>Hasta dónde <select id="dlog-mode" class="text-input">
+                <option value="dates">📅 Por fechas</option>
+                <option value="between">🦅 Entre los dos últimos separadores</option>
+                <option value="last">🦅 Desde el último separador</option>
+              </select></label>
+              <label class="dlog-date">Desde (domingo) <input type="date" id="dlog-from"></label>
+              <label class="dlog-date">Hasta (sábado) <input type="date" id="dlog-to"></label>
               <button id="dlog-load" class="primary">Traer facturas</button>
             </div>
             <div id="dlog-range" class="dlog-range"></div>
@@ -617,7 +622,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 74 - Aguila Motors</footer>
+    <footer class="app-version">Versión 75 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -899,13 +904,14 @@
         <li>Muestra la barra de favoritos. <b>Edge, Chrome, Opera, Brave:</b> <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd>. <b>Firefox:</b> clic derecho en la parte de arriba (junto a las pestañas) → <b>Barra de marcadores</b> → <b>Mostrar siempre</b>.</li>
         <li>Arrastra este botón a la barra: <a id="kits-bm" class="kits-bm" href="#">🦅 Copiar logs</a></li>
       </ol>
-      <p class="muted">¿Ya tenías «🦅 Copiar kits»? Bórralo de la barra (clic derecho → Eliminar) y arrastra el nuevo: el viejo no sabe copiar la compraventa.</p>
+      <p class="muted">¿Ya lo tenías en la barra? Bórralo (clic derecho → Eliminar) y arrastra el nuevo cada vez que se actualice: el marcador guarda la versión con la que lo instalaste.</p>
       <p class="muted">¿No te deja arrastrarlo? Pulsa <b>Copiar código</b>, luego clic derecho en la barra de favoritos → <b>Agregar favorito</b> (en Firefox: <b>Añadir marcador</b>), nombre «Copiar logs» y pega el código en <b>URL</b>.</p>
       <h4>Usarlo</h4>
       <ol>
         <li>Abre el canal en el navegador (discord.com, no la aplicación): <b>Abrir canal Venta de Kits ↗</b> en Pagos, o <b>Abrir canal de Compraventa ↗</b> en Compraventa → Procesar log.</li>
         <li>Pulsa <b>🦅 Copiar logs</b> en la barra de favoritos. Sale un recuadro naranja con la semana ya puesta y elige solo <b>qué copiar</b> según el canal (puedes cambiarlo).</li>
-        <li>Sube con la rueda del ratón hasta que diga <b>✅ Fechas completas</b>.</li>
+        <li>En <b>Hasta dónde</b> elige <b>por fechas</b> o por el <b>separador 🦅</b> (el GIF de cierre): «entre los dos últimos separadores» para un cierre, o «desde el último separador» para lo nuevo.</li>
+        <li>Sube con la rueda del ratón hasta que diga <b>✅</b> (fechas completas o separadores encontrados).</li>
         <li>Pulsa <b>Copiar</b>, vuelve aquí y pega: los kits en <b>Pagos → Pegar + Procesar</b>, la compraventa en <b>Compraventa → Procesar log → Pegar + Procesar</b>.</li>
       </ol>
       <footer class="actions">
@@ -934,7 +940,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=74"></script>
-  <script src="app.js?v=74"></script>
+  <script src="catalogo/vehiculos.js?v=75"></script>
+  <script src="app.js?v=75"></script>
 </body>
 </html>
