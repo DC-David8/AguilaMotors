@@ -1616,3 +1616,6 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .cv-gama { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -2px 0 2px; font-size: 12px; }
 .cv-gama-chip { padding: 2px 9px; border-radius: 999px; background: rgba(249,125,2,.16); color: #ffb15c; font-weight: 700; letter-spacing: .02em; }
 .cv-gama-dealer { opacity: .7; }
+/* v74 · Catálogo: rangos largos (millones) bajan de línea en vez de salirse */
+.cvc-car .cv-body dd { white-space: normal; overflow-wrap: anywhere; }
+.cvc-car .cv-body dl { grid-template-columns: auto minmax(0, 1fr); }
