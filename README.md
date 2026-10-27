@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 68 · 26 de octubre de 2026
+- Compraventa → Procesar log: botón **Abrir canal de Compraventa ↗**, que abre el log de compraventa del Discord de la ciudad en una pestaña nueva.
+
 ### Versión 67 · 26 de octubre de 2026
 - El marcador pasa a ser **🦅 Copiador de logs**: además de los kits copia la **compraventa de vehículos** («Transacción de vehículo»). En el recuadro naranja se elige **qué copiar** (lo detecta solo según el canal) y las fechas.
 - Cada mensaje copiado lleva su **fecha y hora exactas** (sacadas del propio mensaje), así la compraventa queda bien fechada aunque Discord muestre «Hoy a las…».
