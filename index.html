@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=65" />
+  <link rel="stylesheet" href="styles.css?v=66" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=65" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=66" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -513,6 +513,13 @@
             <h2>Catálogo de vehículos</h2>
             <span class="muted" id="cvc-count"></span>
           </div>
+          <div class="cvc-admin" id="cvc-admin" hidden>
+            <span id="cvc-admin-txt"></span>
+            <span class="cvc-admin-acts">
+              <button type="button" id="cvc-upload" class="small" hidden>☁️ Subir catálogo a la nube</button>
+              <button type="button" id="cvc-add" class="small" hidden>➕ Añadir vehículo</button>
+            </span>
+          </div>
           <div class="cvc-margins">
             <span id="cvc-margins-txt"></span>
             <button type="button" id="cvc-margins-edit" class="ghost small" hidden>✏️ Cambiar %</button>
@@ -609,7 +616,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 65 - Aguila Motors</footer>
+    <footer class="app-version">Versión 66 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -848,6 +855,37 @@
     </form>
   </dialog>
 
+  <dialog id="cat-edit-dlg">
+    <form method="dialog" class="modal-card cat-edit-card" onsubmit="return false">
+      <header class="modal-head">
+        <h3 id="ce-title">Editar vehículo</h3>
+        <button type="button" class="icon-btn" aria-label="Cerrar" onclick="this.closest('dialog').close()">✕</button>
+      </header>
+      <div class="ce-grid">
+        <label class="ce-wide">Nombre <input id="ce-nombre" class="text-input" type="text" placeholder="Ej.: Karin Sultan" /></label>
+        <label>Modelo <input id="ce-modelo" class="text-input" type="text" placeholder="Ej.: sultan2r" autocomplete="off" /></label>
+        <label>Precio de concesionario ($) <input id="ce-precio" class="text-input" type="text" inputmode="numeric" placeholder="Vacío = pendiente" /></label>
+        <label>Categoría <input id="ce-categoria" class="text-input" type="text" list="ce-cats" /></label>
+        <label>Concesionario <input id="ce-conce" class="text-input" type="text" list="ce-conces" /></label>
+        <label class="ce-wide">Sección <small class="muted">(opcional)</small> <input id="ce-seccion" class="text-input" type="text" list="ce-secs" /></label>
+      </div>
+      <datalist id="ce-cats"></datalist><datalist id="ce-conces"></datalist><datalist id="ce-secs"></datalist>
+      <div class="ce-photo" id="ce-photo" tabindex="0"></div>
+      <div class="ce-photo-acts">
+        <button type="button" id="ce-paste" class="ghost small">📋 Pegar recorte</button>
+        <button type="button" id="ce-file-btn" class="ghost small">📁 Elegir archivo</button>
+        <input type="file" id="ce-file" accept="image/*" hidden />
+      </div>
+      <p class="warn" id="ce-err"></p>
+      <footer class="actions ce-foot">
+        <button type="button" id="ce-delete" class="danger">Quitar del catálogo</button>
+        <span class="ce-spacer"></span>
+        <button type="button" id="ce-cancel" class="ghost">Cancelar</button>
+        <button type="button" id="ce-save">Guardar</button>
+      </footer>
+    </form>
+  </dialog>
+
   <dialog id="kits-dlg">
     <form method="dialog" class="modal-card kits-card">
       <header class="modal-head">
@@ -894,7 +932,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=65"></script>
-  <script src="app.js?v=65"></script>
+  <script src="catalogo/vehiculos.js?v=66"></script>
+  <script src="app.js?v=66"></script>
 </body>
 </html>

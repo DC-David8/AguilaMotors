@@ -1570,3 +1570,20 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .cvc-multi-acts { display: flex; justify-content: space-between; gap: 6px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 6px; margin-top: 4px; }
 .cvc-multi-acts button { padding: 5px 12px; font-size: 12.5px; }
 @media (max-width: 700px) { .cvc-multi { flex: 1 1 100%; } .cvc-multi-pop { width: 100%; max-width: none; } }
+
+/* v66 · Editar el catálogo (Jefe Aguila) */
+.cvc-admin { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 8px 12px; margin: 0 0 10px; border-radius: 10px; border: 1px dashed #f97d02; background: rgba(249,125,2,.06); font-size: 13px; }
+.cvc-admin[hidden] { display: none; }
+.cvc-admin-acts { display: flex; gap: 6px; }
+.cvc-edit { margin-top: auto; align-self: flex-start; padding: 5px 12px; font-size: 12.5px; }
+.cat-edit-card { max-width: 620px; }
+.ce-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.ce-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; opacity: .95; }
+.ce-wide { grid-column: 1 / -1; }
+.ce-photo { margin-top: 12px; border: 2px dashed rgba(255,255,255,.18); border-radius: 12px; min-height: 120px; display: grid; place-items: center; overflow: hidden; text-align: center; padding: 6px; font-size: 13px; }
+.ce-photo.is-over { border-color: #f97d02; background: rgba(249,125,2,.08); }
+.ce-photo img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 8px; }
+.ce-photo-acts { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.ce-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ce-spacer { flex: 1; }
+@media (max-width: 560px) { .ce-grid { grid-template-columns: 1fr; } }

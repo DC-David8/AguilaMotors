@@ -227,6 +227,15 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 66 · 26 de octubre de 2026
+- **Catálogo editable desde la página (solo Jefe Aguila).** En Compraventa → Catálogo:
+  - **☁️ Subir catálogo a la nube** (una sola vez): pasa los vehículos a Supabase (tabla `catalogo`).
+  - **✏️ Editar** en cada vehículo: nombre, modelo, precio (vacío = pendiente), categoría, concesionario, sección y **foto** (pegar recorte con Ctrl + V, arrastrar o elegir archivo). **Quitar del catálogo** lo elimina.
+  - **➕ Añadir vehículo** para coches nuevos.
+  - Los cambios se ven al momento en la Caja y en Compraventa para todo el equipo. Las fotos nuevas van a la carpeta pública `catalogo-fotos` de Supabase.
+- Si no hay conexión o aún no se subió, la página usa la copia fija de `catalogo/vehiculos.js`.
+- SQL nuevo: `bot-facturas/8_catalogo.sql` (todos leen; solo el Jefe Aguila cambia y sube fotos).
+
 ### Versión 65 · 26 de octubre de 2026
 - **Compraventa** pasa a estar junto a la Caja (orden: Caja · Compraventa · Pagos · Sorteo).
 - Subpestañas en orden **Almacén · Catálogo · Historial · Procesar log**.

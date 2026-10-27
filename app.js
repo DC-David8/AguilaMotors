@@ -4571,7 +4571,7 @@ Promise.allSettled([
   }),
   Promise.resolve()
     .then(() => authInit())
-    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, canSeeCv() ? loadCvMargins() : null])),
+    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, canSeeCv() ? loadCvMargins() : null, loadCatalogCloud()])),
 ])
   .finally(() => {
     setupCaja();
@@ -5635,7 +5635,206 @@ function setupCompraventa() {
     $("cvc-margins-txt").innerHTML = `Comprar al <b>${pctTxt(m.buyMin)}–${pctTxt(m.buyMax)} %</b> · Vender al <b>${pctTxt(m.sellMin)}–${pctTxt(m.sellMax)} %</b> <span class="muted">del precio de concesionario</span>`;
     $("cvc-margins-edit").hidden = !AUTH.aguila;
   }
+  // ---------- Editar el catalogo (solo Jefe Aguila) ----------
+  const catEditable = () => AUTH.aguila && CATALOG.source === "cloud";
+  function renderCatAdmin() {
+    const bar = $("cvc-admin");
+    if (!bar) return;
+    bar.hidden = !AUTH.aguila;
+    if (!AUTH.aguila) return;
+    const txt = $("cvc-admin-txt");
+    $("cvc-upload").hidden = CATALOG.source === "cloud";
+    $("cvc-add").hidden = CATALOG.source !== "cloud";
+    txt.textContent = CATALOG.missing
+      ? "Para editar el catálogo falta ejecutar en Supabase el SQL 8_catalogo.sql."
+      : CATALOG.source === "cloud"
+        ? "✏️ Catálogo en línea: pulsa Editar en cualquier vehículo o añade uno nuevo. Los cambios los ve todo el equipo al momento."
+        : "El catálogo aún es la copia fija de la página. Súbelo a la nube para poder editarlo desde aquí.";
+    $("cvc-upload").disabled = CATALOG.missing;
+  }
+
+  async function reloadCatalog() {
+    await loadCatalogCloud();
+    catReady = false;
+    renderCatalog();
+  }
+
+  $("cvc-upload")?.addEventListener("click", async () => {
+    if (!confirm(`¿Subir los ${catVehicles().length} vehículos del catálogo a la nube? Después podrás editarlos desde aquí.`)) return;
+    const btn = $("cvc-upload");
+    btn.disabled = true;
+    btn.textContent = "Subiendo…";
+    try {
+      const now = new Date().toISOString();
+      await cvCloud.upsert("catalogo", catVehicles().map((v) => ({ ...catRowFromDb(v), actualizado_at: now, actualizado_por: AUTH.name || "" })), "id");
+      await reloadCatalog();
+    } catch (e) {
+      alert(`No se pudo subir el catálogo: ${e.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "☁️ Subir catálogo a la nube";
+    }
+  });
+
+  const ed = { dlg: $("cat-edit-dlg"), v: null, photo: null };
+  if (ed.dlg) document.body.appendChild(ed.dlg);
+  function fillDatalist(id, vals) {
+    const dl = $(id);
+    dl.innerHTML = "";
+    for (const v of vals) dl.appendChild(new Option(v, v));
+  }
+  function openCatEditor(v) {
+    ed.v = v;
+    ed.photo = null;
+    $("ce-title").textContent = v ? `✏️ Editar ${v.nombre}` : "➕ Nuevo vehículo";
+    $("ce-nombre").value = v?.nombre || "";
+    $("ce-modelo").value = v?.modelo || "";
+    $("ce-precio").value = v && typeof v.precio === "number" ? String(v.precio) : "";
+    $("ce-categoria").value = v?.categoria || "";
+    $("ce-conce").value = v?.concesionario || "";
+    $("ce-seccion").value = v?.seccion || "";
+    const uniq = (k) => [...new Set(catVehicles().map((x) => x[k]).filter(Boolean))].sort((x, y) => x.localeCompare(y, "es"));
+    fillDatalist("ce-cats", uniq("categoria"));
+    fillDatalist("ce-conces", uniq("concesionario"));
+    fillDatalist("ce-secs", uniq("seccion"));
+    setEdPhoto(v?.foto || "");
+    $("ce-err").textContent = "";
+    $("ce-delete").hidden = !v;
+    ed.dlg.showModal();
+    $("ce-nombre").focus();
+  }
+  function setEdPhoto(src) {
+    const box = $("ce-photo");
+    box.innerHTML = "";
+    if (src) {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = "";
+      box.appendChild(img);
+    } else box.appendChild(el("span", "muted", "Sin foto · pega un recorte (Ctrl + V) o elige un archivo"));
+  }
+  async function takeEdPhoto(blob) {
+    if (!blob || !String(blob.type || "").startsWith("image/")) {
+      $("ce-err").textContent = "Eso no es una imagen.";
+      return;
+    }
+    try {
+      ed.photo = await cvCompressImage(blob);
+      setEdPhoto(ed.photo);
+      $("ce-err").textContent = "";
+    } catch (e) {
+      $("ce-err").textContent = String(e?.message || e);
+    }
+  }
+  const bucketPath = (url) => {
+    const m = String(url || "").match(new RegExp(`/storage/v1/object/public/${CAT_BUCKET}/(.+)$`));
+    return m ? decodeURIComponent(m[1]) : "";
+  };
+  if (ed.dlg) {
+    $("cvc-add").addEventListener("click", () => openCatEditor(null));
+    $("ce-cancel").addEventListener("click", () => ed.dlg.close());
+    $("ce-file-btn").addEventListener("click", () => {
+      $("ce-file").value = "";
+      $("ce-file").click();
+    });
+    $("ce-file").addEventListener("change", () => takeEdPhoto($("ce-file").files?.[0]));
+    $("ce-paste").addEventListener("click", async () => {
+      try {
+        for (const it of await navigator.clipboard.read()) {
+          const type = it.types.find((ty) => ty.startsWith("image/"));
+          if (type) return takeEdPhoto(await it.getType(type));
+        }
+        $("ce-err").textContent = "No hay ninguna imagen copiada. Haz el recorte con Windows + Shift + S.";
+      } catch {
+        $("ce-err").textContent = "El navegador no deja leer el portapapeles con el botón: pulsa Ctrl + V.";
+      }
+    });
+    ed.dlg.addEventListener("paste", (e) => {
+      const it = [...(e.clipboardData?.items || [])].find((x) => x.type.startsWith("image/"));
+      if (!it) return;
+      e.preventDefault();
+      takeEdPhoto(it.getAsFile());
+    });
+    const drop = $("ce-photo");
+    drop.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      drop.classList.add("is-over");
+    });
+    drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("is-over");
+      const f = e.dataTransfer?.files?.[0];
+      if (f) takeEdPhoto(f);
+    });
+
+    $("ce-save").addEventListener("click", async () => {
+      const nombre = $("ce-nombre").value.trim().replace(/\s+/g, " ");
+      const modelo = $("ce-modelo").value.trim();
+      const precioTxt = $("ce-precio").value.trim().replace(/[.\s$€]/g, "").replace(",", ".");
+      const precio = precioTxt === "" ? null : Number(precioTxt);
+      if (!nombre) return ($("ce-err").textContent = "Pon el nombre del vehículo.");
+      if (precio !== null && !(Number.isFinite(precio) && precio >= 0)) return ($("ce-err").textContent = "El precio no es válido (solo números, o vacío si aún no se sabe).");
+      const id = ed.v?.id || (() => {
+        let base = catSlug(modelo || nombre);
+        let k = base;
+        for (let i = 2; catVehicles().some((x) => x.id === k); i++) k = `${base}_${i}`;
+        return k;
+      })();
+      const twin = modelo && catVehicles().find((x) => x.id !== id && normalizeKeySimple(x.modelo) === normalizeKeySimple(modelo));
+      if (twin && !confirm(`El modelo «${modelo}» ya lo tiene ${twin.nombre}. ¿Guardar igualmente?`)) return;
+      const btn = $("ce-save");
+      btn.disabled = true;
+      $("ce-err").textContent = "Guardando…";
+      try {
+        let foto = ed.v?.foto || "";
+        if (ed.photo) {
+          const path = `${id}-${Date.now()}.jpg`;
+          await cvCloud.req(`/storage/v1/object/${CAT_BUCKET}/${encodeURIComponent(path)}`, {
+            method: "POST",
+            body: cvDataUrlToBlob(ed.photo),
+            headers: { "Content-Type": "image/jpeg", "x-upsert": "true", "cache-control": "31536000" },
+            auth: true,
+          });
+          const old = bucketPath(foto);
+          foto = `${CV_CLOUD_URL}/storage/v1/object/public/${CAT_BUCKET}/${encodeURIComponent(path)}`;
+          if (old) cvCloud.req(`/storage/v1/object/${CAT_BUCKET}`, { method: "DELETE", body: { prefixes: [old] }, auth: true }).catch(() => {});
+        }
+        await cvCloud.upsert("catalogo", [{
+          id, nombre, modelo: modelo || null, precio,
+          categoria: $("ce-categoria").value.trim() || null,
+          concesionario: $("ce-conce").value.trim() || null,
+          seccion: $("ce-seccion").value.trim() || null,
+          foto: foto || null,
+          actualizado_at: new Date().toISOString(),
+          actualizado_por: AUTH.name || "",
+        }], "id");
+        ed.dlg.close();
+        await reloadCatalog();
+      } catch (e) {
+        $("ce-err").textContent = `No se pudo guardar: ${e.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    $("ce-delete").addEventListener("click", async () => {
+      const v = ed.v;
+      if (!v || !confirm(`¿Quitar ${v.nombre} del catálogo? Ya no saldrá en la Caja ni en Compraventa.`)) return;
+      try {
+        await cvCloud.del("catalogo", `id=eq.${encodeURIComponent(v.id)}`);
+        const old = bucketPath(v.foto);
+        if (old) cvCloud.req(`/storage/v1/object/${CAT_BUCKET}`, { method: "DELETE", body: { prefixes: [old] }, auth: true }).catch(() => {});
+        ed.dlg.close();
+        await reloadCatalog();
+      } catch (e) {
+        $("ce-err").textContent = `No se pudo quitar: ${e.message}`;
+      }
+    });
+  }
+
   function renderCatalog() {
+    renderCatAdmin();
     if (!catReady) {
       fillCatFilters();
       catReady = true;
@@ -5693,6 +5892,12 @@ function setupCompraventa() {
         row("Margen", moneyRange(ref.margin), "cvc-margin");
       }
       body.appendChild(dl);
+      if (catEditable()) {
+        const eb = el("button", "ghost cvc-edit", "✏️ Editar");
+        eb.type = "button";
+        eb.addEventListener("click", () => openCatEditor(v));
+        body.appendChild(eb);
+      }
       c.appendChild(body);
       grid.appendChild(c);
     }
@@ -6609,8 +6814,48 @@ const CAT_GAMA = {
   helicopteros: "aereos",
 };
 
+// El catalogo vive en Supabase (tabla "catalogo", la edita el Jefe Aguila). Si aun
+// no esta subido, o no hay conexion, se usa la copia fija de catalogo/vehiculos.js.
+const CATALOG = {
+  list: Array.isArray(window.AGUILA_CATALOGO?.vehiculos) ? window.AGUILA_CATALOGO.vehiculos : [],
+  source: "static", // "static" | "cloud"
+  missing: false, // falta crear la tabla en Supabase
+};
+const CAT_BUCKET = "catalogo-fotos";
+
 function catVehicles() {
-  return Array.isArray(window.AGUILA_CATALOGO?.vehiculos) ? window.AGUILA_CATALOGO.vehiculos : [];
+  return CATALOG.list;
+}
+
+function catRowFromDb(r) {
+  const n = r.precio == null || r.precio === "" ? null : Number(r.precio);
+  return {
+    id: String(r.id),
+    nombre: String(r.nombre || ""),
+    modelo: r.modelo || null,
+    precio: Number.isFinite(n) ? n : null,
+    categoria: r.categoria || "",
+    concesionario: r.concesionario || "",
+    seccion: r.seccion || null,
+    foto: r.foto || "",
+  };
+}
+
+async function loadCatalogCloud() {
+  try {
+    const rows = await cvCloud.selectAll("catalogo", "nombre.asc");
+    CATALOG.missing = false;
+    if (rows.length) {
+      CATALOG.list = rows.map(catRowFromDb);
+      CATALOG.source = "cloud";
+    }
+  } catch (e) {
+    CATALOG.missing = e.status === 404 || e.code === "PGRST205" || e.code === "42P01";
+  }
+}
+
+function catSlug(s) {
+  return normalizeKeySimple(s).replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40) || "vehiculo";
 }
 
 function catGamaKey(v) {
