@@ -227,6 +227,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 65 · 26 de octubre de 2026
+- **Compraventa** pasa a estar junto a la Caja (orden: Caja · Compraventa · Pagos · Sorteo).
+- Subpestañas en orden **Almacén · Catálogo · Historial · Procesar log**.
+- **Quién ve qué:** Almacén y Catálogo, los Jefes y los empleados desde **Experimentado** (Experimentado y Subjefe). Chalán y Mecánico solo ven la Caja. **Historial, Procesar log** y las cifras de compras, ventas y balance: **solo el Jefe Aguila**.
+- La base también lo impide (SQL `bot-facturas/7_compraventa_permisos.sql`): nueva función `almacen_v2()` (solo Jefes y desde Experimentado; la antigua `almacen()` queda cerrada) y regla restrictiva en `cv_tx` para que el historial solo lo lea el Jefe Aguila.
+
 ### Versión 64 · 26 de octubre de 2026
 - Compraventa → Catálogo: el filtro de **concesionarios** permite marcar **uno, varios o todos** (casillas con el número de vehículos de cada uno). El botón muestra los elegidos («Central, Fox» o «3 concesionarios»); **Todos** quita la selección.
 

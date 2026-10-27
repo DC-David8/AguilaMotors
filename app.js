@@ -355,7 +355,7 @@ function setupTabs() {
   tabs.forEach((tab) => {
     tab.addEventListener("click", async () => {
       const target = tab.dataset.tabTarget;
-      const required = PROTECTED_TABS.includes(target) && !(target === "tab-cv" && canSeeStock());
+      const required = PROTECTED_TABS.includes(target) && !(target === "tab-cv" && canSeeCv());
       if (required && !unlocked.has(target)) {
         const ok = await showAccessModal({
           sectionLabel: tab.textContent?.trim() || "Acceso restringido",
@@ -4571,7 +4571,7 @@ Promise.allSettled([
   }),
   Promise.resolve()
     .then(() => authInit())
-    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, hasAccess() ? loadCvMargins() : null])),
+    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, canSeeCv() ? loadCvMargins() : null])),
 ])
   .finally(() => {
     setupCaja();
@@ -5221,6 +5221,13 @@ function hasAccess() {
 }
 
 // Empleados registrados (Chalan a Subjefe): ven solo el Almacen de Compraventa.
+// Compraventa (Almacen y Catalogo): Jefes y empleados desde Experimentado.
+// Historial y Procesar log: solo el Jefe Aguila.
+const CV_RANKS = ["experimentado", "subjefe"];
+function canSeeCv() {
+  return hasAccess() || (AUTH.role === "empleado" && CV_RANKS.includes(normalizeKeySimple(AUTH.profile?.rank)));
+}
+
 function canSeeStock() {
   return AUTH.role === "jefe" || AUTH.role === "empleado";
 }
@@ -5496,7 +5503,7 @@ function setupAuthUI() {
   const tabs = document.querySelectorAll("nav.tabs .tab");
   tabs.forEach((t) => {
     const target = t.dataset.tabTarget;
-    t.hidden = PROTECTED_TABS.includes(target) && !(target === "tab-cv" ? canSeeStock() : hasAccess());
+    t.hidden = PROTECTED_TABS.includes(target) && !(target === "tab-cv" ? canSeeCv() : hasAccess());
   });
   const active = document.querySelector("nav.tabs .tab.is-active");
   if (active?.hidden) document.querySelector('nav.tabs .tab[data-tab-target="tab-caja"]')?.click();
@@ -5747,11 +5754,13 @@ function setupCompraventa() {
 
   function renderBar() {
     const logged = hasAccess();
-    const stockOnly = !hasAccess();
-    root.querySelector(".cv-kpis")?.toggleAttribute("hidden", stockOnly);
-    root.querySelector('[data-cv="cv-p-hist"]')?.toggleAttribute("hidden", stockOnly);
-    root.querySelector(".sx-subtabs")?.toggleAttribute("hidden", stockOnly); // solo hay Almacen
-    if (stockOnly && !$("cv-p-stock").classList.contains("is-active")) showPane("cv-p-stock");
+    // Historial, Procesar log y las cifras de compras/ventas: solo el Jefe Aguila.
+    const full = AUTH.aguila;
+    root.querySelectorAll(".cv-kpis .pg-kpi:not(.hl)").forEach((k) => k.toggleAttribute("hidden", !full));
+    root.querySelector('[data-cv="cv-p-hist"]')?.toggleAttribute("hidden", !full);
+    root.querySelector('[data-cv="cv-p-log"]')?.toggleAttribute("hidden", !full);
+    const activePane = root.querySelector(".sx-pane.is-active")?.id;
+    if (!full && (activePane === "cv-p-hist" || activePane === "cv-p-log")) showPane("cv-p-stock");
     const dot = $("cv-cloud-dot");
     const txt = $("cv-cloud-text");
     if (online()) {
@@ -5772,7 +5781,7 @@ function setupCompraventa() {
     $("cv-migrate").hidden = !(online() && logged && (local.tx.length || Object.keys(local.photos).length));
 
     const when = SHARED_DATA?.publishedAt ? ` el ${SHARED_DATA.publishedAt}` : "";
-    $("cv-mode").textContent = !logged && canSeeStock()
+    $("cv-mode").textContent = !AUTH.aguila && canSeeCv()
       ? "Vehículos disponibles en el almacén de la compraventa."
       : online()
       ? logged
@@ -5783,7 +5792,7 @@ function setupCompraventa() {
           ? "Sin base en línea: lo que proceses queda en esta PC. Exporta datos.js (Pagos → Datos compartidos) para que lo vean los demás."
           : "Sin base en línea: estos datos se guardan en esta PC."
         : `Publicado por el encargado${when}. Aquí solo se puede ver.`;
-    $("cv-tab-log").hidden = !canEdit();
+    $("cv-tab-log").hidden = !(canEdit() && AUTH.aguila);
     if (!canEdit() && $("cv-p-log").classList.contains("is-active")) showPane("cv-p-stock");
   }
 
@@ -5801,7 +5810,7 @@ function setupCompraventa() {
         $("cv-view").showModal();
       });
       pic.appendChild(img);
-    } else if (hasAccess() && catPhoto(catFind(t.model))) {
+    } else if (canSeeCv() && catPhoto(catFind(t.model))) {
       // Sin foto propia: la del catalogo como referencia.
       const img = el("img");
       img.src = catPhoto(catFind(t.model));
@@ -5829,7 +5838,7 @@ function setupCompraventa() {
     row("Fecha", t.ts || "Sin fecha");
     body.appendChild(dl);
     // Referencia del catalogo (solo Jefes): precio nuevo y a cuanto revenderlo.
-    const cv = hasAccess() ? catFind(t.model) : null;
+    const cv = canSeeCv() ? catFind(t.model) : null;
     const ref = cv ? cvRef(cv.precio) : null;
     if (ref) {
       const box = el("div", "cv-ref");
@@ -5918,7 +5927,7 @@ function setupCompraventa() {
 
   // ---------- lectura de la base en linea ----------
   async function loadCloud() {
-    if (!hasAccess()) return loadStockOnly();
+    if (!AUTH.aguila) return loadStockOnly();
     try {
       const [rows, photos] = await Promise.all([
         cvCloud.selectAll("cv_tx", "sort.asc,uid.asc"),
@@ -5960,7 +5969,14 @@ function setupCompraventa() {
   // Empleados (no Jefes): la base solo les da lo que hay en el almacen.
   async function loadStockOnly() {
     try {
-      const rows = (await cvCloud.req("/rest/v1/rpc/almacen", { method: "POST", body: {} })) || [];
+      // almacen_v2: solo Jefes y desde Experimentado (si aun no existe, la de antes).
+      let rows;
+      try {
+        rows = (await cvCloud.req("/rest/v1/rpc/almacen_v2", { method: "POST", body: {} })) || [];
+      } catch (e) {
+        if (!(e.status === 404 || e.code === "PGRST202")) throw e;
+        rows = (await cvCloud.req("/rest/v1/rpc/almacen", { method: "POST", body: {} })) || [];
+      }
       cloud.tx = rows.map((r, i) => ({
         uid: r.uid,
         ts: r.ts || "",
@@ -6253,7 +6269,7 @@ function setupCompraventa() {
   // Se ve al momento con lo de esta PC; luego se conecta y se mantiene al dia
   // (cada 45 s mientras la pestana esta abierta y al volver a la ventana).
   render();
-  if (canSeeStock()) loadCloud();
+  if (canSeeCv()) loadCloud();
   else {
     cloud.tried = true;
     cloud.error = "Solo para Jefes.";
@@ -6261,13 +6277,13 @@ function setupCompraventa() {
   }
   const tabActive = () => root.classList.contains("is-active") && document.visibilityState === "visible";
   setInterval(() => {
-    if (!busy && canSeeStock() && tabActive()) loadCloud();
+    if (!busy && canSeeCv() && tabActive()) loadCloud();
   }, 45000);
   document.addEventListener("visibilitychange", () => {
-    if (!busy && canSeeStock() && tabActive()) loadCloud();
+    if (!busy && canSeeCv() && tabActive()) loadCloud();
   });
   document.querySelector('.tab[data-tab-target="tab-cv"]')?.addEventListener("click", () => {
-    if (!busy && canSeeStock() && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
+    if (!busy && canSeeCv() && cloud.tried) setTimeout(() => tabActive() && loadCloud(), 50);
   });
 }
 
