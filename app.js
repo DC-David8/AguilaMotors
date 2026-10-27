@@ -6095,6 +6095,13 @@ function setupCompraventa() {
     // Titulo: el nombre del catalogo si se conoce (p. ej. "Ghost Rider"); si no, el modelo.
     const named = canSeeCv() ? catFind(t.model) : null;
     body.appendChild(el("h4", "", named ? named.nombre : t.model.toUpperCase()));
+    // Gama / categoria del catalogo (y concesionario) bajo el titulo.
+    if (named && (named.categoria || named.concesionario)) {
+      const meta = el("div", "cv-gama");
+      if (named.categoria) meta.appendChild(el("span", "cv-gama-chip", named.categoria));
+      if (named.concesionario) meta.appendChild(el("span", "cv-gama-dealer", named.concesionario));
+      body.appendChild(meta);
+    }
     const dl = el("dl");
     const row = (k, v) => {
       dl.appendChild(el("dt", "", k));

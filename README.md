@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 73 · 26 de octubre de 2026
+- Almacén: bajo el nombre de cada coche sale su **gama / categoría** del catálogo (p. ej. «Gama Media») y el concesionario.
+
 ### Versión 72 · 26 de octubre de 2026
 - Almacén: junto a la matrícula sale el **modelo** que trae el log (p. ej. `sm-sanctus`) y el título de la tarjeta es el **nombre del catálogo** (p. ej. «Ghost Rider»). Si el modelo aún no está asociado, el título sigue siendo el modelo.
 - El buscador del almacén también encuentra los coches por su nombre del catálogo.
