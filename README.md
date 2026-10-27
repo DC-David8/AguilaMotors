@@ -227,6 +227,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 71 · 26 de octubre de 2026
+- Almacén: la ficha de catálogo de cada coche (precio de concesionario, a cuánto venderlo, ganancia y 🔗 Cambiar/asociar) **solo la ve el Jefe Aguila**. Los demás ven el coche con su foto, como antes.
+
 ### Versión 70 · 26 de octubre de 2026
 - Almacén: junto al título se ve **cuántos vehículos hay** («5 vehículos»), para cuadrarlo con el almacén del juego. Al buscar muestra «2 de 5».
 

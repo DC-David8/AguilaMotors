@@ -6099,8 +6099,8 @@ function setupCompraventa() {
     row("Mediador", cvDisplayName(t.mediator));
     row("Fecha", t.ts || "Sin fecha");
     body.appendChild(dl);
-    // Referencia del catalogo (solo Jefes): precio nuevo y a cuanto revenderlo.
-    const cv = canSeeCv() ? catFind(t.model) : null;
+    // Ficha del catalogo (precio nuevo, a cuanto revenderlo, ganancia y asociar): solo el Jefe Aguila.
+    const cv = AUTH.aguila ? catFind(t.model) : null;
     const ref = cv ? cvRef(cv.precio) : null;
     if (ref) {
       const box = el("div", "cv-ref");
