@@ -227,6 +227,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 67 · 26 de octubre de 2026
+- El marcador pasa a ser **🦅 Copiador de logs**: además de los kits copia la **compraventa de vehículos** («Transacción de vehículo»). En el recuadro naranja se elige **qué copiar** (lo detecta solo según el canal) y las fechas.
+- Cada mensaje copiado lleva su **fecha y hora exactas** (sacadas del propio mensaje), así la compraventa queda bien fechada aunque Discord muestre «Hoy a las…».
+- Compraventa → Procesar log: aviso con el botón **Copiador de logs**. El lector de compraventa entiende las etiquetas en una línea y el valor debajo, y títulos con emoji delante.
+- Hay que **volver a arrastrar el marcador** a la barra de favoritos (el viejo «Copiar kits» no copia la compraventa).
+
 ### Versión 66 · 26 de octubre de 2026
 - **Catálogo editable desde la página (solo Jefe Aguila).** En Compraventa → Catálogo:
   - **☁️ Subir catálogo a la nube** (una sola vez): pasa los vehículos a Supabase (tabla `catalogo`).

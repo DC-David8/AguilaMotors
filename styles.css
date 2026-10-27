@@ -1587,3 +1587,4 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .ce-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .ce-spacer { flex: 1; }
 @media (max-width: 560px) { .ce-grid { grid-template-columns: 1fr; } }
+.cv-copier-hint { margin: 0 0 10px; }

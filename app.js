@@ -2304,7 +2304,7 @@ const RE_DTF_AUT = /^\s*AUT:\s*([^\s•]+)\s*•\s*TARJETA:\s*(.+?)\s*•\s*Dat[
 // Venta de Kits: "Venta de kits" es la linea fija que abre el bloque (la
 // cabecera con el nombre del bot y la hora no se usa, por la misma razon
 // de arriba). Solo interesa Vendedor y Cantidad.
-const RE_KITS = /^\s*Venta\s+de\s+kits\s*$/i;
+const RE_KITS = /^[^\p{L}]*Venta\s+de\s+kits\s*$/iu;
 const RE_SELLER = /^\s*Vendedor:\s*(.+?)\s*$/i;
 const RE_BUYER = /^\s*Comprador:\s*(.+?)\s*$/i;
 const RE_KITS_QTY = /^\s*Cantidad:\s*`?(\d+)`?\s*$/i;
@@ -4785,7 +4785,20 @@ function cvParseLog(text) {
     if (cur && cur.plate) out.push(cur);
     cur = null;
   };
-  for (const rawLine of String(text || "").split(/\r?\n/)) {
+  // Etiqueta sola en su linea ("Mediador:" y el valor debajo, como sale a veces
+  // al copiar recuadros de Discord): se juntan en una linea.
+  const RE_CV_LABEL = /^\s*(Mediador|Due[ñn]o|Comprador|Precio|Veh[ií]culo|Empresa)\s*:?\s*$/i;
+  const rawLines = String(text || "").split(/\r?\n/);
+  const joined = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const lab = rawLines[i].replace(/\*\*/g, "").match(RE_CV_LABEL);
+    const next = rawLines[i + 1];
+    if (lab && next != null && next.trim() && !RE_CV_LABEL.test(next.replace(/\*\*/g, ""))) {
+      joined.push(`${lab[1]}: ${next.trim()}`);
+      i++;
+    } else joined.push(rawLines[i]);
+  }
+  for (const rawLine of joined) {
     const line = rawLine.replace(/\*\*/g, "").trim();
     if (!line) continue;
     // Cabecera del mensaje de Discord con la fecha.
@@ -4802,7 +4815,7 @@ function cvParseLog(text) {
       ts = `${pad(day.getDate())}/${pad(day.getMonth() + 1)}/${day.getFullYear()} ${pad(d[2])}:${d[3]}`;
       continue;
     }
-    if (/^transacci[oó]n de veh[ií]culo/i.test(line)) {
+    if (/^[^\p{L}]*transacci[oó]n de veh[ií]culo/iu.test(line)) {
       push();
       cur = { ts, mediator: "", owner: "", buyer: "", price: 0, model: "", plate: "", company: "" };
       continue;
@@ -6676,7 +6689,27 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
 // semana (hora de España) mientras subes con la rueda y los copia.
 function aguilaKitsCopier() {
   if (window.__aguilaKits) { window.__aguilaKits.show(); return; }
-  if (!/discord\.com$/.test(location.hostname)) { alert("Abre el canal de kits en discord.com (en el navegador, no en la aplicación) y pulsa otra vez el marcador."); return; }
+  if (!/discord\.com$/.test(location.hostname)) { alert("Abre el canal de kits o de compraventa en discord.com (en el navegador, no en la aplicación) y pulsa otra vez el marcador."); return; }
+  const MODES = {
+    kits: { re: /venta\s+de\s+kits/i, what: "ventas de kits", btn: "Copiar kits de la semana" },
+    cv: { re: /transacci[oó]n de veh[ií]culo/i, what: "transacciones de vehículos", btn: "Copiar compraventa" },
+  };
+  let mode = "";
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const stamp = (ms) => { const d = new Date(ms); return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+  const textOf = (li) => {
+    let t = li.innerText || "";
+    let from = 0;
+    for (const c of li.querySelectorAll("code")) {
+      const ct = (c.innerText || "").trim();
+      if (!ct || ct.includes("\n")) continue;
+      const i = t.indexOf(ct, from);
+      if (i < 0) continue;
+      t = t.slice(0, i) + "`" + ct + "`" + t.slice(i + ct.length);
+      from = i + ct.length + 2;
+    }
+    return t.trim();
+  };
   const EPOCH = 1420070400000n;
   const seen = new Map();
   const tsOf = (id) => { try { return Number((BigInt(id) >> 22n) + EPOCH); } catch { return 0; } };
@@ -6706,8 +6739,15 @@ function aguilaKitsCopier() {
       const parts = li.id.split("-");
       const id = parts.pop();
       if (!/^\d+$/.test(id) || (chan && parts.pop() !== chan)) continue;
-      const txt = (li.innerText || "").trim();
-      if (txt) seen.set(id, txt);
+      const txt = textOf(li);
+      if (txt) {
+        // La fecha exacta del mensaje, justo antes de "Transaccion..." / "Venta de kits"
+        // (asi no la pisa la cabecera "Hoy a las ..." de Discord).
+        const lines = txt.split("\n");
+        const at = lines.findIndex((l) => MODES.kits.re.test(l) || MODES.cv.re.test(l));
+        lines.splice(at < 0 ? 0 : at, 0, stamp(tsOf(id)));
+        seen.set(id, lines.join("\n"));
+      }
     }
     update();
   };
@@ -6715,7 +6755,8 @@ function aguilaKitsCopier() {
   const box = document.createElement("div");
   box.style.cssText = "position:fixed;top:70px;right:20px;z-index:99999;width:320px;background:#1b1714;color:#f3eee8;border:1px solid #f08a24;border-radius:12px;padding:12px 14px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)";
   box.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="font-size:14px">🦅 Copiador de kits</b><button data-x style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer">×</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="font-size:14px">🦅 Copiador de logs</b><button data-x style="background:none;border:0;color:#aaa;font-size:18px;cursor:pointer">×</button></div>
+    <label style="display:block;font-size:11px;opacity:.8;margin-bottom:6px">Qué copiar<select data-k style="width:100%;margin-top:2px;background:#2a2420;color:#fff;border:1px solid #555;border-radius:6px;padding:4px"><option value="kits">🧩 Venta de kits</option><option value="cv">🚗 Compraventa de vehículos</option></select></label>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <label style="flex:1;font-size:11px;opacity:.8">Desde (domingo)<input data-f type="date" style="width:100%;margin-top:2px;background:#2a2420;color:#fff;border:1px solid #555;border-radius:6px;padding:4px;color-scheme:dark"></label>
       <label style="flex:1;font-size:11px;opacity:.8">Hasta (sábado)<input data-t type="date" style="width:100%;margin-top:2px;background:#2a2420;color:#fff;border:1px solid #555;border-radius:6px;padding:4px;color-scheme:dark"></label>
@@ -6737,23 +6778,31 @@ function aguilaKitsCopier() {
     if (!$("[data-f]").value || !$("[data-t]").value) return;
     const { a, b, list, sel } = inRange();
     const oldest = list[0]?.ts, newest = list[list.length - 1]?.ts;
-    const kits = sel.filter((m) => /venta\s+de\s+kits/i.test(m.t)).length;
-    let s = `<b>${kits}</b> ventas de kits recogidas de esa semana.<br>`;
-    if (!list.length) s += "⏳ No veo mensajes: abre el canal de kits.";
+    if (!mode) {
+      const nk = list.filter((m) => MODES.kits.re.test(m.t)).length;
+      const nc = list.filter((m) => MODES.cv.re.test(m.t)).length;
+      if (nk || nc) { mode = nc > nk ? "cv" : "kits"; $("[data-k]").value = mode; $("[data-c]").textContent = MODES[mode].btn; }
+    }
+    const M = MODES[mode || "kits"];
+    const kits = sel.filter((m) => M.re.test(m.t)).length;
+    let s = `<b>${kits}</b> ${M.what} recogidas de esas fechas.<br>`;
+    if (!list.length) s += "⏳ No veo mensajes: abre el canal de kits o de compraventa.";
     else if (oldest >= a) s += `<span style="color:#ffb020">⬆ Sigue subiendo hasta pasar el <b>${fmt(a)}</b> (tu hora). Ahora llegas al ${fmt(oldest)}.</span>`;
     else if (newest < b && b < Date.now() - 60000) s += `<span style="color:#ffb020">⬇ Baja hasta pasar el <b>${fmt(b)}</b> (tu hora).</span>`;
-    else s += `<span style="color:#6fdc8c">✅ Semana completa. Pulsa Copiar.</span>`;
+    else s += `<span style="color:#6fdc8c">✅ Fechas completas. Pulsa Copiar.</span>`;
     if ($("[data-s]").innerHTML !== s) $("[data-s]").innerHTML = s;
   }
 
+  $("[data-k]").addEventListener("change", () => { mode = $("[data-k]").value; $("[data-c]").textContent = MODES[mode].btn; update(); });
   $("[data-f]").addEventListener("change", update);
   $("[data-t]").addEventListener("change", update);
   $("[data-x]").addEventListener("click", () => { box.style.display = "none"; });
   $("[data-c]").addEventListener("click", async () => {
     grab();
-    const { sel } = inRange();
-    const text = sel.map((m) => m.t).join("\n\n");
-    if (!text) { $("[data-s]").innerHTML += "<br>No hay mensajes de esa semana todavía."; return; }
+    const M = MODES[mode || "kits"];
+    const pick = inRange().sel.filter((m) => M.re.test(m.t));
+    const text = pick.map((m) => m.t).join("\n\n");
+    if (!text) { $("[data-s]").innerHTML += `<br>No hay ${M.what} en esas fechas.`; return; }
     let ok = false;
     try { await navigator.clipboard.writeText(text); ok = true; } catch {}
     if (!ok) {
@@ -6762,8 +6811,8 @@ function aguilaKitsCopier() {
       try { ok = document.execCommand("copy"); } catch {}
       ta.remove();
     }
-    $("[data-c]").textContent = ok ? `✅ Copiados ${sel.length} mensajes` : "No se pudo copiar";
-    setTimeout(() => { $("[data-c]").textContent = "Copiar kits de la semana"; }, 3000);
+    $("[data-c]").textContent = ok ? `✅ Copiados ${pick.length} mensajes` : "No se pudo copiar";
+    setTimeout(() => { $("[data-c]").textContent = M.btn; }, 3000);
   });
 
   const obs = new MutationObserver((muts) => {
@@ -6791,6 +6840,7 @@ function setupKitsCopier() {
     alert("No lo pulses aquí: arrástralo a tu barra de favoritos y úsalo dentro de Discord.");
   });
   open.addEventListener("click", () => dlg.showModal());
+  byId("kits-install-cv")?.addEventListener("click", () => dlg.showModal());
   byId("kits-copy-code")?.addEventListener("click", async () => {
     const ok = await copyText(link.href);
     byId("kits-copy-code").textContent = ok ? "✅ Código copiado" : "No se pudo copiar";
