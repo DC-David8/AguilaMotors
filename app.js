@@ -6085,10 +6085,16 @@ function setupCompraventa() {
         '<svg viewBox="0 0 64 32" aria-hidden="true"><path d="M6 22h52M10 22l4-8c1-2 3-3 5-3h18c2 0 4 1 6 3l7 6 6 1c2 0 3 1 3 3v2H4v-2c0-1 1-2 2-2"/><circle cx="18" cy="24" r="4"/><circle cx="48" cy="24" r="4"/></svg>';
       pic.appendChild(el("span", "", "Sin foto"));
     }
-    pic.appendChild(el("span", "cv-plate", t.plate));
+    // Matricula y, a su lado, el modelo que trae el log.
+    const tags = el("div", "cv-tags");
+    tags.appendChild(el("span", "cv-plate", t.plate));
+    if (t.model) tags.appendChild(el("span", "cv-model-tag", t.model.toLowerCase()));
+    pic.appendChild(tags);
     c.appendChild(pic);
     const body = el("div", "cv-body");
-    body.appendChild(el("h4", "", t.model.toUpperCase()));
+    // Titulo: el nombre del catalogo si se conoce (p. ej. "Ghost Rider"); si no, el modelo.
+    const named = canSeeCv() ? catFind(t.model) : null;
+    body.appendChild(el("h4", "", named ? named.nombre : t.model.toUpperCase()));
     const dl = el("dl");
     const row = (k, v) => {
       dl.appendChild(el("dt", "", k));
@@ -6183,7 +6189,7 @@ function setupCompraventa() {
     const grid = $("cv-stock");
     grid.innerHTML = "";
     const q = normalizeKeySimple($("cv-stock-q").value);
-    const shown = stock.filter((t) => !q || normalizeKeySimple(`${t.model} ${t.plate} ${t.owner} ${t.mediator}`).includes(q));
+    const shown = stock.filter((t) => !q || normalizeKeySimple(`${t.model} ${catFind(t.model)?.nombre || ""} ${t.plate} ${t.owner} ${t.mediator}`).includes(q));
     shown.forEach((t) => grid.appendChild(card(t, photos)));
     // Cuantos hay (para cuadrarlo con el almacen del juego).
     const cnt = $("cv-stock-count");

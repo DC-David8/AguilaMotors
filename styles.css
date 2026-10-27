@@ -1606,3 +1606,8 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .cv-linker { min-width: 0; }
 .cv-guess span { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
 .cv-stock-count { display: inline-block; vertical-align: middle; margin-left: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(249,125,2,.16); color: #ffb15c; font-size: 0.8rem; letter-spacing: .02em; }
+
+/* v72 · Almacén: modelo junto a la matrícula y nombre del catálogo */
+.cv-tags { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cv-tags .cv-plate { position: static; }
+.cv-model-tag { background: rgba(0,0,0,.72); color: #ffb15c; border: 1px solid rgba(249,125,2,.6); font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.5); }

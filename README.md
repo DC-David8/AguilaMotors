@@ -227,6 +227,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 72 · 26 de octubre de 2026
+- Almacén: junto a la matrícula sale el **modelo** que trae el log (p. ej. `sm-sanctus`) y el título de la tarjeta es el **nombre del catálogo** (p. ej. «Ghost Rider»). Si el modelo aún no está asociado, el título sigue siendo el modelo.
+- El buscador del almacén también encuentra los coches por su nombre del catálogo.
+
 ### Versión 71 · 26 de octubre de 2026
 - Almacén: la ficha de catálogo de cada coche (precio de concesionario, a cuánto venderlo, ganancia y 🔗 Cambiar/asociar) **solo la ve el Jefe Aguila**. Los demás ven el coche con su foto, como antes.
 
