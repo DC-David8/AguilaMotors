@@ -4571,7 +4571,7 @@ Promise.allSettled([
   }),
   Promise.resolve()
     .then(() => authInit())
-    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, canSeeCv() ? loadCvMargins() : null, loadCatalogCloud()])),
+    .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, canSeeCv() ? loadCvMargins() : null, canSeeCv() ? loadCvAlias() : null, loadCatalogCloud()])),
 ])
   .finally(() => {
     setupCaja();
@@ -6014,6 +6014,50 @@ function setupCompraventa() {
     if (!canEdit() && $("cv-p-log").classList.contains("is-active")) showPane("cv-p-stock");
   }
 
+  // ---------- Asociar un modelo del log con el catalogo (Jefe Aguila) ----------
+  async function linkModel(model, v) {
+    try {
+      await saveCvAlias(model, v ? v.id : "");
+      render();
+    } catch (e) {
+      alert(`No se pudo guardar la asociación: ${e.message}`);
+    }
+  }
+  function openLinker(box, model, linked) {
+    if (box.querySelector(".cv-linker")) return;
+    const wrap = el("div", "cv-linker");
+    const inp = el("input", "text-input");
+    inp.type = "search";
+    inp.placeholder = "Nombre o modelo del vehículo";
+    const res = el("div", "cv-linker-res");
+    const draw = () => {
+      res.innerHTML = "";
+      for (const v of catSearch(inp.value, 6)) {
+        const b = el("button", "cv-guess");
+        b.type = "button";
+        b.innerHTML = `<img alt=""><span></span>`;
+        if (catPhoto(v)) b.querySelector("img").src = catPhoto(v);
+        else b.querySelector("img").remove();
+        b.querySelector("span").textContent = `${v.nombre}${v.modelo ? ` · ${v.modelo}` : ""}`;
+        b.addEventListener("click", () => linkModel(model, v));
+        res.appendChild(b);
+      }
+    };
+    inp.addEventListener("input", draw);
+    wrap.append(inp, res);
+    if (linked && CV_ALIAS[normalizeKeySimple(model)]) {
+      const un = el("button", "cv-link-btn", "Quitar asociación");
+      un.type = "button";
+      un.addEventListener("click", () => linkModel(model, null));
+      wrap.appendChild(un);
+    }
+    box.appendChild(wrap);
+    inp.value = String(model || "").slice(0, 6);
+    draw();
+    inp.focus();
+    inp.select();
+  }
+
   function card(t, photos) {
     const c = el("article", "cv-car");
     const pic = el("div", "cv-pic");
@@ -6065,6 +6109,39 @@ function setupCompraventa() {
       box.appendChild(el("div", "cv-ref-sell", `Vender a ${moneyRange(ref.sell)}`));
       const gain = [ref.sell[0] - t.price, ref.sell[1] - t.price];
       box.appendChild(el("div", gain[1] >= 0 ? "cv-ref-ok" : "cv-ref-bad", `Ganancia ${gain[0] < 0 ? "- " + fmtMoney(-gain[0]) : fmtMoney(gain[0])} – ${gain[1] < 0 ? "- " + fmtMoney(-gain[1]) : fmtMoney(gain[1])}`));
+      if (AUTH.aguila) {
+        const ch = el("button", "cv-link-btn", "🔗 Cambiar");
+        ch.type = "button";
+        ch.title = "Asociar este modelo a otro vehículo del catálogo";
+        ch.addEventListener("click", () => openLinker(box, t.model, true));
+        box.appendChild(ch);
+      }
+      body.appendChild(box);
+    } else if (cv && AUTH.aguila) {
+      // Asociado pero sin precio (pendiente): se puede cambiar igual.
+      const box = el("div", "cv-ref");
+      box.appendChild(el("div", "cv-ref-name", `📖 ${cv.nombre}`));
+      box.appendChild(el("div", "cvc-pend", "Precio pendiente"));
+      body.appendChild(box);
+    } else if (!cv && AUTH.aguila && catVehicles().length) {
+      const box = el("div", "cv-ref cv-ref-miss");
+      box.appendChild(el("div", "cv-ref-name", `🔗 «${t.model}» no está en el catálogo`));
+      const guesses = catGuess(t.model);
+      if (guesses.length) box.appendChild(el("div", "muted", "¿Es alguno de estos?"));
+      for (const g of guesses) {
+        const b = el("button", "cv-guess");
+        b.type = "button";
+        b.innerHTML = `<img alt=""><span></span>`;
+        if (catPhoto(g)) b.querySelector("img").src = catPhoto(g);
+        else b.querySelector("img").remove();
+        b.querySelector("span").textContent = `${g.nombre}${g.modelo ? ` · ${g.modelo}` : ""}`;
+        b.addEventListener("click", () => linkModel(t.model, g));
+        box.appendChild(b);
+      }
+      const other = el("button", "cv-link-btn", "🔎 Buscar en el catálogo");
+      other.type = "button";
+      other.addEventListener("click", () => openLinker(box, t.model, false));
+      box.appendChild(other);
       body.appendChild(box);
     }
     if (canEdit()) {
@@ -6931,12 +7008,56 @@ function catSearch(q, limit = 8) {
   return out.slice(0, limit).map((x) => x.v);
 }
 
+// Asociaciones hechas a mano: modelo del log -> id del catalogo (el log a veces
+// corta el modelo, p. ej. "drafterhatc"). Las guarda el Jefe Aguila.
+let CV_ALIAS = {};
+async function loadCvAlias() {
+  try {
+    const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.cv_alias");
+    const v = rows?.[0]?.value;
+    if (v && typeof v === "object") CV_ALIAS = v;
+  } catch {
+    // sin asociaciones
+  }
+}
+async function saveCvAlias(model, catId) {
+  const k = normalizeKeySimple(model);
+  const next = { ...CV_ALIAS };
+  if (catId) next[k] = catId;
+  else delete next[k];
+  await cvCloud.upsert("app_settings", [{ key: "cv_alias", value: next }], "key");
+  CV_ALIAS = next;
+}
+
 // El log de compraventa trae el modelo (codigo de spawn) o el nombre.
 function catFind(model) {
   const k = normalizeKeySimple(model);
   if (!k) return null;
   const list = catVehicles();
+  const alias = CV_ALIAS[k];
+  if (alias) {
+    const v = list.find((x) => x.id === alias);
+    if (v) return v;
+  }
   return list.find((v) => v.modelo && normalizeKeySimple(v.modelo) === k) || list.find((v) => normalizeKeySimple(v.nombre) === k) || null;
+}
+
+// Parecidos para cuando no hay coincidencia exacta (modelo cortado, nombre...).
+function catGuess(model, limit = 3) {
+  const k = normalizeKeySimple(model).replace(/[^a-z0-9]/g, "");
+  if (k.length < 4) return [];
+  const scored = [];
+  for (const v of catVehicles()) {
+    const m = normalizeKeySimple(v.modelo).replace(/[^a-z0-9]/g, "");
+    const n = normalizeKeySimple(v.nombre).replace(/[^a-z0-9 ]/g, "");
+    let s = 0;
+    if (m && (m.startsWith(k) || k.startsWith(m))) s = 3;
+    else if (n.split(" ").some((w) => w.length >= 4 && (w === k || w.startsWith(k) || (w.length >= 6 && k.startsWith(w))))) s = 2;
+    else if (m && m.length >= 5 && (m.includes(k) || k.includes(m))) s = 1;
+    if (s) scored.push({ v, s, d: Math.abs((m || n).length - k.length) });
+  }
+  scored.sort((x, y) => y.s - x.s || x.d - y.d);
+  return scored.slice(0, limit).map((x) => x.v);
 }
 
 // Margenes de compraventa (% del precio de concesionario). Los cambia el Jefe Aguila.

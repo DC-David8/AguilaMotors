@@ -1588,3 +1588,20 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .ce-spacer { flex: 1; }
 @media (max-width: 560px) { .ce-grid { grid-template-columns: 1fr; } }
 .cv-copier-hint { margin: 0 0 10px; }
+
+/* v69 · Asociar modelos del log con el catálogo */
+.cv-ref-miss { border-style: dashed; border-color: rgba(255,176,32,.45); }
+.cv-guess { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 4px 6px; margin-top: 4px; border-radius: 8px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); box-shadow: none; color: inherit; font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.cv-guess:hover { border-color: #f97d02; background: rgba(249,125,2,.12); }
+.cv-guess img { width: 48px; height: 26px; object-fit: cover; border-radius: 4px; flex: none; }
+.cv-guess span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-link-btn { margin-top: 5px; align-self: flex-start; padding: 3px 8px; font-size: 11.5px; background: none; border: 1px solid rgba(255,255,255,.18); box-shadow: none; color: inherit; text-transform: none; letter-spacing: 0; font-weight: 600; border-radius: 7px; }
+.cv-link-btn:hover { border-color: #f97d02; }
+.cv-linker { margin-top: 6px; display: grid; gap: 2px; }
+.cv-linker .text-input { padding: 5px 8px; font-size: 12.5px; }
+.cv-body { min-width: 0; }
+.cv-ref { min-width: 0; overflow: hidden; }
+.cv-ref-name { overflow-wrap: anywhere; }
+.cv-guess, .cv-link-btn, .cv-linker .text-input { box-sizing: border-box; max-width: 100%; min-width: 0; }
+.cv-linker { min-width: 0; }
+.cv-guess span { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
