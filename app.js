@@ -606,10 +606,21 @@ function isTopRank(rank) {
   return TOP_RANKS.some((r) => normalizeKeySimple(r) === k);
 }
 
+// Nombres que se ven (desde la v78, los mismos que en el juego). Por dentro, en
+// la base y en las reglas, cada rango conserva su nombre original (Chalan,
+// Experimentado, Subjefe, Jefe): asi no cambian permisos, comisiones ni roles.
+// "Mano Derecha" solo existe en Discord y en las pagas: no se renombra.
+const DEFAULT_RANK_NAMES = {
+  "Chalán": "Aprendiz",
+  "Experimentado": "Especialista",
+  "Subjefe": "Jefe de Taller",
+  "Jefe": "Gerente",
+};
+
 function rankLabel(rank) {
   const found = RANKS.find((r) => normalizeKeySimple(r.label) === normalizeKeySimple(rank));
   if (!found) return rank || "";
-  return String(RANK_NAMES[found.label] || "").trim() || found.label;
+  return String(RANK_NAMES[found.label] || "").trim() || DEFAULT_RANK_NAMES[found.label] || found.label;
 }
 
 // Empleado de la Semana: quien mas cobra (sin bono) entre los que cobran,
@@ -2864,7 +2875,7 @@ function setupContabilidad() {
     promo.up.sort((a, b) => b.total - a.total);
     promo.down.sort((a, b) => a.total - b.total);
     byId("pg-promo-rules").textContent =
-      `Mínimo ${fmtMoney(R.min)} · Metas: Chalán ${fmtMoney(R.up["Chalán"])} · Mecánico ${fmtMoney(R.up["Mecánico"])} · Experimentado ${fmtMoney(R.up["Experimentado"])}`;
+      `Mínimo ${fmtMoney(R.min)} · Metas: ${rankLabel("Chalán")} ${fmtMoney(R.up["Chalán"])} · ${rankLabel("Mecánico")} ${fmtMoney(R.up["Mecánico"])} · ${rankLabel("Experimentado")} ${fmtMoney(R.up["Experimentado"])}`;
     const draw = (listId, items, kind) => {
       const list = byId(listId);
       list.textContent = "";
@@ -2897,7 +2908,7 @@ function setupContabilidad() {
         for (const c of promo.cand) {
           const p = document.createElement("p");
           p.className = "pg-promo-cand";
-          p.textContent = `⭐ ${c.name} (${rankLabel(c.from)}) es candidato a Jefe: ${fmtMoney(c.total)} facturados. Lo decide el Jefe Aguila.`;
+          p.textContent = `⭐ ${c.name} (${rankLabel(c.from)}) es candidato a ${rankLabel("Jefe")}: ${fmtMoney(c.total)} facturados. Lo decide el Jefe Aguila.`;
           list.appendChild(p);
         }
       }
@@ -3414,7 +3425,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     for (const r of RANKS) {
       const opt = document.createElement("option");
       opt.value = r.label;
-      opt.textContent = `${r.label} (${Math.round(r.pct * 100)}%)`;
+      opt.textContent = `${rankLabel(r.label)} (${Math.round(r.pct * 100)}%)`;
       rankInput.appendChild(opt);
     }
   }
@@ -3486,12 +3497,13 @@ function setupEmployeesAdminModal({ onChanged }) {
         grid.dataset.built = "1";
         for (const r of RANKS.slice().reverse()) {
           const lab = document.createElement("label");
-          lab.textContent = `${r.label} (${Math.round(r.pct * 100)}%)`;
+          const base = DEFAULT_RANK_NAMES[r.label] || r.label;
+          lab.textContent = `${base} (${Math.round(r.pct * 100)}%)`;
           const inp = document.createElement("input");
           inp.className = "text-input";
           inp.dataset.rank = r.label;
           inp.maxLength = 30;
-          inp.placeholder = r.label;
+          inp.placeholder = DEFAULT_RANK_NAMES[r.label] || r.label;
           lab.appendChild(inp);
           grid.appendChild(lab);
         }
@@ -3510,7 +3522,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     const map = {};
     byId("emp-rank-names-grid").querySelectorAll("input[data-rank]").forEach((inp) => {
       const v = inp.value.replace(/\s+/g, " ").trim();
-      if (v && v !== inp.dataset.rank) map[inp.dataset.rank] = v;
+      if (v && v !== inp.dataset.rank && v !== DEFAULT_RANK_NAMES[inp.dataset.rank]) map[inp.dataset.rank] = v;
     });
     const btn = byId("emp-rank-names-save");
     btn.disabled = true;
@@ -5391,7 +5403,7 @@ function renderAuthCard() {
     ? rankLabel(p.rank)
     : AUTH.aguila
       ? rankLabel("Jefe Aguila")
-      : { jefe: "Jefe", empleado: "Empleado", invitado: "Sin registrar", offline: "Sin conexión" }[AUTH.role] || "";
+      : { jefe: "Jefatura", empleado: "Empleado", invitado: "Sin registrar", offline: "Sin conexión" }[AUTH.role] || "";
   const rankKey = p?.rank || (AUTH.aguila ? "Jefe Aguila" : "");
 
   box.textContent = "";
@@ -5503,7 +5515,7 @@ function setupAuthUI() {
   if (false) {
     const roleTxt = AUTH.aguila
       ? rankLabel("Jefe Aguila")
-      : { jefe: "Jefe", empleado: "Empleado", invitado: "Sin registrar", offline: "Sin conexión" }[AUTH.role] || "";
+      : { jefe: "Jefatura", empleado: "Empleado", invitado: "Sin registrar", offline: "Sin conexión" }[AUTH.role] || "";
     userEl.textContent = `👤 ${AUTH.name || "Sesión iniciada"} · ${roleTxt}`;
     userEl.title = hasAccess()
       ? "Acceso a todos los módulos"

@@ -54,13 +54,17 @@ Los productos agregados desde Gestión de Productos usan su nombre completo. Las
 
 ## Comisiones por rango
 
-| Rango | Comisión |
-|---|---|
-| Chalán | 40 % |
-| Mecánico | 45 % |
-| Experimentado | 50 % |
-| Subjefe | 50 % |
-| Jefe | 50 % |
+| Rango (como se ve) | Nombre interno | Comisión |
+|---|---|---|
+| Aprendiz | Chalán | 40 % |
+| Mecánico | Mecánico | 45 % |
+| Especialista | Experimentado | 50 % |
+| Jefe de Taller | Subjefe | 50 % |
+| Mano Derecha | Mano Derecha | 50 % |
+| Gerente | Jefe | 50 % |
+| Jefe Aguila | Jefe Aguila | 100 % |
+
+Los nombres que se ven salen de `DEFAULT_RANK_NAMES` en `app.js` (y el Jefe Aguila puede cambiarlos en Gestión → Nombres de los rangos). Por dentro, en la base de datos y en las reglas de permisos, cada rango conserva su **nombre interno**.
 
 Se aplican igual a las facturas y a las ventas de kits. El rango de cada empleado se cambia en **Gestión de empleados**. Para que se reconozca a un empleado, su nombre y apellido tienen que ser iguales a los que salen en Discord como *Cobrador* o *Vendedor*.
 
@@ -226,6 +230,12 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 Al publicar un cambio, sube el número de versión en `index.html`: el pie de página (formato «Versión N - Aguila Motors») y el `?v=` de `styles.css`, `app.js` y el icono. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
+
+### Versión 78 · 29 de octubre de 2026
+- **Rangos con los nombres nuevos del juego** en toda la página: **Aprendiz** (antes Chalán), Mecánico, **Especialista** (antes Experimentado), **Jefe de Taller** (antes Subjefe), **Gerente** (antes Jefe) y Jefe Aguila. **Mano Derecha** no cambia (solo existe en Discord y en las pagas).
+- Se ven en Pagos (ranking, ascensos y descensos, umbrales, «Copiar para Discord»), Gestión de empleados, la tarjeta de sesión y el resto de la web.
+- Por dentro (base de datos, permisos, comisiones, roles de Discord) cada rango conserva su nombre interno: no hay que ejecutar nada en Supabase ni cambiar a nadie de rango.
+- «Nombres de los rangos» (Jefe Aguila) sigue sirviendo para cambiarlos; vacío = el nombre nuevo.
 
 ### Versión 77 · 26 de octubre de 2026
 - Almacén: las **fotos de catálogo** también se amplían al hacer clic (antes solo las fotos subidas). El pie de la foto ampliada muestra el nombre del catálogo y la matrícula.
