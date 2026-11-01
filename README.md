@@ -231,6 +231,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 79 · 1 de noviembre de 2026
+- Caja: botones del ticket reorganizados. Arriba, pequeños: **Deshacer · Quitar · Copiar total**. Abajo, grandes: **🧹 Limpiar** y **📋 Copiar concepto** (el más grande y destacado, ocupa dos tercios). Igual en el móvil.
+
 ### Versión 78 · 29 de octubre de 2026
 - **Rangos con los nombres nuevos del juego** en toda la página: **Aprendiz** (antes Chalán), Mecánico, **Especialista** (antes Experimentado), **Jefe de Taller** (antes Subjefe), **Gerente** (antes Jefe) y Jefe Aguila. **Mano Derecha** no cambia (solo existe en Discord y en las pagas).
 - Se ven en Pagos (ranking, ascensos y descensos, umbrales, «Copiar para Discord»), Gestión de empleados, la tarjeta de sesión y el resto de la web.

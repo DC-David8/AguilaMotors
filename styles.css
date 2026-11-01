@@ -948,7 +948,7 @@ html, body {
 .receipt-total strong { font-size: 1.35rem; color: #1a1209; }
 .receipt-foot { text-align: center; font-size: 0.7rem; color: #6d5e4b; margin-top: 10px; letter-spacing: 0.1em; }
 .ticket-actions button { text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.04em; }
-#btn-copy-total, #btn-copy-concept { box-shadow: 0 0 16px rgba(249, 125, 2, 0.45); }
+
 
 /* Aviso al anadir un producto */
 .add-toast {
@@ -1626,3 +1626,18 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .cv-resale { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 8px; padding: 7px 10px; border-radius: 10px; background: rgba(111,220,140,.1); border: 1px solid rgba(111,220,140,.35); color: #6fdc8c; font-size: 0.82rem; }
 .cv-resale b { font-size: 0.98rem; white-space: nowrap; }
 .cv-tags, .cv-pic-tag { pointer-events: none; }
+
+/* v79 · Botones del ticket: Copiar concepto y Limpiar, los grandes */
+.ticket-actions { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ticket-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap; }
+.ticket-actions .tk-small { padding: 8px 6px; font-size: 0.74rem; border-radius: 10px; }
+.ticket-actions .tk-big { min-height: 54px; font-size: 0.98rem; letter-spacing: 0.06em; border-radius: 12px; }
+.ticket-actions .tk-big span { font-size: 1.15rem; }
+.ticket-actions .tk-clear { grid-column: 1 / 2; background: linear-gradient(180deg, #3a3029, #241d17); color: var(--text); border: 2px solid rgba(249, 125, 2, 0.55); }
+.ticket-actions .tk-clear:hover { border-color: #f97d02; }
+.ticket-actions .tk-main { grid-column: 2 / 4; font-size: 1.05rem; box-shadow: 0 0 22px rgba(249, 125, 2, 0.55); }
+@media (max-width: 700px) {
+  .ticket-actions .tk-small { padding: 9px 4px; font-size: 0.72rem; gap: 4px; }
+  .ticket-actions .tk-small span { display: none; }
+  .ticket-actions .tk-big { min-height: 50px; font-size: 0.9rem; }
+}
