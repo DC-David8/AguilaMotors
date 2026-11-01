@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=96" />
+  <link rel="stylesheet" href="styles.css?v=97" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=96" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=97" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -219,9 +219,8 @@
             <b id="conta-total-a-pagar">$ 0</b>
           </div>
           <div class="pg-actions">
-            <button type="button" id="pg-copy-discord">Copiar para Discord</button>
-            <button type="button" id="conta-employees" class="ghost">Totales empleados</button>
-            <button type="button" id="conta-manage-employees" class="ghost">Gestión de empleados</button>
+            <button type="button" id="pg-copy-discord" class="pg-ic-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1.1a15.6 15.6 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.2 12.2 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.7 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z" fill="currentColor"/></svg>Copiar para Discord</button>
+            <button type="button" id="conta-manage-employees" class="ghost pg-ic-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Gestión de empleados</button>
           </div>
           <p class="muted pg-copied" id="pg-copy-status" role="status"></p>
 
@@ -567,7 +566,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 96 - Aguila Motors</footer>
+    <footer class="app-version">Versión 97 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -664,37 +663,6 @@
       </div>
     </form>
   </dialog>
-
-  <dialog id="employees-modal">
-    <form method="dialog" class="modal-card">
-      <header class="modal-head">
-        <h3>Totales por empleado</h3>
-        <button value="cancel" class="ghost">Cerrar</button>
-      </header>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Empleado</th>
-              <th>Rango</th>
-              <th class="num">%</th>
-              <th class="num">Bruto</th>
-              <th class="num">A pagar</th>
-            </tr>
-          </thead>
-          <tbody id="employees-body"></tbody>
-        </table>
-      </div>
-      <p class="muted" id="employees-bank-total">Total a retirar: $ 0</p>
-      <footer class="actions">
-        <button type="button" id="employees-copy-sel">Copiar seleccionado</button>
-        <button type="button" id="employees-remove" class="danger">Quitar de la lista</button>
-        <button type="button" id="employees-copy-all">Copiar todo</button>
-        <button type="button" id="employees-manage">Gestion empleados</button>
-      </footer>
-    </form>
-  </dialog>
-
 
   <dialog id="employees-admin-modal" class="emp-modal">
     <form method="dialog" class="modal-card emp-card">
@@ -893,7 +861,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=96"></script>
-  <script src="app.js?v=96"></script>
+  <script src="catalogo/vehiculos.js?v=97"></script>
+  <script src="app.js?v=97"></script>
 </body>
 </html>

@@ -231,6 +231,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 97 · 1 de noviembre de 2026
+
+- **Pagos:** se quita el botón y la ventana «Totales empleados»; «Copiar para Discord» y la Gestión de empleados ya cubren lo que hacía. «Copiar para Discord» sigue funcionando igual.
+- Los botones «Copiar para Discord» y «Gestión de empleados» llevan icono (logo de Discord y grupo de personas).
+
 ### Versión 96 · 1 de noviembre de 2026
 
 - **Iconos por rango en lugar de iniciales:** cada empleado lleva un círculo del color de su rango con la herramienta que lo representa y estrellas debajo con su nivel. Aprendiz: tuerca ★. Mecánico: llave inglesa ★★. Especialista: engranaje ★★★. Jefe de Taller: portapapeles ★★★★. Mano Derecha: apretón de manos ★★★★★. Gerente: maletín ★★★★★. Jefe Aguila: logo del taller ★★★★★. Sale en el listado y la ficha de empleados, en la pestaña Strikes y en el ranking de Pagos. Quien no tiene rango sigue con sus iniciales.

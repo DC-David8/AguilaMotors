@@ -1979,3 +1979,7 @@ dialog.emp-modal { width: min(1180px, 96vw); }
 .rk-av.big .rk-stars svg { width: 10px; height: 10px; }
 .pg-av.rk-av .crown { z-index: 2; }
 .emp-row, .emp-srow { padding-bottom: 12px; }
+
+/* v97: iconos en los botones de Pagos */
+.pg-ic-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.pg-ic-btn svg { width: 17px; height: 17px; flex: none; }

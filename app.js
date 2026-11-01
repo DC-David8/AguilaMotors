@@ -3825,11 +3825,10 @@ function setupContabilidad() {
 }
 
 function setupEmployeesModal(state, refreshPagos) {
-  const totalsModal = byId("employees-modal");
-  const totalsBody = byId("employees-body");
   const adminModal = byId("employees-admin-modal");
 
-  let selectedId = null;
+  // La ventana "Totales empleados" se quito en v97: los totales se arman aqui
+  // solo para "Copiar para Discord".
   let totalsRows = [];
 
   function sumByNormalizedName(map, name) {
@@ -3872,48 +3871,6 @@ function setupEmployeesModal(state, refreshPagos) {
     totalsRows.sort((a, b) => rankOrder(b.rank) - rankOrder(a.rank) || a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
   }
 
-  function renderTotalsRows() {
-    totalsBody.innerHTML = "";
-    for (const row of totalsRows) {
-      const tr = document.createElement("tr");
-      if (row.id === selectedId) tr.classList.add("is-selected");
-      tr.innerHTML = `
-        <td>${row.name}${row.warn ? `<br><small class="warn">${row.strikeN >= STRIKE_MAX ? "🚫" : "⚠️"} ${strikeLabel(row.strikeN)} (${row.strikeWhy || strikeReason(row.gross)})</small>` : ""}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
-        <td>${row.rank ? rankLabel(row.rank) : "-"}</td>
-        <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
-        <td class="num">${fmtMoney(row.gross)}</td>
-        <td class="num">${row.noPay ? `<span class="muted" title="Le corresponderían ${fmtMoney(row.payout)}">${NO_PAY_TEXT}</span>` : fmtMoney(row.payout)}${row.bonus ? `<br><small class="ok">🏆 incluye bono ${fmtBonus(row.bonus)}</small>` : ""}</td>
-      `;
-      tr.addEventListener("click", () => {
-        selectedId = row.id;
-        renderTotalsRows();
-      });
-      tr.addEventListener("dblclick", async () => {
-        const text = row.noPay ? NO_PAY_TEXT : String(row.payout);
-        const ok = await copyText(text);
-        if (!ok) openCopyFallback(text);
-      });
-      totalsBody.appendChild(tr);
-    }
-    byId("employees-bank-total").textContent = `Total a retirar: ${fmtMoney(bankTotalOf(totalsRows))}`;
-  }
-
-  async function openTotalsModal() {
-    const employees = await listEmployees();
-    if (!employees.length) {
-      alert("No hay empleados en la lista. Entra en 'Gestion empleados' para anadirlos.");
-      return;
-    }
-    await buildTotalsRows();
-    selectedId = null;
-    renderTotalsRows();
-    totalsModal.showModal();
-  }
-
-  byId("conta-employees").addEventListener("click", () => {
-    openTotalsModal().catch(() => alert("No se pudieron cargar los empleados."));
-  });
-
   // Quien mas cobra en la lista es el empleado de la semana (si hay empate, todos).
   // El Jefe Aguila (100 %) no compite: si no, lo ganaria siempre.
   // Se decide al armar los totales (ver weekWinners): quitar a alguien de la lista no cambia al ganador.
@@ -3929,28 +3886,6 @@ function setupEmployeesModal(state, refreshPagos) {
   }
 
   const ibanForCopy = (row) => (row.iban ? `IBAN ${row.iban}` : IBAN_PENDING_TEXT);
-
-  byId("employees-copy-sel").addEventListener("click", async () => {
-    const row = totalsRows.find((r) => r.id === selectedId);
-    if (!row) return;
-    const name = labelForCopy(row);
-    const pctTxt = row.pct ? `${Math.round(row.pct * 100)}%` : "-";
-    let text = row.noPay
-      ? `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | ${NO_PAY_TEXT}`
-      : `${name} | ${pctTxt} | Bruto: ${fmtMoney(row.gross)} | A pagar: ${fmtMoney(row.payout)}${row.bonus ? ` (incluye Bono por Empleado de la Semana de ${fmtBonus(row.bonus)})` : ""} | ${ibanForCopy(row)}`;
-    if (isEmployeeOfWeek(row)) text += ` | ${EMPLOYEE_OF_WEEK_TAG}`;
-
-    const ok = await copyText(text);
-    if (!ok) openCopyFallback(text);
-  });
-
-  byId("employees-remove")?.addEventListener("click", () => {
-    const row = totalsRows.find((r) => r.id === selectedId);
-    if (!row) return;
-    totalsRows = totalsRows.filter((r) => r.id !== selectedId);
-    selectedId = null;
-    renderTotalsRows();
-  });
 
   // Suma solo a quien sigue en la lista y cobra (los "No cobra" no cuentan).
   function bankTotalOf(rows) {
@@ -3976,15 +3911,6 @@ function setupEmployeesModal(state, refreshPagos) {
     const total = `**Total a retirar de la cuenta de la empresa: ${fmtMoney(bankTotalOf(rows))}** (${paying} ${paying === 1 ? "empleado" : "empleados"} a pagar${bonusTxt})`;
     return `${lines}\n\n${total}`;
   }
-
-  byId("employees-copy-all").addEventListener("click", async () => {
-    if (!totalsRows.length) {
-      return;
-    }
-    const text = discordPayText();
-    const ok = await copyText(text);
-    if (!ok) openCopyFallback(text);
-  });
 
   // Boton del panel de Pagos: arma los totales sin abrir la ventana y copia.
   byId("pg-copy-discord")?.addEventListener("click", async () => {
@@ -4025,19 +3951,11 @@ function setupEmployeesModal(state, refreshPagos) {
   }
 
   byId("conta-manage-employees").addEventListener("click", openAdminModal);
-  byId("employees-manage").addEventListener("click", () => {
-    totalsModal.close();
-    openAdminModal();
-  });
 
   setupEmployeesAdminModal({
     onChanged: async () => {
       // Rango, Discord, IBAN o "No cobra" cambian lo que muestra Pagos.
       await refreshPagos?.();
-      if (totalsModal.open) {
-        await buildTotalsRows();
-        renderTotalsRows();
-      }
     },
   });
 }
