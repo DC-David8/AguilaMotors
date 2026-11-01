@@ -387,7 +387,7 @@ const PRODUCT_CATEGORIES = [
   { key: "camaleonica", label: "Camaleónica" },
   { key: "nitro", label: "Nitro" },
   { key: "neones", label: "Neones RGB" },
-  { key: "compraventa", label: "Compraventa" },
+  { key: "compraventa", label: "Mediación de Venta" },
   { key: "otros", label: "Otros" },
 ];
 
@@ -405,7 +405,7 @@ const CAT_TAB_ICONS = {
   camaleonica: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/>',
   nitro: '<rect x="7" y="5" width="10" height="17" rx="3.8"/><path d="M10.5 5V2.8h3V5M9 2.4h6"/><rect x="7.8" y="10" width="8.4" height="6.5" rx="1" fill="currentColor" stroke="none"/>',
   neones: '<path d="M4 16c2-4 4-4 6 0s4 4 6 0 4-4 4-4"/><path d="M4 10c2-4 4-4 6 0s4 4 6 0"/>',
-  compraventa: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>',
+  compraventa: '<path d="M2 8l4-2 4 2 3-2 4 1 5 3"/><path d="M2 8v6l3 2M22 10v5l-3 2"/><path d="M8 14l3 3a1.5 1.5 0 0 0 2.2-2l-3-3"/><path d="M11 17l1.5 1.5a1.5 1.5 0 0 0 2.2-2L13 15M14.5 16.5a1.5 1.5 0 0 0 2.2-2L13 11l-2 1.5a1.8 1.8 0 0 1-2.5-2.5L10 8"/>',
   otros: '<circle cx="12" cy="12" r="3"/>',
 };
 function catTabIconSvg(key) {
@@ -522,10 +522,10 @@ const SERVICE_SHORT = {
   "Botella de Nitro": ["Bot nitro", ""],
   "Instalación de Neones RGB": ["Neon RGB", ""],
   "Mando de Neones RGB": ["Mando RGB", ""],
-  "Compraventa Gama Baja": ["Compra", "GB"],
-  "Compraventa Gama Media": ["Compra", "GM"],
-  "Compraventa Gama Alta": ["Compra", "GA"],
-  "Compraventa Camiones": ["Compra", "CAM"],
+  "Mediación de Venta (Gama Baja)": ["Mediac", "GB"],
+  "Mediación de Venta (Gama Media)": ["Mediac", "GM"],
+  "Mediación de Venta (Gama Alta)": ["Mediac", "GA"],
+  "Mediación de Venta (Gama Camiones)": ["Mediac", "CAM"],
 };
 
 function buildTuningProducts() {
@@ -593,10 +593,10 @@ const SERVICE_PRODUCTS = [
   { name: "Instalación de Neones RGB", price: 10000, category: "neones" },
 
   // Compraventa (cambio de papeles)
-  { name: "Compraventa Gama Baja", price: 2500, category: "compraventa" },
-  { name: "Compraventa Gama Media", price: 5000, category: "compraventa" },
-  { name: "Compraventa Gama Alta", price: 10000, category: "compraventa" },
-  { name: "Compraventa Camiones", price: 7500, category: "compraventa" },
+  { name: "Mediación de Venta (Gama Baja)", price: 2500, category: "compraventa" },
+  { name: "Mediación de Venta (Gama Media)", price: 5000, category: "compraventa" },
+  { name: "Mediación de Venta (Gama Alta)", price: 10000, category: "compraventa" },
+  { name: "Mediación de Venta (Gama Camiones)", price: 7500, category: "compraventa" },
 ];
 
 const PRODUCTS = [
@@ -980,7 +980,7 @@ const PRODUCT_ICON_PATHS = {
     // Botella de nitro: bombona con etiqueta "N2O".
     botella: '<rect x="7" y="5" width="10" height="18" rx="3.8"/><path d="M10.5 5V2.8h3V5M9 2.4h6"/><rect x="7.75" y="10.4" width="8.5" height="6.84" rx="1" fill="{C}" stroke="none"/><text x="12" y="15.3" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="4.1" fill="#0d1416" stroke="none">N₂O</text>',
     camaleon: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/>',
-    compra: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>',
+    compra: '<path d="M2 8l4-2 4 2 3-2 4 1 5 3"/><path d="M2 8v6l3 2M22 10v5l-3 2"/><path d="M8 14l3 3a1.5 1.5 0 0 0 2.2-2l-3-3"/><path d="M11 17l1.5 1.5a1.5 1.5 0 0 0 2.2-2L13 15M14.5 16.5a1.5 1.5 0 0 0 2.2-2L13 11l-2 1.5a1.8 1.8 0 0 1-2.5-2.5L10 8"/>',
     // Helicoptero levantando un coche con el cable.
     gruaaerea: '<path d="M3 2.5h18M12 2.5v2"/><path d="M8.5 4.5h5a3 3 0 0 1 3 3v1h-8a2 2 0 0 1 0-4z"/><path d="M16.5 6.5h4l1-2"/><path d="M12 8.5v6" stroke-dasharray="1.2 1.4"/><path d="M6 19l1.5-3h9l1.5 3v1.5H6z"/><circle cx="8.5" cy="21" r="1"/><circle cx="15.5" cy="21" r="1"/>',
     // Salvavidas bajo la helice: rescate aereo con todo incluido.
@@ -988,7 +988,7 @@ const PRODUCT_ICON_PATHS = {
     desvuelco: '<path d="M4 14l2-4h12l2 4v2H4z"/><path d="M8 6a6 6 0 0 1 9 1M17 3v4h-4"/>',
   };
 
-const PRODUCT_ICON_KEYWORDS = [["rescate aéreo","rescate"],["grúa aérea","gruaaerea"],["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["botella","botella"],["nitro","nitro"],["compraventa","compra"],["desvuelco","desvuelco"]];
+const PRODUCT_ICON_KEYWORDS = [["rescate aéreo","rescate"],["grúa aérea","gruaaerea"],["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["botella","botella"],["nitro","nitro"],["mediaci","compra"],["compraventa","compra"],["desvuelco","desvuelco"]];
 
 function productIconKey(name) {
   const n = String(name || "").toLowerCase();
