@@ -231,9 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
-### Versión 82 (vista previa, rama `vista-previa-v82`) · 1 de noviembre de 2026
+### Versión 82 · 1 de noviembre de 2026
 - **Barra lateral en PC** (pantallas de 1100 px o más): logo, módulos en vertical, **cuenta atrás del cierre de la semana** (con el cambio de hora de España) y la tarjeta de sesión abajo. En móvil y tablet no cambia nada.
 - **Pagos → ranking con barras de progreso:** rayita blanca en el mínimo y verde en la meta de ascenso, con el texto de cuánto falta para ascender o para evitar el strike.
+- Pestañas con nombres cortos (**Caja · Compraventa · Pagos · Sorteo**) e iconos de color propio (naranja, rojo, verde y azul), también en el menú del móvil.
 
 ### Versión 81 · 1 de noviembre de 2026
 - **Varios personajes con el mismo Discord** (char1, char2…): se pueden registrar como empleados distintos con el mismo ID de Discord. Cada uno cobra por separado (su facturación, su IBAN, sus strikes) y al copiar las pagas se etiqueta a la misma persona en los dos.

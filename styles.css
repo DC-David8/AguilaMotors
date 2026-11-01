@@ -1687,3 +1687,14 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 }
 .pg-mk.below em { bottom: auto; top: calc(100% + 2px); }
 .pg-prog:has(.pg-mk.below) { margin-bottom: 16px; }
+
+/* v82 · Iconos de los módulos con color propio (como en la idea 1) */
+.tab:not(.is-active) .tab-ic.ic-caja, .m-nav-item .tab-ic.ic-caja { stroke: #ffb15c; }
+.tab:not(.is-active) .tab-ic.ic-cv, .m-nav-item .tab-ic.ic-cv { stroke: #ff7a6a; }
+.tab:not(.is-active) .tab-ic.ic-pagos, .m-nav-item .tab-ic.ic-pagos { stroke: #6fdc8c; }
+.tab:not(.is-active) .tab-ic.ic-sorteo, .m-nav-item .tab-ic.ic-sorteo { stroke: #5ec8ff; }
+.tab:not(.is-active) .tab-ic.ic-sorteo .tab-ic-ball, .m-nav-item .tab-ic.ic-sorteo .tab-ic-ball { fill: #ffcf3a; }
+@media (min-width: 1100px) {
+  body.has-rail nav.tabs .tab { font-size: 0.95rem; letter-spacing: .06em; }
+  body.has-rail nav.tabs .tab .tab-ic { width: 20px; height: 20px; margin-right: 12px; }
+}
