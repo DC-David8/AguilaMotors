@@ -231,6 +231,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 84 · 1 de noviembre de 2026
+- Caja: los **packs de servicios** («Reparación + Limpieza», «Repostaje + Limpieza», «Reparación + Limpieza + Repostaje»…) tienen un **icono circular partido**: en 2 mitades o en 3 partes, cada una con el icono y el color de su servicio (reparación verde, limpieza celeste, repostaje ámbar), en el orden del nombre. Vale para Taller y Grúa, y para cualquier producto nuevo con «+» en el nombre.
+
 ### Versión 83 · 1 de noviembre de 2026
 - Caja: **iconos arcoíris**, cada pieza y servicio con su propio color y un brillo suave detrás (pintura rosa, neones morado, luces amarillo, turbo rojo, transmisión celeste, suspensión verde…). Colores en `PRODUCT_ICON_COLORS`.
 - **Pestañas de gama con su color:** Motos verde agua, Gama Baja verde, Gama Media amarillo, Gama Alta naranja, Gama VIP morado, Camiones azul y Aéreos celeste (la activa se rellena de su color). En el móvil, rayita de color en el menú de categorías y el nombre de la categoría en su color.

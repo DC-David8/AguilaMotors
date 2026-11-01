@@ -981,7 +981,40 @@ const PRODUCT_ICON_COLORS = {
   rescate: "#ff4d4d", desvuelco: "#ffb020",
 };
 
+// Packs ("Reparación + Limpieza (Taller)"): circulo partido en 2 o 3, cada parte
+// con el icono y el color de su servicio.
+function packIconKeys(name) {
+  const base = String(name || "").replace(/\([^)]*\)/g, "");
+  if (!base.includes("+")) return null;
+  const keys = base.split("+").map((p) => productIconKey(p)).filter((k) => PRODUCT_ICON_PATHS[k]);
+  return keys.length >= 2 && keys.length <= 3 ? keys : null;
+}
+
+function buildPackIconSvg(keys) {
+  const cx = 12, cy = 12, R = 15.5;
+  const n = keys.length;
+  const pt = (deg, r = R) => [cx + r * Math.cos((deg * Math.PI) / 180), cy + r * Math.sin((deg * Math.PI) / 180)];
+  const start = n === 2 ? 90 : 150; // primera parte a la izquierda (o arriba a la izquierda si son 3)
+  const step = 360 / n;
+  let sectors = "", icons = "", lines = "";
+  keys.forEach((k, i) => {
+    const a0 = start + i * step, a1 = a0 + step;
+    const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+    const col = PRODUCT_ICON_COLORS[k] || "#ffcf94";
+    sectors += `<path d="M${cx} ${cy}L${x0.toFixed(2)} ${y0.toFixed(2)}A${R} ${R} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}Z" fill="${col}2e"/>`;
+    const [mx, my] = pt((a0 + a1) / 2, n === 2 ? 7.4 : 8.6);
+    const s = n === 2 ? 0.56 : 0.47;
+    icons += `<g transform="translate(${(mx - 12 * s).toFixed(2)} ${(my - 12 * s).toFixed(2)}) scale(${s})" fill="none" stroke="${col}" stroke-width="${(1.5 / s).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round">${PRODUCT_ICON_PATHS[k]}</g>`;
+    const [lx, ly] = pt(a0);
+    lines += `<line x1="${cx}" y1="${cy}" x2="${lx.toFixed(2)}" y2="${ly.toFixed(2)}" stroke="#ffffff38" stroke-width="0.7"/>`;
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 36 36"><rect x="-6" y="-6" width="36" height="36" rx="9" fill="#120d09"/>${sectors}${lines}<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#ffffff30" stroke-width="0.8"/>${icons}</svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
 function buildProductIconSvg(name) {
+  const pack = packIconKeys(name);
+  if (pack) return buildPackIconSvg(pack);
   const key = productIconKey(name);
   const d = PRODUCT_ICON_PATHS[key];
   const col = PRODUCT_ICON_COLORS[key] || "#ffcf94";
