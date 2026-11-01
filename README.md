@@ -231,6 +231,17 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 94 · 1 de noviembre de 2026
+
+- **Nueva Gestión de empleados por pestañas:** Listado · Nuevo empleado · Strikes · Rangos · Despedidos.
+  - **Listado:** resumen arriba (En plantilla, Con strikes, Para despido, Sin IBAN, Sin Discord) que también sirve de filtro, buscador y orden por rango / A–Z / más strikes. La lista ya no tiene casillas: solo informa.
+  - **Ficha de empleado** (al tocar a alguien): datos, escalera de rango con lo facturado esta semana y la meta, botones Subir / Bajar, gráfica de facturación de las últimas semanas cerradas con la línea del mínimo, strikes (＋1, −1, quitar todos, por semana) e historial. Se pasa a la persona anterior o siguiente sin volver al listado.
+  - **Strikes:** todos los que tienen strikes, separados en «Para despido» y «Con strikes», con ＋1 / −1 / Despedir y un formulario para poner un strike con motivo.
+  - **Rangos:** nombres de los rangos (Jefe Aguila) y tabla con comisión, meta de ascenso y quién está en cada rango.
+  - **Despedidos:** el registro con Readmitir.
+  - Editar datos, subir/bajar, despedir y gestionar strikes: solo el Jefe Aguila. Los demás Jefes ven todo en modo lectura y pueden dar de alta empleados.
+- **Historial de empleados** (SQL nuevo `bot-facturas/10_historial_empleados.sql`): se apuntan solos los ascensos y descensos (también los de Pagos), strikes puestos o quitados, cambios de nombre, Discord, IBAN y «No cobra», altas, despidos y readmisiones. También guarda la fecha de entrada de los nuevos; para los que ya estaban se usa su primera semana cerrada.
+
 ### Versión 93 · 1 de noviembre de 2026
 
 - **Gestión de strikes existentes (solo Jefe Aguila):** en Gestión de empleados, el contador de strikes de cada persona (⚠️ N/3) es un botón que abre su historial de semanas cerradas. Desde ahí se puede: poner un strike (＋1, con motivo), quitar el último (−1), quitar todos, o hacer clic en una semana para poner o quitar el strike de esa semana. No hace falta cargar ninguna semana en Pagos. Los demás jefes solo ven el contador.

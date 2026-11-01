@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=93" />
+  <link rel="stylesheet" href="styles.css?v=94" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=93" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=94" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -567,7 +567,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 93 - Aguila Motors</footer>
+    <footer class="app-version">Versión 94 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -696,34 +696,52 @@
   </dialog>
 
 
-  <dialog id="employees-admin-modal">
-    <form method="dialog" class="modal-card">
-      <header class="modal-head">
-        <h3>Gestion de empleados</h3>
+  <dialog id="employees-admin-modal" class="emp-modal">
+    <form method="dialog" class="modal-card emp-card">
+      <header class="modal-head emp-head">
+        <h3>👥 Empleados</h3>
+        <div class="cv-cloud emp-cloud" id="emp-cloud">
+          <span class="cv-dot" id="emp-cloud-dot"></span>
+          <span class="cv-cloud-text" id="emp-cloud-text">Conectando…</span>
+          <span class="cv-cloud-acts">
+            <button type="button" id="emp-cloud-login" class="ghost" hidden>🔑 Iniciar sesión</button>
+            <button type="button" id="emp-cloud-migrate" hidden>☁️ Subir empleados a la nube</button>
+          </span>
+        </div>
         <button value="cancel" class="ghost">Cerrar</button>
       </header>
 
-      <div class="cv-cloud emp-cloud" id="emp-cloud">
-        <span class="cv-dot" id="emp-cloud-dot"></span>
-        <span class="cv-cloud-text" id="emp-cloud-text">Conectando…</span>
-        <span class="cv-cloud-acts">
-          <button type="button" id="emp-cloud-login" class="ghost" hidden>🔑 Iniciar sesión</button>
-          <button type="button" id="emp-cloud-migrate" hidden>☁️ Subir empleados a la nube</button>
-        </span>
-      </div>
+      <nav class="emp-tabs" id="emp-tabs" role="tablist">
+        <button type="button" class="emp-tab is-on" data-emp-tab="list">📋 Listado <span class="emp-tab-n" id="emp-tab-n-list"></span></button>
+        <button type="button" class="emp-tab" data-emp-tab="new" id="emp-tab-new">➕ Nuevo empleado</button>
+        <button type="button" class="emp-tab" data-emp-tab="strikes">⚠️ Strikes <span class="emp-tab-n r" id="emp-tab-n-strikes"></span></button>
+        <button type="button" class="emp-tab" data-emp-tab="ranks" id="emp-tab-ranks">🏷️ Rangos</button>
+        <button type="button" class="emp-tab" data-emp-tab="fired" id="emp-tab-fired">🚪 Despedidos <span class="emp-tab-n" id="emp-fired-n"></span></button>
+      </nav>
 
-      <section class="admin-grid">
-        <div class="admin-block">
-          <h4>Acceso</h4>
-          <div class="form-row">
-            <label for="emp-admin-pass">Contrasena</label>
-            <input id="emp-admin-pass" class="text-input" type="password" placeholder="••••••••" autocomplete="current-password" />
-            <button type="button" id="emp-admin-unlock">Desbloquear</button>
+      <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
+
+      <!-- Listado + ficha -->
+      <section class="emp-pane" data-emp-pane="list">
+        <div id="emp-list-view">
+          <div class="emp-kpis" id="emp-kpis"></div>
+          <div class="emp-bar">
+            <input id="emp-search" class="text-input" type="text" placeholder="🔍 Buscar por nombre o rango…" />
+            <div class="emp-sort" id="emp-sort">
+              <button type="button" class="emp-chip is-on" data-sort="rank">Por rango</button>
+              <button type="button" class="emp-chip" data-sort="az">A–Z</button>
+              <button type="button" class="emp-chip" data-sort="strikes">Más strikes</button>
+            </div>
+            <button type="button" id="emp-refresh" class="ghost" title="Volver a cargar">↻</button>
           </div>
-          <p class="muted" id="emp-admin-status">Bloqueado</p>
+          <div class="emp-list" id="emp-list"></div>
         </div>
+        <div id="emp-ficha-view" hidden></div>
+      </section>
 
-        <div class="admin-block">
+      <!-- Nuevo empleado -->
+      <section class="emp-pane" data-emp-pane="new" hidden>
+        <div class="admin-block emp-new-block">
           <h4>Nuevo empleado</h4>
           <div class="form-grid">
             <input id="emp-new-name" class="text-input" type="text" placeholder="Nombre" />
@@ -737,47 +755,37 @@
           </div>
           <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor). Con el ID de Discord se le etiqueta al copiar los totales, y con el IBAN sale su cuenta para la nómina.</p>
         </div>
-      
+        <div class="admin-block" hidden>
+          <input id="emp-admin-pass" class="text-input" type="password" autocomplete="current-password" />
+          <button type="button" id="emp-admin-unlock">Desbloquear</button>
+        </div>
+      </section>
+
+      <!-- Strikes -->
+      <section class="emp-pane" data-emp-pane="strikes" hidden>
+        <div id="emp-strikes"></div>
+      </section>
+
+      <!-- Rangos -->
+      <section class="emp-pane" data-emp-pane="ranks" hidden>
         <div class="admin-block emp-rank-names" id="emp-rank-names" hidden>
-          <h4>👑 Nombres de los rangos <small class="muted">(solo Jefe Aguila)</small></h4>
+          <h4>🏷️ Nombres de los rangos <small class="muted">(solo Jefe Aguila)</small></h4>
           <p class="muted emp-rank-names-hint">Así se verán en la página y al copiar las pagas. Vacío = nombre original. La comisión no cambia.</p>
           <div class="emp-rank-names-grid" id="emp-rank-names-grid"></div>
           <div class="actions"><button type="button" id="emp-rank-names-save">Guardar nombres</button></div>
         </div>
+        <div class="emp-rank-table" id="emp-rank-table"></div>
       </section>
 
-      <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
+      <!-- Despedidos -->
+      <section class="emp-pane" data-emp-pane="fired" hidden>
+        <div class="emp-fired" id="emp-fired">
+          <p class="muted">Registro de despidos: no cuentan en Pagos ni pueden entrar en la página. «Readmitir» les devuelve su rango y su Discord.</p>
+          <div id="emp-fired-list" class="emp-fired-list"></div>
+        </div>
+      </section>
 
-
-
-      <h4>Empleados</h4>
-      <div class="form-row">
-        <input id="emp-search" class="text-input" type="text" placeholder="Buscar por nombre, apellido o rango..." />
-        <button type="button" id="emp-refresh">Actualizar</button>
-      </div>
-
-      <div class="table-wrap" style="max-height: 44vh;">
-        <table>
-          <thead>
-            <tr>
-              <th>Empleado</th>
-              <th>Rango</th>
-              <th class="num">% de Comisión según Rango</th>
-              <th>Discord</th>
-              <th>IBAN</th>
-              <th class="center">No cobra</th>
-              <th class="num">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="emp-admin-body"></tbody>
-        </table>
-      </div>
-
-      <details class="emp-fired" id="emp-fired" hidden>
-        <summary>🚪 Despedidos (<span id="emp-fired-n">0</span>)</summary>
-        <p class="muted">Registro de despidos: no cuentan en Pagos ni pueden entrar en la página. «Readmitir» les devuelve su rango y su Discord.</p>
-        <div id="emp-fired-list" class="emp-fired-list"></div>
-      </details>
+      <p class="muted emp-status" id="emp-admin-status" role="status"></p>
     </form>
   </dialog>
 
@@ -885,7 +893,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=93"></script>
-  <script src="app.js?v=93"></script>
+  <script src="catalogo/vehiculos.js?v=94"></script>
+  <script src="app.js?v=94"></script>
 </body>
 </html>
