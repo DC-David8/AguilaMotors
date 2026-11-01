@@ -2610,6 +2610,37 @@ function setupContabilidad() {
   // lo que hay que pagarle y avisos (sin IBAN, no cobra, kits a si mismo).
   const RANK_BADGE = { "jefe aguila": "r-aguila", jefe: "r-jefe", "mano derecha": "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };
 
+  // Cuanto le falta a cada uno para el minimo (strike) y para su ascenso.
+  function rankProgress(r) {
+    const R = RANK_RULES;
+    const out = { min: 0, goal: 0, goalLabel: "", note: "", noteCls: "", low: false };
+    if (!r.emp || r.noPay) return out;
+    out.min = R.min;
+    const i = PROMO_LADDER.indexOf(r.rank);
+    if (i >= 0 && R.up[r.rank]) {
+      out.goal = R.up[r.rank];
+      out.goalLabel = `${rankLabel(PROMO_LADDER[i + 1])} ${fmtMoney(out.goal)}`;
+    } else if (r.rank === "Subjefe" && R.candidate) {
+      out.goal = R.candidate;
+      out.goalLabel = `⭐ ${rankLabel("Jefe")} ${fmtMoney(out.goal)}`;
+    }
+    if (r.total < R.min) {
+      out.low = true;
+      out.note = `Le faltan ${fmtMoney(R.min - r.total)} para evitar el strike`;
+      out.noteCls = "bad";
+    } else if (out.goal && r.total < out.goal) {
+      out.note = `Mínimo cubierto ✅ · le faltan ${fmtMoney(out.goal - r.total)} para ${r.rank === "Subjefe" ? "ser candidato" : "ascender"}`;
+      out.noteCls = "ok";
+    } else if (out.goal) {
+      out.note = r.rank === "Subjefe" ? "⭐ Candidato a ascenso" : "⬆️ Meta de ascenso alcanzada";
+      out.noteCls = "ok";
+    } else {
+      out.note = "Mínimo cubierto ✅";
+      out.noteCls = "ok";
+    }
+    return out;
+  }
+
   function renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar: baseTotal }) {
     let totalAPagar = baseTotal;
     lastSnapshot = null;
@@ -2691,14 +2722,26 @@ function setupContabilidad() {
       if (r.emp && r.noPay) nameRow.appendChild(el("span", "pg-badge w-nopay", "No cobra"));
       else if (r.emp && !r.iban) nameRow.appendChild(el("span", "pg-badge w-iban", "⚠ Sin IBAN"));
       if (r.kits && r.self / r.kits >= 0.5) nameRow.appendChild(el("span", "pg-badge w-self", `${r.self}/${r.kits} kits a sí mismo`));
-      const bar = el("div", "pg-bar");
-      const fill = el("i");
-      fill.style.width = `${Math.max(2, Math.round((r.total / maxTotal) * 100))}%`;
+      // Barra de progreso: minimo (rayita blanca) y meta de ascenso (rayita verde).
+      const prog = rankProgress(r);
+      const bar = el("div", "pg-prog");
+      const fill = el("i", prog.low ? "low" : "");
+      const scale = Math.max(prog.goal || 0, prog.min || 0, r.total, 1) * (prog.goal ? 1 : 1.15);
+      fill.style.width = `${Math.max(2, Math.min(100, (r.total / scale) * 100))}%`;
       bar.appendChild(fill);
+      const mark = (val, cls, label) => {
+        const m = el("span", `pg-mk ${cls}${cls !== "goal" && prog.goal && val / scale > 0.5 ? " below" : ""}`);
+        m.style.left = `${Math.min(100, (val / scale) * 100)}%`;
+        m.appendChild(el("em", "", label));
+        bar.appendChild(m);
+      };
+      if (prog.min) mark(prog.min, "", `mín. ${fmtMoney(prog.min)}`);
+      if (prog.goal) mark(prog.goal, "goal", prog.goalLabel);
       const meta = [`${fmtMoney(r.total)} facturados`];
       if (r.kits) meta.push(`${r.kits} ${r.kits === 1 ? "kit" : "kits"}`);
       if (r.iban) meta.push(`IBAN ${r.iban}`);
       mid.append(nameRow, bar, el("div", "pg-meta", meta.join(" · ")));
+      if (prog.note) mid.appendChild(el("div", `pg-prog-note ${prog.noteCls}`, prog.note));
 
       const amt = el("div", "pg-amt");
       if (r.noPay) {
@@ -4601,6 +4644,7 @@ Promise.allSettled([
     setupSorteo();
     setupCompraventa();
     setupAuthUI();
+    setupSideRail();
     setupMobileNav();
   });
 
@@ -4608,6 +4652,46 @@ Promise.allSettled([
 // Vista movil: menu lateral (secciones y categorias), lista de productos y
 // barra del ticket abajo. En PC estos elementos no se muestran.
 // ============================================================================
+// ---------- Barra lateral (PC) con la cuenta atras del cierre ----------
+function nextWeekClose(now = Date.now()) {
+  const md = dlogMadridParts(now);
+  let days = (7 - md.wd) % 7;
+  if (days === 0) days = 7;
+  const d = new Date(Date.UTC(md.y, md.m - 1, md.d + days));
+  return dlogMadridMidnight(d.toISOString().slice(0, 10));
+}
+
+function setupSideRail() {
+  const shell = document.querySelector(".app-shell");
+  const top = shell?.querySelector(".topbar");
+  const nav = shell?.querySelector("nav.tabs");
+  if (!shell || !top || !nav || document.querySelector(".side-rail")) return;
+  const rail = document.createElement("aside");
+  rail.className = "side-rail";
+  shell.prepend(rail);
+  rail.append(top, nav);
+  const spacer = document.createElement("div");
+  spacer.className = "side-spacer";
+  const close = document.createElement("div");
+  close.className = "side-close";
+  close.innerHTML = `<span>⏳ Cierre de la semana en</span><b id="side-close-left"></b><small id="side-close-when"></small>`;
+  rail.append(spacer, close);
+  document.body.classList.add("has-rail");
+  const tick = () => {
+    const t = nextWeekClose();
+    let left = Math.max(0, t - Date.now());
+    const d = Math.floor(left / 86400000);
+    left -= d * 86400000;
+    const h = Math.floor(left / 3600000);
+    left -= h * 3600000;
+    const m = Math.floor(left / 60000);
+    byId("side-close-left").textContent = `${d ? `${d} d ` : ""}${String(h).padStart(2, "0")} h ${String(m).padStart(2, "0")} min`;
+    byId("side-close-when").textContent = new Date(t).toLocaleString("es-ES", { weekday: "long", hour: "2-digit", minute: "2-digit", hour12: false }).replace(",", "").replace(/^./, (c) => c.toUpperCase()) + " (tu hora)";
+  };
+  tick();
+  setInterval(tick, 30000);
+}
+
 function setupMobileNav() {
   const drawer = byId("m-drawer");
   const menuBtn = byId("m-menu-btn");

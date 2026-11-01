@@ -1642,3 +1642,48 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
   .ticket-actions .tk-big { min-height: 50px; font-size: 0.9rem; }
 }
 .emp-alt { font-size: 11px; margin-top: 3px; color: #8fc7ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+/* v82 · Idea 3: progreso hacia el mínimo y el ascenso en el ranking */
+.pg-prog { position: relative; height: 10px; border-radius: 999px; background: #2a2019; margin: 18px 0 4px; }
+.pg-prog > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c75e00, #f97d02, #ffb15c); }
+.pg-prog > i.low { background: linear-gradient(90deg, #a83a25, #ff7a6a); }
+.pg-mk { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: rgba(255,255,255,.6); border-radius: 2px; }
+.pg-mk.goal { background: #6fdc8c; }
+.pg-mk em { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-style: normal; font-size: 10px; color: var(--muted); white-space: nowrap; }
+.pg-mk.goal em { color: #6fdc8c; left: auto; right: 0; transform: none; }
+.pg-prog-note { font-size: 12px; margin-top: 2px; }
+.pg-prog-note.bad { color: #ff9a8a; font-weight: 700; }
+.pg-prog-note.ok { color: #8fdca8; }
+
+/* v82 · Idea 1: barra lateral fija en PC */
+.side-rail { display: contents; }
+.side-close, .side-spacer { display: none; }
+@media (min-width: 1100px) {
+  body.has-rail .app-shell { width: auto; margin: 0; padding: 22px 28px 30px 268px; }
+  body.has-rail .side-rail {
+    display: flex; flex-direction: column; gap: 6px;
+    position: fixed; z-index: 50; left: 0; top: 0; bottom: 0; width: 240px;
+    padding: 18px 14px; overflow-y: auto;
+    background: linear-gradient(180deg, rgba(14,10,7,.96), rgba(8,6,4,.96));
+    border-right: 1px solid var(--line);
+    box-shadow: 6px 0 30px rgba(0,0,0,.35);
+  }
+  body.has-rail .side-rail .topbar { display: contents; }
+  body.has-rail .topbar-brand { order: 1; margin: 0 0 16px; gap: 10px; }
+  body.has-rail .topbar-logo { width: 46px; height: 46px; }
+  body.has-rail .topbar h1 { font-size: 1.15rem; line-height: 1.05; }
+  body.has-rail .topbar p { font-size: 0.6rem; letter-spacing: 0.18em; }
+  body.has-rail nav.tabs { order: 2; display: flex; flex-direction: column; gap: 6px; margin: 0; }
+  body.has-rail nav.tabs .tab { width: 100%; justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: 12px; font-size: 0.82rem; box-shadow: none; }
+  body.has-rail nav.tabs .tab.is-active { box-shadow: inset 3px 0 0 #fff4, 0 0 18px rgba(249,125,2,.35); }
+  body.has-rail .side-spacer { order: 3; display: block; flex: 1; min-height: 12px; }
+  body.has-rail .side-close { order: 4; display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(249,125,2,.45); background: rgba(249,125,2,.08); font-size: 12px; }
+  body.has-rail .side-close b { font-size: 1.25rem; color: #ffb15c; letter-spacing: .02em; }
+  body.has-rail .side-close small { color: var(--muted); }
+  body.has-rail .topbar::before, body.has-rail .topbar::after { display: none; }
+  body.has-rail .auth-box { order: 5; margin: 6px 0 0; flex-direction: column; align-items: stretch; gap: 6px; }
+  body.has-rail .auth-box .auth-user { border-radius: 12px; }
+  body.has-rail .auth-box button { width: 100%; }
+}
+.pg-mk.below em { bottom: auto; top: calc(100% + 2px); }
+.pg-prog:has(.pg-mk.below) { margin-bottom: 16px; }
