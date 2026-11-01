@@ -3705,6 +3705,15 @@ function setupEmployeesAdminModal({ onChanged }) {
 
       const dInput = tr.querySelector(".emp-discord-input");
       dInput.value = getEmployeeDiscord(full);
+      // Otros personajes del mismo Discord: se avisa, no es un error.
+      const alts = empCloudOn() ? empAltsOf(e) : [];
+      if (alts.length) {
+        const tag = document.createElement("div");
+        tag.className = "emp-alt";
+        tag.textContent = `👥 Mismo Discord: ${alts.map((x) => fullName(x)).join(", ")}`;
+        tag.title = "Es la misma persona con otro personaje (char1, char2…). Entra con el rango más alto de los dos.";
+        dInput.after(tag);
+      }
       const iInput = tr.querySelector(".emp-iban-input");
       iInput.value = getEmployeeIban(full);
       const npInput = tr.querySelector(".emp-nopay-input");
@@ -3729,7 +3738,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         await (onChanged?.());
       });
       // Ni el Jefe Aguila ni uno mismo pueden ser despedidos (se quedarian sin acceso).
-      if (empCloudOn() && (normalizeKeySimple(e.rank) === normalizeKeySimple("Jefe Aguila") || (AUTH.discordId && e.discord === AUTH.discordId))) {
+      if (empCloudOn() && (normalizeKeySimple(e.rank) === normalizeKeySimple("Jefe Aguila") || (AUTH.discordId && String(empMainOf(AUTH.discordId)?.id) === String(e.id)))) {
         tr.querySelector("button[data-del]")?.remove();
       }
       if (locked) {
@@ -3824,7 +3833,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         }
         const label = emp ? `${emp.name} ${emp.surname}` : `ID ${id}`;
         if (empCloudOn() && emp) {
-          if (normalizeKeySimple(emp.rank) === normalizeKeySimple("Jefe Aguila") || (AUTH.discordId && emp.discord === AUTH.discordId)) {
+          if (normalizeKeySimple(emp.rank) === normalizeKeySimple("Jefe Aguila") || (AUTH.discordId && String(empMainOf(AUTH.discordId)?.id) === String(emp.id))) {
             alert("No puedes despedirte a ti mismo ni al Jefe Aguila: perderías el acceso a la página.");
             return;
           }
@@ -5173,6 +5182,18 @@ function empCloudRequireSession() {
   if (!cvCloud.session || !hasAccess()) throw new Error("Solo los Jefes pueden cambiar los empleados (inicia sesión con 🔑 Entrar).");
 }
 
+// Un mismo Discord puede tener varios personajes (char1, char2...). Para el
+// acceso y la tarjeta de sesion manda el de rango mas alto.
+function empMainOf(discord) {
+  if (!discord) return null;
+  const mine = EMP_CLOUD.list.filter((x) => x.discord === discord);
+  return mine.sort((x, y) => rankOrder(y.rank) - rankOrder(x.rank))[0] || null;
+}
+function empAltsOf(e) {
+  if (!e?.discord) return [];
+  return EMP_CLOUD.list.filter((x) => x.discord === e.discord && String(x.id) !== String(e.id));
+}
+
 const empCloudRow = (e) => ({
   id: e.id,
   name: e.name,
@@ -5394,7 +5415,7 @@ function renderAuthCard() {
   const box = byId("auth-user");
   if (!box) return;
   if (!AUTH.profile && AUTH.discordId && EMP_CLOUD.list.length) {
-    const e = EMP_CLOUD.list.find((x) => x.discord === AUTH.discordId);
+    const e = empMainOf(AUTH.discordId);
     if (e) AUTH.profile = { name: e.name, surname: e.surname, rank: e.rank };
   }
   const p = AUTH.profile;

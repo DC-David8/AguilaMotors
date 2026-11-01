@@ -231,6 +231,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 81 · 1 de noviembre de 2026
+- **Varios personajes con el mismo Discord** (char1, char2…): se pueden registrar como empleados distintos con el mismo ID de Discord. Cada uno cobra por separado (su facturación, su IBAN, sus strikes) y al copiar las pagas se etiqueta a la misma persona en los dos.
+- Para entrar a la página y la tarjeta de sesión manda **el personaje de rango más alto** de ese Discord.
+- Gestión: aviso **👥 Mismo Discord: …** bajo el ID. Se puede despedir al otro personaje sin perder el acceso (solo se protege el que da acceso).
+- SQL nuevo: `bot-facturas/9_varios_personajes.sql` (quita la restricción de Discord único si existía; `mi_rango` y `mi_perfil` eligen el rango más alto).
+
 ### Versión 80 · 1 de noviembre de 2026
 - **Gama de tuning para los 106 vehículos que no la tenían** (Coches, Street Tuning, King of the Street, Coches Rally, Vapid), según su precio de concesionario: **menos de $ 50.000 → Gama Baja**, **de $ 50.000 a $ 149.999 → Gama Media**, **$ 150.000 o más → Gama Alta** (análisis del 1/11/2026 con los precios de las gamas del catálogo). Límites en `CAT_GAMA_LIMITS`.
 - La Caja salta sola a esa gama al buscar el vehículo; el Catálogo y el Almacén muestran la gama como etiqueta.

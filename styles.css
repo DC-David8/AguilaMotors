@@ -1641,3 +1641,4 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
   .ticket-actions .tk-small span { display: none; }
   .ticket-actions .tk-big { min-height: 50px; font-size: 0.9rem; }
 }
+.emp-alt { font-size: 11px; margin-top: 3px; color: #8fc7ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
