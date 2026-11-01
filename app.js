@@ -2222,8 +2222,27 @@ function setupCaja() {
     });
   }
 
+  // Categorias que se muestran juntas en una pestana, con subdivisiones (v99):
+  // Servicios (Taller) reune Taller, Tienda y Neones RGB.
+  const CAT_GROUPS = { servicios_taller: [
+    { key: "servicios_taller", label: "Taller" },
+    { key: "tienda", label: "Tienda" },
+    { key: "neones", label: "Neones RGB" },
+  ] };
+  const CAT_CHILD = {};
+  for (const [g, subs] of Object.entries(CAT_GROUPS)) for (const s of subs) if (s.key !== g) CAT_CHILD[s.key] = g;
+  const groupOf = (key) => CAT_CHILD[key] || key;
+  state.activeSub = "all";
+  let catSubEl = byId("cat-sub");
+  if (!catSubEl) {
+    catSubEl = document.createElement("div");
+    catSubEl.id = "cat-sub";
+    catSubEl.className = "cat-sub";
+    productGrid.before(catSubEl);
+  }
+
   function renderCategoryTabs(allProducts) {
-    const present = new Set(allProducts.map((p) => p.category || "otros"));
+    const present = new Set(allProducts.map((p) => groupOf(p.category || "otros")));
     let cats = PRODUCT_CATEGORIES.filter((c) => present.has(c.key));
     if (!cats.length) cats = [{ key: "otros", label: "Otros" }];
     if (!state.activeCategory || !cats.some((c) => c.key === state.activeCategory)) {
@@ -2238,6 +2257,7 @@ function setupCaja() {
       btn.innerHTML = catTabIconSvg(c.key);
       btn.append(c.label);
       btn.addEventListener("click", () => {
+        if (state.activeCategory !== c.key) state.activeSub = "all";
         state.activeCategory = c.key;
         renderProductGrid();
       });
@@ -2257,10 +2277,50 @@ function setupCaja() {
   function renderProductGrid() {
     const all = getAllProducts();
     renderCategoryTabs(all);
-    const shown = all.filter((p) => (p.category || "otros") === state.activeCategory);
+    let shown = all.filter((p) => groupOf(p.category || "otros") === state.activeCategory);
+    const subs = (CAT_GROUPS[state.activeCategory] || []).filter((s) => shown.some((p) => (p.category || "otros") === s.key));
+
+    // Subdivisiones: chips para filtrar y titulos dentro de la lista.
+    catSubEl.textContent = "";
+    catSubEl.hidden = subs.length < 2;
+    if (subs.length < 2) state.activeSub = "all";
+    if (!catSubEl.hidden) {
+      for (const s of [{ key: "all", label: "Todos" }, ...subs]) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "cat-sub-chip" + (state.activeSub === s.key ? " is-on" : "");
+        b.dataset.cat = s.key === "all" ? state.activeCategory : s.key;
+        if (s.key !== "all") b.innerHTML = catTabIconSvg(s.key);
+        b.append(s.label);
+        const n = shown.filter((p) => s.key === "all" || (p.category || "otros") === s.key).length;
+        const c = document.createElement("span");
+        c.className = "cat-sub-n";
+        c.textContent = String(n);
+        b.appendChild(c);
+        b.addEventListener("click", () => {
+          state.activeSub = s.key;
+          renderProductGrid();
+        });
+        catSubEl.appendChild(b);
+      }
+      if (state.activeSub !== "all") shown = shown.filter((p) => (p.category || "otros") === state.activeSub);
+    }
+    const order = subs.map((s) => s.key);
+    if (order.length > 1) shown = shown.slice().sort((x, y) => order.indexOf(x.category || "otros") - order.indexOf(y.category || "otros"));
 
     productGrid.innerHTML = "";
+    let lastSub = null;
     for (const product of shown) {
+      if (subs.length > 1 && state.activeSub === "all" && (product.category || "otros") !== lastSub) {
+        lastSub = product.category || "otros";
+        const s = subs.find((x) => x.key === lastSub);
+        const h = document.createElement("div");
+        h.className = "prod-sub-h";
+        h.dataset.cat = lastSub;
+        h.innerHTML = catTabIconSvg(lastSub);
+        h.append(s ? s.label : lastSub);
+        productGrid.appendChild(h);
+      }
       const button = document.createElement("button");
       button.className = "product-btn";
       button.type = "button";

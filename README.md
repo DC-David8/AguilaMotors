@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 99 · 1 de noviembre de 2026
+
+- **Caja · Servicios (Taller) con subdivisiones:** las pestañas Tienda y Neones RGB pasan a estar dentro de Servicios (Taller). Arriba de la lista salen los filtros **Todos · Taller · Tienda · Neones RGB** (con cuántos productos tiene cada uno) y, en «Todos», la lista va separada por títulos de color. Los productos no cambian de categoría por dentro (Gestión de Productos, ticket y Pagos siguen igual). También en el menú de categorías del móvil.
+
 ### Versión 98 · 1 de noviembre de 2026
 
 - **Móvil · barra de secciones abajo:** Caja · Compraventa · Pagos · Sorteo con sus iconos, como en las apps. Cada uno ve solo sus secciones (con una sola, no sale la barra). La barra del ticket de Caja queda justo encima.

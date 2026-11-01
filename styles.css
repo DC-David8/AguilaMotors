@@ -2076,3 +2076,22 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
   /* Compraventa: sin la frase larga de arriba */
   #cv-mode { display: none; }
 }
+
+/* v99: subdivisiones dentro de una pestaña (Servicios Taller: Taller · Tienda · Neones RGB) */
+.cat-sub { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; padding: 8px; border-radius: 12px; background: #120d09; border: 1px solid #2e241a; }
+.cat-sub[hidden] { display: none; }
+.cat-sub-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; min-height: 0; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--gc, #554433) 55%, transparent); background: transparent; color: var(--gl, var(--text)); font-weight: 700; font-size: 0.8rem; text-transform: none; letter-spacing: 0; box-shadow: none; cursor: pointer; }
+.cat-sub-chip.is-on { background: var(--gg, linear-gradient(180deg, var(--gl, #ffb15c), var(--gc, #f97d02))); color: #0d0905; border-color: transparent; }
+.cat-sub-n { font-size: 0.68rem; padding: 0 6px; border-radius: 99px; background: rgba(255,255,255,.08); }
+.cat-sub-chip.is-on .cat-sub-n { background: rgba(0,0,0,.18); }
+.prod-sub-h { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 0 2px 6px; border-bottom: 1px solid color-mix(in srgb, var(--gc, #554433) 45%, transparent); color: var(--gl, #ffb15c); font-weight: 800; font-size: 0.8rem; letter-spacing: .08em; text-transform: uppercase; }
+.prod-sub-h:first-child { margin-top: 0; }
+.prod-sub-h .cat-ic { width: 16px; height: 16px; }
+.cat-sub-chip[data-cat="servicios_taller"], .prod-sub-h[data-cat="servicios_taller"] { --gc: #1fb47a; --gl: #8ff0c8; }
+.cat-sub-chip[data-cat="tienda"], .prod-sub-h[data-cat="tienda"] { --gc: #ff6fa8; --gl: #ffc0db; }
+.cat-sub-chip[data-cat="neones"], .prod-sub-h[data-cat="neones"] { --gc: #c45cff; --gl: #f0b3ff; --gg: linear-gradient(90deg, #ff3b5c, #ffcc00, #5ee38a, #3d8bff, #c45cff); }
+@media (max-width: 700px) {
+  .cat-sub { margin: 6px 0 0; padding: 6px; gap: 5px; }
+  .cat-sub-chip { padding: 6px 10px; font-size: 0.76rem; }
+  .prod-sub-h { margin-top: 10px; }
+}
