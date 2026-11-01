@@ -787,6 +787,46 @@ let PAGOS_WEEK_GROSS = null;
 const EMP_RANK_CLS = { "jefe aguila": "r-aguila", jefe: "r-jefe", "mano derecha": "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };
 const empRankCls = (rank) => EMP_RANK_CLS[normalizeKeySimple(rank)] || "r-none";
 const empInitials = (e) => `${String(e.name || "").trim().charAt(0)}${String(e.surname || "").trim().charAt(0)}`.toUpperCase() || "?";
+// Avatar por rango (v96): herramienta del rango sobre circulo de su color y
+// estrellas debajo con el nivel. El Jefe Aguila lleva el logo del taller.
+// Sin rango: iniciales como antes.
+const RANK_ICON_SVG = {
+  chalan: '<polygon points="12,2.8 20,7.4 20,16.6 12,21.2 4,16.6 4,7.4"/><circle cx="12" cy="12" r="3.4"/>',
+  mecanico: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.4-3.4a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+  experimentado: '<line x1="19" y1="12" x2="21.6" y2="12" stroke-width="3"/><line x1="16.95" y1="16.95" x2="18.79" y2="18.79" stroke-width="3"/><line x1="12" y1="19" x2="12" y2="21.6" stroke-width="3"/><line x1="7.05" y1="16.95" x2="5.21" y2="18.79" stroke-width="3"/><line x1="5" y1="12" x2="2.4" y2="12" stroke-width="3"/><line x1="7.05" y1="7.05" x2="5.21" y2="5.21" stroke-width="3"/><line x1="12" y1="5" x2="12" y2="2.4" stroke-width="3"/><line x1="16.95" y1="7.05" x2="18.79" y2="5.21" stroke-width="3"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.5"/>',
+  subjefe: '<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2.5" width="6" height="3.5" rx="1"/><path d="M8.5 13.5l2.5 2.5 4.5-5"/>',
+  "mano derecha": '<path d="M2 8l4-2 4 2 3-2 4 1 5 3"/><path d="M2 8v6l3 2M22 10v5l-3 2"/><path d="M8 14l3 3a1.5 1.5 0 0 0 2.2-2l-3-3"/><path d="M11 17l1.5 1.5a1.5 1.5 0 0 0 2.2-2L13 15M14.5 16.5a1.5 1.5 0 0 0 2.2-2L13 11l-2 1.5a1.8 1.8 0 0 1-2.5-2.5L10 8"/>',
+  jefe: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M3 12.5h18"/><rect x="10.5" y="11" width="3" height="3" rx=".6" fill="currentColor"/>',
+};
+const RANK_STARS = { chalan: 1, mecanico: 2, experimentado: 3, subjefe: 4, "mano derecha": 5, jefe: 5, "jefe aguila": 5 };
+const RANK_STAR_SVG = '<svg viewBox="0 0 10 10" aria-hidden="true"><polygon points="5,0.4 6.35,3.4 9.6,3.7 7.15,5.85 7.85,9.1 5,7.45 2.15,9.1 2.85,5.85 0.4,3.7 3.65,3.4" fill="currentColor"/></svg>';
+function rankAvatar(rank, fallbackText = "?", extraCls = "") {
+  const key = normalizeKeySimple(rank);
+  const n = RANK_STARS[key] || 0;
+  const div = document.createElement("div");
+  div.className = `rk-av ${empRankCls(rank)}${extraCls ? " " + extraCls : ""}`;
+  if (key === "jefe aguila") {
+    const img = document.createElement("img");
+    img.src = "aguila_motors_logo.png";
+    img.alt = "";
+    img.onerror = () => img.replaceWith(document.createTextNode(fallbackText));
+    div.appendChild(img);
+  } else if (RANK_ICON_SVG[key]) {
+    div.insertAdjacentHTML("beforeend", `<svg class="rk-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${RANK_ICON_SVG[key]}</svg>`);
+  } else {
+    div.classList.add("rk-txt");
+    div.textContent = fallbackText;
+  }
+  if (n) {
+    const s = document.createElement("span");
+    s.className = "rk-stars";
+    s.innerHTML = RANK_STAR_SVG.repeat(n);
+    div.appendChild(s);
+  }
+  if (rank) div.title = `${rankLabel(rank)}${n ? ` · nivel ${n}` : ""}`;
+  return div;
+}
+
 // Escalera de rangos para Subir / Bajar desde la ficha.
 const EMP_LADDER = ["Chalán", "Mecánico", "Experimentado", "Subjefe", "Jefe"];
 
@@ -3025,7 +3065,7 @@ function setupContabilidad() {
       const isWinner = winners.has(r);
       const card = el("div", "pg-row" + (isWinner ? " first" : ""));
       const initials = r.name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-      const av = el("div", "pg-av" + (r.noPay ? " np" : ""), initials);
+      const av = r.rank ? rankAvatar(r.rank, initials, "pg-av" + (r.noPay ? " np" : "")) : el("div", "pg-av" + (r.noPay ? " np" : ""), initials);
       if (isWinner) av.appendChild(el("span", "crown", "🏆"));
 
       const mid = el("div", "pg-mid");
@@ -4259,7 +4299,7 @@ function setupEmployeesAdminModal({ onChanged }) {
   });
 
   function avatar(e, big = false) {
-    return mk("div", `emp-av ${empRankCls(e.rank)}${big ? " big" : ""}`, empInitials(e));
+    return rankAvatar(e.rank, empInitials(e), `emp-av${big ? " big" : ""}`);
   }
   function badge(rank) {
     return mk("span", `pg-badge ${empRankCls(rank)}`, rank ? rankLabel(rank) : "Sin rango");

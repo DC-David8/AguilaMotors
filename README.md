@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 96 · 1 de noviembre de 2026
+
+- **Iconos por rango en lugar de iniciales:** cada empleado lleva un círculo del color de su rango con la herramienta que lo representa y estrellas debajo con su nivel. Aprendiz: tuerca ★. Mecánico: llave inglesa ★★. Especialista: engranaje ★★★. Jefe de Taller: portapapeles ★★★★. Mano Derecha: apretón de manos ★★★★★. Gerente: maletín ★★★★★. Jefe Aguila: logo del taller ★★★★★. Sale en el listado y la ficha de empleados, en la pestaña Strikes y en el ranking de Pagos. Quien no tiene rango sigue con sus iniciales.
+
 ### Versión 95 · 1 de noviembre de 2026
 
 - **Gestión de empleados:** con muchos empleados las filas del listado se aplastaban unas sobre otras; ahora mantienen su alto y la lista hace scroll. La barra de scroll va en el color oscuro de la página.

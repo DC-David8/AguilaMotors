@@ -1962,3 +1962,20 @@ dialog.emp-modal { width: min(1180px, 96vw); }
 .emp-list::-webkit-scrollbar, .emp-ficha::-webkit-scrollbar { width: 8px; }
 .emp-list::-webkit-scrollbar-thumb, .emp-ficha::-webkit-scrollbar-thumb { background: #5a4430; border-radius: 8px; }
 .emp-list::-webkit-scrollbar-track, .emp-ficha::-webkit-scrollbar-track { background: transparent; }
+
+/* ===== Avatar por rango (v96): herramienta + estrellas de nivel ===== */
+.rk-av { position: relative; border-radius: 50%; display: grid; place-items: center; color: #1a0d00; flex: none; box-sizing: border-box; font-weight: 800; }
+.rk-av .rk-ic { width: 54%; height: 54%; }
+.rk-av > img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #ffcf94; }
+.rk-av.r-chalan { background: #7fe0a8; --rk: #7fe0a8; }
+.rk-av.r-mecanico { background: #8fb6ff; --rk: #8fb6ff; }
+.rk-av.r-exp { background: #c9a2ff; --rk: #c9a2ff; }
+.rk-av.r-subjefe { background: #ff9a3d; --rk: #ff9a3d; }
+.rk-av.r-jefe { background: #ffd257; --rk: #ffd257; }
+.rk-av.r-aguila { background: linear-gradient(135deg, #f97d02, #ffcf94); --rk: #ffcf94; }
+.rk-stars { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); display: flex; gap: 1px; padding: 1.5px 4px; border-radius: 99px; background: #120d09; border: 1px solid #3a2c1d; color: var(--rk, #ffb15c); line-height: 0; white-space: nowrap; }
+.rk-stars svg { width: 7px; height: 7px; display: block; }
+.rk-av.big .rk-stars { bottom: -9px; padding: 2px 6px; gap: 2px; }
+.rk-av.big .rk-stars svg { width: 10px; height: 10px; }
+.pg-av.rk-av .crown { z-index: 2; }
+.emp-row, .emp-srow { padding-bottom: 12px; }
