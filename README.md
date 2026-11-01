@@ -231,6 +231,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 89 · 1 de noviembre de 2026
+- **Full Tuning** con icono nuevo: **escudo con velocímetro** (aguja roja al tope) y la palabra **FULL**, en el color de cada gama. La pestaña lleva el escudo con el velocímetro.
+
 ### Versión 88 · 1 de noviembre de 2026
 - Caja: la pestaña «Compraventa» pasa a llamarse **Mediación de Venta** (lo que se cobra es la gestión del traspaso). Productos: **Mediación de Venta (Gama Baja / Gama Media / Gama Alta / Gama Camiones)**, mismos precios. Icono de **apretón de manos** con el color de cada gama. En el concepto del datáfono sale «Mediac GB», «Mediac GM»…
 
