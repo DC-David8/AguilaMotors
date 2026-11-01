@@ -231,6 +231,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 92 · 1 de noviembre de 2026
+
+- **Ascensos y descensos (solo Jefe Aguila):** la sección ya solo la ve el Jefe Aguila y nada sale marcado; se marcan solo los que sí van tras revisar ausencias y comportamiento IC. Cada fila tiene un campo de motivo que sale en el mensaje de Discord (si está vacío, se usa el texto de siempre) y muestra los strikes de la persona. Además se pueden añadir ascensos o descensos a mano (por ejemplo, por buen o mal comportamiento IC) aunque no lleguen a la meta o al mínimo.
+- **Gestión de strikes (solo Jefe Aguila):** en el cuadro de strikes de la semana se puede quitar un strike (✕, con motivo, p. ej. ausencia justificada), volver a ponerlo (↺), poner un strike a mano con motivo y quitar strikes acumulados de semanas anteriores (−1). Un strike quitado no suma ni corta la racha. Se guarda en línea (`app_settings`, clave `strike_adj`) y se refleja en Totales empleados, Copiar para Discord, Gestión de empleados y el cierre de semana.
+
 ### Versión 91 · 1 de noviembre de 2026
 
 - **Pagos:** se quitan el recuadro «Datos compartidos» y la sección «Ver detalle (facturas y kits por separado)», que ya no se usaban. El ranking, el total a pagar y «Copiar para Discord» siguen igual.

@@ -698,6 +698,46 @@ async function loadStrikeHist() {
   } catch {
     STRIKE_HIST = [];
   }
+  try {
+    const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.strike_adj");
+    const v = rows?.[0]?.value;
+    STRIKE_ADJ = v && typeof v === "object" ? v : {};
+  } catch {
+    STRIKE_ADJ = {};
+  }
+}
+
+// Strikes puestos o quitados a mano por el Jefe Aguila (app_settings "strike_adj"):
+// { "AAAA-MM-DD" (domingo de la semana): { "id:12": { s: true|false, m: "motivo", por, at } } }
+// s:true = strike puesto a mano (aunque facturara). s:false = strike quitado:
+// esa semana ni suma ni corta la cuenta de strikes seguidos.
+let STRIKE_ADJ = {};
+function strikeKey(id, name) {
+  return id != null && id !== "" ? `id:${id}` : `n:${normalizeKeySimple(name)}`;
+}
+function strikeAdjFor(wk, id, name) {
+  const w = STRIKE_ADJ[wk];
+  if (!w) return null;
+  return w[strikeKey(id, name)] || w[`n:${normalizeKeySimple(name)}`] || null;
+}
+// Strike de una semana para una persona: el automatico (no facturar o no llegar
+// al minimo) salvo que el jefe lo haya puesto o quitado a mano.
+function weekStrike(wk, id, name, gross, noPay) {
+  const auto = !noPay && gross < RANK_RULES.min;
+  const adj = noPay ? null : strikeAdjFor(wk, id, name);
+  if (!adj) return { on: auto, auto, reason: auto ? strikeReason(gross) : "" };
+  if (adj.s) return { on: true, auto, manual: true, reason: adj.m || "puesto por el jefe" };
+  return { on: false, auto, forgiven: true, reason: adj.m || "" };
+}
+async function saveStrikeAdj(wk, id, name, value) {
+  const next = JSON.parse(JSON.stringify(STRIKE_ADJ || {}));
+  const w = next[wk] || (next[wk] = {});
+  delete w[`n:${normalizeKeySimple(name)}`];
+  if (value) w[strikeKey(id, name)] = { ...value, por: AUTH.name || "", at: new Date().toISOString() };
+  else delete w[strikeKey(id, name)];
+  if (!Object.keys(w).length) delete next[wk];
+  await cvCloud.upsert("app_settings", [{ key: "strike_adj", value: next }], "key");
+  STRIKE_ADJ = next;
 }
 
 function strikeRowIn(week, id, name) {
@@ -713,10 +753,26 @@ function strikesBefore(id, name, beforeWeek = "") {
     if (beforeWeek && String(w.semana) >= beforeWeek) continue;
     const r = strikeRowIn(w, id, name);
     if (!r || r.noPay) continue; // no estaba o no cobraba: no cuenta
-    if (r.strike) n++;
+    const adj = strikeAdjFor(String(w.semana), id, name);
+    if (adj && !adj.s) continue; // quitado por el jefe: ni suma ni corta
+    if (r.strike || adj?.s) n++;
     else break;
   }
   return n;
+}
+
+// Ultima semana cerrada cuyo strike cuenta en la racha (para quitarlo con "−1").
+function lastCountedStrikeWeek(id, name, beforeWeek = "") {
+  for (const w of STRIKE_HIST) {
+    if (beforeWeek && String(w.semana) >= beforeWeek) continue;
+    const r = strikeRowIn(w, id, name);
+    if (!r || r.noPay) continue;
+    const adj = strikeAdjFor(String(w.semana), id, name);
+    if (adj && !adj.s) continue;
+    if (r.strike || adj?.s) return String(w.semana);
+    break;
+  }
+  return "";
 }
 
 function strikeLabel(n) {
@@ -728,8 +784,8 @@ function strikeReason(gross) {
   return gross > 0 ? `no llegó al mínimo: ${fmtMoney(gross)} de ${fmtMoney(RANK_RULES.min)}` : "no facturó";
 }
 
-function strikeText(n, gross = 0) {
-  return `${n >= STRIKE_MAX ? "🚫" : "⚠️"} **${strikeLabel(n)}** (${strikeReason(gross)})`;
+function strikeText(n, gross = 0, why = "") {
+  return `${n >= STRIKE_MAX ? "🚫" : "⚠️"} **${strikeLabel(n)}** (${why || strikeReason(gross)})`;
 }
 
 // Semana que se esta revisando en Pagos (domingo, del cuadro de fechas).
@@ -2840,17 +2896,19 @@ function setupContabilidad() {
       list.appendChild(card);
     }
 
-    // Strike: no facturar o no llegar al minimo (solo se libran los que no cobran).
+    // Strike: no facturar o no llegar al minimo (solo se libran los que no cobran),
+    // salvo que el Jefe Aguila lo quite o lo ponga a mano.
     const grossOf = (e) => rows.find((x) => x.emp === e)?.total || 0;
-    const idle = employees
-      .filter((e) => !isEmployeeNoPay(fullName(e)) && grossOf(e) < RANK_RULES.min)
-      .sort(byRankThenName);
     const wk = payWeekKey();
+    const wsOf = new Map(employees.map((e) => [e, weekStrike(wk, e.id, fullName(e), grossOf(e), isEmployeeNoPay(fullName(e)))]));
+    const idle = employees.filter((e) => wsOf.get(e).on).sort(byRankThenName);
+    const forgiven = employees.filter((e) => wsOf.get(e).forgiven && wsOf.get(e).auto).sort(byRankThenName);
     lastSnapshot = {
       rows: employees.map((e) => {
         const name = fullName(e);
         const r = rows.find((x) => x.emp === e);
         const noPay = isEmployeeNoPay(name);
+        const ws = wsOf.get(e);
         return {
           id: e.id ?? null,
           name,
@@ -2859,29 +2917,139 @@ function setupContabilidad() {
           payout: r && !noPay ? r.payout + (winners.has(r) ? WEEK_BONUS : 0) : 0,
           bonus: r && winners.has(r) && !noPay ? WEEK_BONUS : 0,
           noPay,
-          strike: !noPay && (r ? r.total : 0) < RANK_RULES.min,
+          strike: ws.on,
+          ...(ws.manual || ws.forgiven ? { strikeMotivo: ws.reason } : {}),
         };
       }),
       total: invSummary.total + kitsSummary.total,
       facturas: invSummary.count,
     };
-    if (idle.length) {
+    const boss = AUTH.aguila && wk;
+    const act = async (btn, fn) => {
+      btn.disabled = true;
+      try {
+        await fn();
+        refresh();
+      } catch (err) {
+        btn.disabled = false;
+        alert(`No se pudo guardar: ${err.message || err}`);
+      }
+    };
+    if (idle.length || forgiven.length || boss) {
       const box = el("div", "pg-warn-box");
       box.appendChild(el("div", "pg-warn-head", `⚠️ Strikes de esta semana · no facturaron o no llegaron a ${fmtMoney(RANK_RULES.min)} (${idle.length})`));
       const chips = el("div", "pg-warn-list");
+      if (!idle.length) chips.appendChild(el("span", "muted pg-strike-why", "Nadie tiene strike esta semana."));
       for (const e of idle) {
+        const ws = wsOf.get(e);
         const n = strikesBefore(e.id, fullName(e), wk) + 1;
-        const chip = el("span", "pg-warn-chip" + (n >= STRIKE_MAX ? " max" : ""));
+        const chip = el("span", "pg-warn-chip" + (n >= STRIKE_MAX ? " max" : "") + (ws.manual ? " manual" : ""));
         chip.appendChild(el("b", "", fullName(e)));
         if (e.rank) chip.appendChild(el("span", "pg-badge " + (RANK_BADGE[normalizeKeySimple(e.rank)] || ""), rankLabel(e.rank)));
         const g = grossOf(e);
-        chip.appendChild(el("span", "pg-strike-why", g > 0 ? `${fmtMoney(g)} de ${fmtMoney(RANK_RULES.min)}` : "Sin facturar"));
+        chip.appendChild(el("span", "pg-strike-why", ws.manual ? `✍️ ${ws.reason}` : g > 0 ? `${fmtMoney(g)} de ${fmtMoney(RANK_RULES.min)}` : "Sin facturar"));
         chip.appendChild(el("span", "pg-strike" + (n >= STRIKE_MAX ? " max" : ""), n >= STRIKE_MAX ? `🚫 ${strikeLabel(n)}` : strikeLabel(n)));
+        if (boss) {
+          const x = el("button", "pg-chip-btn", "✕");
+          x.type = "button";
+          x.title = ws.manual ? "Quitar este strike puesto a mano" : "Quitar el strike (ausencia justificada, etc.)";
+          x.addEventListener("click", () => {
+            if (ws.manual && !ws.auto) return act(x, () => saveStrikeAdj(wk, e.id, fullName(e), null));
+            const m = prompt(`Quitar el strike de ${fullName(e)} esta semana.\n\nMotivo (opcional, p. ej. «ausencia justificada»):`, "");
+            if (m === null) return;
+            act(x, () => saveStrikeAdj(wk, e.id, fullName(e), { s: false, m: m.trim() }));
+          });
+          chip.appendChild(x);
+        }
         chips.appendChild(chip);
       }
       box.appendChild(chips);
+      if (forgiven.length) {
+        const fl = el("div", "pg-warn-list pg-forgiven");
+        fl.appendChild(el("span", "pg-strike-why", "Quitados por el jefe:"));
+        for (const e of forgiven) {
+          const ws = wsOf.get(e);
+          const chip = el("span", "pg-warn-chip off");
+          chip.appendChild(el("b", "", fullName(e)));
+          if (ws.reason) chip.appendChild(el("span", "pg-strike-why", ws.reason));
+          if (boss) {
+            const u = el("button", "pg-chip-btn", "↺");
+            u.type = "button";
+            u.title = "Volver a poner el strike";
+            u.addEventListener("click", () => act(u, () => saveStrikeAdj(wk, e.id, fullName(e), null)));
+            chip.appendChild(u);
+          }
+          fl.appendChild(chip);
+        }
+        box.appendChild(fl);
+      }
+      if (boss) box.appendChild(strikeManager(employees, wsOf, wk, act));
       list.appendChild(box);
     }
+  }
+
+  // Solo Jefe Aguila: poner un strike a mano (mal comportamiento IC, etc.) y
+  // quitar strikes acumulados de semanas anteriores.
+  function strikeManager(employees, wsOf, wk, act) {
+    const el = (tag, cls, text) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    const wrap = el("div", "pg-strike-tools");
+    const add = el("div", "pg-strike-add");
+    const sel = document.createElement("select");
+    sel.className = "text-input";
+    sel.appendChild(new Option("Poner strike a…", ""));
+    for (const e of [...employees].sort(byRankThenName)) {
+      const ws = wsOf.get(e);
+      if (ws.on || isEmployeeNoPay(fullName(e))) continue;
+      sel.appendChild(new Option(`${fullName(e)}${e.rank ? ` (${rankLabel(e.rank)})` : ""}`, String(employees.indexOf(e))));
+    }
+    const why = document.createElement("input");
+    why.className = "text-input";
+    why.placeholder = "Motivo (p. ej. mal comportamiento IC)";
+    why.maxLength = 120;
+    const go = el("button", "", "➕ Poner strike");
+    go.type = "button";
+    go.addEventListener("click", () => {
+      const e = employees[Number(sel.value)];
+      if (!sel.value || !e) return alert("Elige a quién ponerle el strike.");
+      const m = why.value.trim();
+      if (!m) return alert("Escribe el motivo del strike.");
+      act(go, () => saveStrikeAdj(wk, e.id, fullName(e), { s: true, m }));
+    });
+    add.append(sel, why, go);
+    wrap.appendChild(add);
+
+    const acc = employees
+      .map((e) => ({ e, n: strikesBefore(e.id, fullName(e), wk) }))
+      .filter((x) => x.n > 0)
+      .sort((a, b) => b.n - a.n || byRankThenName(a.e, b.e));
+    if (acc.length) {
+      const al = el("div", "pg-warn-list pg-acc");
+      al.appendChild(el("span", "pg-strike-why", "Acumulados de semanas anteriores:"));
+      for (const { e, n } of acc) {
+        const chip = el("span", "pg-warn-chip" + (n >= STRIKE_MAX ? " max" : ""));
+        chip.appendChild(el("b", "", fullName(e)));
+        chip.appendChild(el("span", "pg-strike" + (n >= STRIKE_MAX ? " max" : ""), `${n}/${STRIKE_MAX}`));
+        const minus = el("button", "pg-chip-btn", "−1");
+        minus.type = "button";
+        minus.title = "Quitar el último strike acumulado";
+        minus.addEventListener("click", () => {
+          const w = lastCountedStrikeWeek(e.id, fullName(e), wk);
+          if (!w) return;
+          const m = prompt(`Quitar a ${fullName(e)} el strike de la semana del ${w.slice(8, 10)}/${w.slice(5, 7)}.\n\nMotivo (opcional):`, "");
+          if (m === null) return;
+          act(minus, () => saveStrikeAdj(w, e.id, fullName(e), { s: false, m: m.trim() || "quitado por el jefe" }));
+        });
+        chip.appendChild(minus);
+        al.appendChild(chip);
+      }
+      wrap.appendChild(al);
+    }
+    return wrap;
   }
 
   // ---------- Cierre de semana (guarda la semana para contar strikes) ----------
@@ -2973,12 +3141,24 @@ function setupContabilidad() {
     return +a === +b ? `Semana del ${f(a)}` : `Semana del ${f(a)} al ${f(b)}`;
   }
 
+  // El Jefe Aguila decide: nada sale marcado; marca los que si van (tras revisar
+  // ausencias y comportamiento IC) y puede añadir ascensos/descensos a mano.
+  let promoSel = new Map(); // "up:nombre" -> { on, motivo }
+  let promoManual = []; // [{ kind, id }]
+  let promoEmployees = [];
+  const selOf = (kind, name) => {
+    const k = `${kind}:${normalizeKeySimple(name)}`;
+    if (!promoSel.has(k)) promoSel.set(k, { on: false, motivo: "" });
+    return promoSel.get(k);
+  };
+
   function renderPromos(rows, employees) {
     const box = byId("pg-promos");
     if (!box) return;
     const hasData = rows.some((r) => r.total > 0);
-    box.hidden = !hasData || !hasAccess();
+    box.hidden = !hasData || !AUTH.aguila;
     if (box.hidden) return;
+    promoEmployees = employees;
     const billed = new Map(rows.map((r) => [normalizeKeySimple(r.name), r.total]));
     const R = RANK_RULES;
     promo = { up: [], down: [], cand: [], week: weekRange() };
@@ -2986,24 +3166,58 @@ function setupContabilidad() {
     if (logKey !== promoLogKey) {
       promoLogKey = logKey;
       promoApplied = new Set();
+      promoSel = new Map();
+      promoManual = [];
     }
+    const ladderIdx = (e) => PROMO_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(e.rank));
+    const wk = payWeekKey();
+    const itemOf = (e, kind, manual = false) => {
+      const name = fullName(e);
+      const i = ladderIdx(e);
+      const total = billed.get(normalizeKeySimple(name)) || 0;
+      const sel = selOf(kind, name);
+      const ws = weekStrike(wk, e.id, name, total, false);
+      const strikes = strikesBefore(e.id, name, wk) + (ws.on ? 1 : 0);
+      return {
+        id: e.id, name, discord: getEmployeeDiscord(name), from: PROMO_LADDER[i], total, sel, manual, strikes,
+        to: PROMO_LADDER[kind === "up" ? i + 1 : i - 1],
+        goal: kind === "up" ? R.up[PROMO_LADDER[i]] : R.min,
+        get on() { return this.sel.on; },
+      };
+    };
+    const used = new Set();
     for (const e of employees) {
       const name = fullName(e);
       if (isEmployeeNoPay(name) || promoApplied.has(normalizeKeySimple(name))) continue;
-      const i = PROMO_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(e.rank));
+      const i = ladderIdx(e);
       if (i < 0) continue; // sin rango, Jefe, Mano Derecha y Jefe Aguila: fuera
       const rank = PROMO_LADDER[i];
       const total = billed.get(normalizeKeySimple(name)) || 0;
-      const item = { id: e.id, name, discord: getEmployeeDiscord(name), from: rank, total, on: true };
       const goal = R.up[rank];
-      if (goal && total >= goal) promo.up.push({ ...item, to: PROMO_LADDER[i + 1], goal });
-      else if (i > 0 && total < R.min) promo.down.push({ ...item, to: PROMO_LADDER[i - 1], goal: R.min });
-      else if (rank === "Subjefe" && total >= R.candidate) promo.cand.push(item);
+      if (goal && total >= goal) promo.up.push(itemOf(e, "up"));
+      else if (i > 0 && total < R.min) promo.down.push(itemOf(e, "down"));
+      else if (rank === "Subjefe" && total >= R.candidate) promo.cand.push({ name, from: rank, total });
+      else continue;
+      used.add(normalizeKeySimple(name));
     }
-    promo.up.sort((a, b) => b.total - a.total);
-    promo.down.sort((a, b) => a.total - b.total);
+    promoManual = promoManual.filter((m) => {
+      const e = employees.find((x) => String(x.id) === String(m.id));
+      if (!e || used.has(normalizeKeySimple(fullName(e))) || promoApplied.has(normalizeKeySimple(fullName(e)))) return false;
+      used.add(normalizeKeySimple(fullName(e)));
+      promo[m.kind].push(itemOf(e, m.kind, true));
+      return true;
+    });
+    promo.up.sort((a, b) => a.manual - b.manual || b.total - a.total);
+    promo.down.sort((a, b) => a.manual - b.manual || a.total - b.total);
     byId("pg-promo-rules").textContent =
       `Mínimo ${fmtMoney(R.min)} · Metas: ${rankLabel("Chalán")} ${fmtMoney(R.up["Chalán"])} · ${rankLabel("Mecánico")} ${fmtMoney(R.up["Mecánico"])} · ${rankLabel("Experimentado")} ${fmtMoney(R.up["Experimentado"])}`;
+    const updCounts = () => {
+      for (const kind of ["up", "down"]) {
+        const items = promo[kind];
+        const on = items.filter((x) => x.on).length;
+        byId(kind === "up" ? "pg-up-count" : "pg-down-count").textContent = items.length ? `(${on} de ${items.length} marcados)` : "(0)";
+      }
+    };
     const draw = (listId, items, kind) => {
       const list = byId(listId);
       list.textContent = "";
@@ -3014,22 +3228,66 @@ function setupContabilidad() {
         list.appendChild(p);
       }
       for (const it of items) {
-        const row = document.createElement("label");
-        row.className = "pg-promo-row";
+        const row = document.createElement("div");
+        row.className = "pg-promo-row" + (it.on ? " on" : "") + (it.manual ? " manual" : "");
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.checked = it.on;
-        cb.addEventListener("change", () => (it.on = cb.checked));
+        cb.title = kind === "up" ? "Marcar: este ascenso sí va" : "Marcar: este descenso sí va";
+        cb.addEventListener("change", () => {
+          it.sel.on = cb.checked;
+          row.classList.toggle("on", cb.checked);
+          updCounts();
+        });
         const txt = document.createElement("span");
+        const top = document.createElement("span");
+        top.className = "pg-promo-top";
         const n = document.createElement("b");
         n.textContent = it.name;
+        top.appendChild(n);
+        if (it.manual) {
+          const tag = document.createElement("em");
+          tag.className = "pg-promo-tag";
+          tag.textContent = "a mano";
+          top.appendChild(tag);
+        }
+        if (it.strikes) {
+          const st = document.createElement("span");
+          st.className = "pg-strike" + (it.strikes >= STRIKE_MAX ? " max" : "");
+          st.textContent = `⚠️ ${it.strikes}/${STRIKE_MAX}`;
+          st.title = "Strikes seguidos (contando esta semana)";
+          top.appendChild(st);
+        }
         const ranks = document.createElement("span");
         ranks.className = "pg-promo-ranks";
         ranks.textContent = `${rankLabel(it.from)} → ${rankLabel(it.to)}`;
         const meta = document.createElement("small");
-        meta.textContent = `${fmtMoney(it.total)} facturados · ${kind === "up" ? "meta" : "mínimo"} ${fmtMoney(it.goal)}`;
-        txt.append(n, ranks, meta);
+        meta.textContent = it.manual
+          ? `${fmtMoney(it.total)} facturados · decisión del jefe`
+          : `${fmtMoney(it.total)} facturados · ${kind === "up" ? "meta" : "mínimo"} ${fmtMoney(it.goal)}`;
+        const why = document.createElement("input");
+        why.className = "text-input pg-promo-why";
+        why.maxLength = 140;
+        why.placeholder = it.manual
+          ? kind === "up" ? "Motivo (p. ej. buen comportamiento IC)" : "Motivo (p. ej. mal comportamiento IC)"
+          : "Motivo (opcional, sale en Discord)";
+        why.value = it.sel.motivo;
+        why.addEventListener("input", () => (it.sel.motivo = why.value));
+        txt.append(top, ranks, meta, why);
         row.append(cb, txt);
+        if (it.manual) {
+          const x = document.createElement("button");
+          x.type = "button";
+          x.className = "pg-chip-btn";
+          x.textContent = "✕";
+          x.title = "Quitar de la lista";
+          x.addEventListener("click", () => {
+            promoManual = promoManual.filter((m) => String(m.id) !== String(it.id));
+            promoSel.delete(`${kind}:${normalizeKeySimple(it.name)}`);
+            refresh();
+          });
+          row.appendChild(x);
+        }
         list.appendChild(row);
       }
       if (kind === "up") {
@@ -3043,20 +3301,59 @@ function setupContabilidad() {
     };
     draw("pg-up-list", promo.up, "up");
     draw("pg-down-list", promo.down, "down");
-    byId("pg-up-count").textContent = `(${promo.up.length})`;
-    byId("pg-down-count").textContent = `(${promo.down.length})`;
+    updCounts();
     byId("pg-rules-edit").hidden = !AUTH.aguila;
+
+    // Añadir a mano: cualquiera de la escalera que no este ya en las listas.
+    const sel = byId("pg-add-emp");
+    const dir = byId("pg-add-dir");
+    if (sel && dir) {
+      const prev = sel.value;
+      sel.textContent = "";
+      sel.appendChild(new Option("Elige empleado…", ""));
+      for (const e of [...employees].sort(byRankThenName)) {
+        const i = ladderIdx(e);
+        const name = fullName(e);
+        if (i < 0 || isEmployeeNoPay(name) || used.has(normalizeKeySimple(name)) || promoApplied.has(normalizeKeySimple(name))) continue;
+        sel.appendChild(new Option(`${name} (${rankLabel(e.rank)})`, String(e.id)));
+      }
+      if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
+    }
   }
+
+  byId("pg-add-btn")?.addEventListener("click", () => {
+    const id = byId("pg-add-emp").value;
+    const kind = byId("pg-add-dir").value;
+    if (!id) return alert("Elige a quién.");
+    const e = promoEmployees.find((x) => String(x.id) === id);
+    if (!e) return;
+    const i = PROMO_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(e.rank));
+    if (kind === "up" && i >= PROMO_LADDER.length - 1) return alert(`${fullName(e)} ya es ${rankLabel(e.rank)}: el siguiente rango lo das tú en Gestión de empleados.`);
+    if (kind === "down" && i <= 0) return alert(`${fullName(e)} ya está en el rango más bajo.`);
+    const name = fullName(e);
+    const s = selOf(kind, name);
+    s.on = true;
+    s.motivo = byId("pg-add-why").value.trim();
+    promoManual.push({ kind, id });
+    byId("pg-add-why").value = "";
+    byId("pg-add-emp").value = "";
+    refresh();
+  });
 
   function promoText(kind) {
     const items = (kind === "up" ? promo.up : promo.down).filter((x) => x.on);
     if (!items.length) return "";
+    const why = (it) => {
+      const m = String(it.sel?.motivo || "").trim().replace(/[.\s]+$/, "");
+      if (!m) return "";
+      return /^(por|tras|al|debido|gracias|para)\b/i.test(m) ? `${m}.` : `por ${m.charAt(0).toLowerCase()}${m.slice(1)}.`;
+    };
     const who = (it) => (it.discord ? `<@${it.discord}>` : `**${it.name}**`);
     const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r)}**`);
     const lines = items.map((it, i) =>
       kind === "up"
-        ? `⬆️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${UP_REASONS[i % UP_REASONS.length]}`
-        : `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${DOWN_REASON}`
+        ? `⬆️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${why(it) || UP_REASONS[i % UP_REASONS.length]}`
+        : `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${why(it) || DOWN_REASON}`
     );
     const week = promo.week ? `${promo.week} · ` : "";
     return kind === "up"
@@ -3349,7 +3646,9 @@ function setupEmployeesModal(state, refreshPagos) {
     const winners = weekWinners(totalsRows);
     const hasData = totalsRows.some((r) => r.gross > 0);
     for (const r of totalsRows) {
-      r.warn = hasData && !r.noPay && r.gross < RANK_RULES.min;
+      const ws = weekStrike(payWeekKey(), r.id, r.name, r.gross, r.noPay);
+      r.warn = hasData && ws.on;
+      r.strikeWhy = ws.reason;
       r.strikeN = r.warn ? strikesBefore(r.id, r.name, payWeekKey()) + 1 : 0;
       r.base = r.payout;
       r.week = winners.has(r);
@@ -3366,7 +3665,7 @@ function setupEmployeesModal(state, refreshPagos) {
       const tr = document.createElement("tr");
       if (row.id === selectedId) tr.classList.add("is-selected");
       tr.innerHTML = `
-        <td>${row.name}${row.warn ? `<br><small class="warn">${row.strikeN >= STRIKE_MAX ? "🚫" : "⚠️"} ${strikeLabel(row.strikeN)} (${strikeReason(row.gross)})</small>` : ""}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
+        <td>${row.name}${row.warn ? `<br><small class="warn">${row.strikeN >= STRIKE_MAX ? "🚫" : "⚠️"} ${strikeLabel(row.strikeN)} (${row.strikeWhy || strikeReason(row.gross)})</small>` : ""}${row.kitsSelf ? `<br><small class="${row.kitsSelf / row.kitsUnits >= 0.5 ? "warn" : "muted"}">Kits a sí mismo: ${row.kitsSelf} de ${row.kitsUnits}</small>` : ""}</td>
         <td>${row.rank ? rankLabel(row.rank) : "-"}</td>
         <td class="num">${row.pct ? Math.round(row.pct * 100) + "%" : "-"}</td>
         <td class="num">${fmtMoney(row.gross)}</td>
@@ -3453,7 +3752,7 @@ function setupEmployeesModal(state, refreshPagos) {
           ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
           : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
         if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
-        if (r.warn) line += ` ${strikeText(r.strikeN, r.gross)}`;
+        if (r.warn) line += ` ${strikeText(r.strikeN, r.gross, r.strikeWhy)}`;
         if (r.bonus && !r.noPay) line += `\n  ↳ 🏆 Incluye bono de Empleado de la Semana: ${fmtMoneyPlain(r.bonus)}`;
         return line;
       })

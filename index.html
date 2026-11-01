@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=91" />
+  <link rel="stylesheet" href="styles.css?v=92" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=91" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=92" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -239,6 +239,7 @@
               <h3>📊 Ascensos y descensos de la semana</h3>
               <span class="muted pg-promo-rules" id="pg-promo-rules"></span>
             </div>
+            <p class="muted pg-promo-hint">Nada sale marcado: revisa ausencias y comportamiento IC y marca solo los que sí van. Solo tú ves esta sección.</p>
             <div class="pg-promo-grid">
               <div class="pg-promo-col up">
                 <h4>⬆️ Ascensos <span id="pg-up-count"></span></h4>
@@ -250,6 +251,15 @@
                 <div id="pg-down-list"></div>
                 <button type="button" id="pg-copy-down">📋 Copiar descensos</button>
               </div>
+            </div>
+            <div class="pg-promo-add">
+              <select id="pg-add-emp" class="text-input" aria-label="Empleado"></select>
+              <select id="pg-add-dir" class="text-input" aria-label="Tipo">
+                <option value="up">⬆️ Ascenso</option>
+                <option value="down">⬇️ Descenso</option>
+              </select>
+              <input id="pg-add-why" class="text-input" maxlength="140" placeholder="Motivo (p. ej. buen comportamiento IC)" />
+              <button type="button" id="pg-add-btn" class="ghost">➕ Añadir a la lista</button>
             </div>
             <div class="pg-actions pg-promo-actions">
               <button type="button" id="pg-apply-ranks" class="ghost">✅ Aplicar rangos en Gestión</button>
@@ -557,7 +567,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 91 - Aguila Motors</footer>
+    <footer class="app-version">Versión 92 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -875,7 +885,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=91"></script>
-  <script src="app.js?v=91"></script>
+  <script src="catalogo/vehiculos.js?v=92"></script>
+  <script src="app.js?v=92"></script>
 </body>
 </html>

@@ -1414,6 +1414,31 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .pg-promo-empty { margin: 4px 0; font-size: 0.85rem; }
 .pg-promo-cand { margin: 2px 0 0; font-size: 0.8rem; color: #ffcf94; }
 .pg-promo-actions { margin-top: 10px; }
+.pg-promo-hint { margin: 2px 0 10px; font-size: 0.78rem; }
+.pg-promo-row { cursor: default; border: 1px solid transparent; opacity: .72; transition: opacity .15s, border-color .15s; }
+.pg-promo-row.on { opacity: 1; border-color: rgba(255, 177, 92, 0.45); }
+.pg-promo-row > span { flex: 1; }
+.pg-promo-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #ff9a1f; flex: none; }
+.pg-promo-top { display: flex !important; flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 6px !important; }
+.pg-promo-top .pg-strike { margin-left: 0; }
+.pg-promo-tag { font-style: normal; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: rgba(120, 170, 255, .16); color: #9cc0ff; }
+.pg-promo-why { margin-top: 4px; padding: 6px 9px !important; font-size: 0.8rem !important; min-height: 0 !important; }
+.pg-promo-add { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 8px; margin-top: 12px; }
+.pg-promo-add #pg-add-why { grid-column: 1 / -1; }
+.pg-promo-add .text-input { min-width: 0; padding: 8px 10px; font-size: 0.85rem; }
+.pg-chip-btn { flex: none; width: 24px; height: 24px; min-height: 0; padding: 0; border-radius: 999px; border: 1px solid #5c3a2a; background: #2a1712; color: #ffb3a3; font-size: 12px; font-weight: 800; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: none; text-transform: none; letter-spacing: 0; }
+.pg-chip-btn:hover { background: #45201a; color: #fff; }
+.pg-promo-row .pg-chip-btn { align-self: flex-start; }
+.pg-warn-chip.manual { border-color: rgba(120, 170, 255, .45); }
+.pg-warn-chip.off { opacity: .7; border-style: dashed; }
+.pg-warn-chip.off b { text-decoration: line-through; }
+.pg-forgiven, .pg-acc { margin-top: 10px; align-items: center; }
+.pg-strike-tools { margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(255, 112, 90, .3); }
+.pg-strike-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.pg-strike-add input { grid-column: 1 / -1; grid-row: 2; }
+.pg-strike-add .text-input { min-width: 0; padding: 8px 10px; font-size: 0.85rem; }
+.pg-strike-add button { white-space: nowrap; }
+
 .pg-rules-box { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 10px; padding: 12px; border-radius: 12px; border: 1px solid #3a2c1d; background: #120e0a; }
 .pg-rules-box label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); }
 .pg-rules-box button { align-self: end; }
@@ -1755,3 +1780,4 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .ticket-card { display: flex; flex-direction: column; }
 .ticket-card .ticket-logo { flex: 1 1 auto; min-height: 160px; padding: 18px 10px 8px; }
 .ticket-card .ticket-logo img { width: min(78%, 360px); height: auto; max-height: 360px; opacity: .9; filter: drop-shadow(0 0 28px rgba(249,125,2,.35)) drop-shadow(0 12px 22px rgba(0,0,0,.55)); }
+.pg-promo-add #pg-add-btn { grid-column: 1 / -1; }
