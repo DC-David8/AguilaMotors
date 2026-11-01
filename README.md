@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 83 · 1 de noviembre de 2026
+- Caja: **iconos arcoíris**, cada pieza y servicio con su propio color y un brillo suave detrás (pintura rosa, neones morado, luces amarillo, turbo rojo, transmisión celeste, suspensión verde…). Colores en `PRODUCT_ICON_COLORS`.
+- **Pestañas de gama con su color:** Motos verde agua, Gama Baja verde, Gama Media amarillo, Gama Alta naranja, Gama VIP morado, Camiones azul y Aéreos celeste (la activa se rellena de su color). En el móvil, rayita de color en el menú de categorías y el nombre de la categoría en su color.
+
 ### Versión 82 · 1 de noviembre de 2026
 - **Barra lateral en PC** (pantallas de 1100 px o más): logo, módulos en vertical, **cuenta atrás del cierre de la semana** (con el cambio de hora de España) y la tarjeta de sesión abajo. En móvil y tablet no cambia nada.
 - **Pagos → ranking con barras de progreso:** rayita blanca en el mínimo y verde en la meta de ascenso, con el texto de cuánto falta para ascender o para evitar el strike.

@@ -1698,3 +1698,31 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
   body.has-rail nav.tabs .tab { font-size: 0.95rem; letter-spacing: .06em; }
   body.has-rail nav.tabs .tab .tab-ic { width: 20px; height: 20px; margin-right: 12px; }
 }
+
+/* v83 · Pestañas de gama con su color (Motos verde agua, Baja verde, Media amarillo,
+   Alta naranja, VIP morado, Camiones azul, Aéreos celeste) */
+.cat-tab[data-cat="motos"] { --gc: #14c3a8; --gl: #7ff0dd; }
+.cat-tab[data-cat="gama_baja"] { --gc: #4bbf2a; --gl: #a7ec8c; }
+.cat-tab[data-cat="gama_media"] { --gc: #f2b705; --gl: #ffe27a; }
+.cat-tab[data-cat="gama_alta"] { --gc: #f97d02; --gl: #ffb15c; }
+.cat-tab[data-cat="gama_vip"] { --gc: #a64dff; --gl: #dcb0ff; }
+.cat-tab[data-cat="camiones"] { --gc: #2f6dff; --gl: #a9c3ff; }
+.cat-tab[data-cat="aereos"] { --gc: #20a8e8; --gl: #9fe0ff; }
+.cat-tab[data-cat="motos"], .cat-tab[data-cat="gama_baja"], .cat-tab[data-cat="gama_media"], .cat-tab[data-cat="gama_alta"],
+.cat-tab[data-cat="gama_vip"], .cat-tab[data-cat="camiones"], .cat-tab[data-cat="aereos"] {
+  color: var(--gl); border-color: color-mix(in srgb, var(--gc) 55%, transparent);
+}
+.cat-tab[data-cat].is-active[data-cat="motos"], .cat-tab.is-active[data-cat="gama_baja"], .cat-tab.is-active[data-cat="gama_media"], .cat-tab.is-active[data-cat="gama_alta"],
+.cat-tab.is-active[data-cat="gama_vip"], .cat-tab.is-active[data-cat="camiones"], .cat-tab.is-active[data-cat="aereos"] {
+  background: linear-gradient(180deg, var(--gl), var(--gc)); color: #0d0905; border-color: transparent;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--gc) 55%, transparent);
+}
+.m-nav-item[data-cat="motos"] { box-shadow: inset 4px 0 0 #14c3a8; }
+.m-nav-item[data-cat="gama_baja"] { box-shadow: inset 4px 0 0 #4bbf2a; }
+.m-nav-item[data-cat="gama_media"] { box-shadow: inset 4px 0 0 #f2b705; }
+.m-nav-item[data-cat="gama_alta"] { box-shadow: inset 4px 0 0 #f97d02; }
+.m-nav-item[data-cat="gama_vip"] { box-shadow: inset 4px 0 0 #a64dff; }
+.m-nav-item[data-cat="camiones"] { box-shadow: inset 4px 0 0 #2f6dff; }
+.m-nav-item[data-cat="aereos"] { box-shadow: inset 4px 0 0 #20a8e8; }
+#m-cat-label[data-cat="motos"] { color: #7ff0dd; } #m-cat-label[data-cat="gama_baja"] { color: #a7ec8c; } #m-cat-label[data-cat="gama_media"] { color: #ffe27a; }
+#m-cat-label[data-cat="gama_alta"] { color: #ffb15c; } #m-cat-label[data-cat="gama_vip"] { color: #dcb0ff; } #m-cat-label[data-cat="camiones"] { color: #a9c3ff; } #m-cat-label[data-cat="aereos"] { color: #9fe0ff; }

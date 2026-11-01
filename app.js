@@ -971,9 +971,21 @@ function productIconKey(name) {
   return "reparacion";
 }
 
+// Iconos "arcoiris": cada pieza o servicio con su propio color (v83).
+const PRODUCT_ICON_COLORS = {
+  pintura: "#ff5fa2", neon: "#c45cff", luces: "#ffe066", rueda: "#9aa7b8", humo: "#d0d6e0",
+  carroceria: "#ff8a3d", claxon: "#ffd23f", tintado: "#7f8cff", turbo: "#ff4d4d", motor: "#ff7a1a",
+  transmision: "#4dd2ff", blindaje: "#3d8bff", suspension: "#5ee38a", frenos: "#ff3b5c", ft: "#ffcc00",
+  reparacion: "#5ee38a", limpieza: "#6fd6ff", gas: "#ffb020", grua: "#ffd23f", mando: "#c45cff",
+  bayeta: "#6fd6ff", nitro: "#3df5ff", camaleon: "#ff5fa2", compra: "#5ee38a", gruaaerea: "#4dd2ff",
+  rescate: "#ff4d4d", desvuelco: "#ffb020",
+};
+
 function buildProductIconSvg(name) {
-  const d = PRODUCT_ICON_PATHS[productIconKey(name)];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf94"/><stop offset="1" stop-color="#f97d02"/></linearGradient><radialGradient id="b"><stop offset="0" stop-color="#3a2410"/><stop offset="1" stop-color="#140e09"/></radialGradient></defs><rect x="-6" y="-6" width="36" height="36" rx="9" fill="url(#b)"/><g fill="none" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
+  const key = productIconKey(name);
+  const d = PRODUCT_ICON_PATHS[key];
+  const col = PRODUCT_ICON_COLORS[key] || "#ffcf94";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${col}"/></linearGradient><radialGradient id="b"><stop offset="0" stop-color="${col}33"/><stop offset="1" stop-color="#120d09"/></radialGradient></defs><rect x="-6" y="-6" width="36" height="36" rx="9" fill="url(#b)"/><g fill="none" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
@@ -1886,6 +1898,7 @@ function setupCaja() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "cat-tab" + (c.key === state.activeCategory ? " is-active" : "");
+      btn.dataset.cat = c.key;
       btn.textContent = c.label;
       btn.addEventListener("click", () => {
         state.activeCategory = c.key;
@@ -4731,13 +4744,13 @@ function setupMobileNav() {
     catsEl.hidden = !showCats;
     if (showCats) {
       document.querySelectorAll("#cat-tabs .cat-tab").forEach((ct) => {
-        catsEl.appendChild(
-          navButton(ct.textContent.trim(), ct.classList.contains("is-active"), () => {
-            ct.click();
-            close();
-            byId("product-grid")?.scrollIntoView({ block: "start", behavior: "smooth" });
-          })
-        );
+        const item = navButton(ct.textContent.trim(), ct.classList.contains("is-active"), () => {
+          ct.click();
+          close();
+          byId("product-grid")?.scrollIntoView({ block: "start", behavior: "smooth" });
+        });
+        if (ct.dataset.cat) item.dataset.cat = ct.dataset.cat;
+        catsEl.appendChild(item);
       });
     }
   }
@@ -4772,7 +4785,10 @@ function setupMobileNav() {
   // Nombre de la categoria activa en el boton "Categoria ▾".
   const syncCat = () => {
     const active = document.querySelector("#cat-tabs .cat-tab.is-active");
-    if (catLabel) catLabel.textContent = active ? active.textContent.trim() : "";
+    if (catLabel) {
+      catLabel.textContent = active ? active.textContent.trim() : "";
+      catLabel.dataset.cat = active?.dataset.cat || "";
+    }
   };
   new MutationObserver(syncCat).observe(byId("cat-tabs"), { childList: true, subtree: true, attributes: true });
   syncCat();
