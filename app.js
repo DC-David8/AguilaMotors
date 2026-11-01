@@ -730,14 +730,130 @@ function weekStrike(wk, id, name, gross, noPay) {
   return { on: false, auto, forgiven: true, reason: adj.m || "" };
 }
 async function saveStrikeAdj(wk, id, name, value) {
+  return saveStrikeAdjMany([{ wk, value }], id, name);
+}
+// Varios cambios de una persona de una vez: [{ wk, value }] (value null = como lo calcula la app).
+async function saveStrikeAdjMany(changes, id, name) {
   const next = JSON.parse(JSON.stringify(STRIKE_ADJ || {}));
-  const w = next[wk] || (next[wk] = {});
-  delete w[`n:${normalizeKeySimple(name)}`];
-  if (value) w[strikeKey(id, name)] = { ...value, por: AUTH.name || "", at: new Date().toISOString() };
-  else delete w[strikeKey(id, name)];
-  if (!Object.keys(w).length) delete next[wk];
+  for (const { wk, value } of changes) {
+    const w = next[wk] || (next[wk] = {});
+    delete w[`n:${normalizeKeySimple(name)}`];
+    if (value) w[strikeKey(id, name)] = { ...value, por: AUTH.name || "", at: new Date().toISOString() };
+    else delete w[strikeKey(id, name)];
+    if (!Object.keys(w).length) delete next[wk];
+  }
   await cvCloud.upsert("app_settings", [{ key: "strike_adj", value: next }], "key");
   STRIKE_ADJ = next;
+}
+
+// Historial de strikes de una persona en las semanas cerradas (la mas reciente primero).
+function strikeHistoryOf(id, name) {
+  const out = [];
+  let streak = true;
+  for (const w of STRIKE_HIST) {
+    const r = strikeRowIn(w, id, name);
+    if (!r || r.noPay) continue;
+    const wk = String(w.semana);
+    const adj = strikeAdjFor(wk, id, name);
+    const auto = !!r.strike;
+    const on = adj ? !!adj.s : auto;
+    const forgiven = !!(adj && !adj.s);
+    const counted = streak && on;
+    if (streak && !on && !forgiven) streak = false;
+    out.push({ wk, hasta: String(w.hasta || ""), auto, on, forgiven, manual: !!adj?.s && !auto, motivo: adj?.m || r.strikeMotivo || (auto ? strikeReason(r.gross || 0) : ""), counted, gross: r.gross || 0 });
+  }
+  return out;
+}
+
+// Editor de strikes de una persona (solo Jefe Aguila): historial por semana
+// cerrada, +1 / −1 / quitar todos. onDone se llama tras guardar.
+function buildStrikeEditor(emp, onDone) {
+  const name = fullName(emp);
+  const id = emp.id;
+  const mk = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  const dm = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "");
+  const box = mk("div", "strike-editor");
+  const hist = strikeHistoryOf(id, name);
+  const n = strikesBefore(id, name);
+  const head = mk("div", "strike-ed-head");
+  head.appendChild(mk("b", "", `Strikes de ${name}`));
+  head.appendChild(mk("span", "pg-strike" + (n >= STRIKE_MAX ? " max" : ""), `${n >= STRIKE_MAX ? "🚫" : "⚠️"} ${n}/${STRIKE_MAX} seguidos`));
+  box.appendChild(head);
+  const run = async (btn, changes) => {
+    btn.disabled = true;
+    try {
+      await saveStrikeAdjMany(changes, id, name);
+      onDone?.();
+    } catch (err) {
+      btn.disabled = false;
+      alert(`No se pudo guardar: ${err.message || err}`);
+    }
+  };
+  // value para que una semana quede como "want": si coincide con lo automatico, se borra el ajuste.
+  const valueFor = (h, want, motivo) => (want === h.auto ? null : { s: want, m: motivo });
+  const acts = mk("div", "strike-ed-acts");
+  const plus = mk("button", "", "＋1 strike");
+  plus.type = "button";
+  // +1: la semana mas reciente sin strike (o con el strike quitado) que alarga la racha.
+  const breaker = hist.find((h) => !h.on);
+  plus.disabled = !breaker;
+  plus.title = breaker ? `Se marca la semana del ${dm(breaker.wk)}` : "No hay semanas cerradas donde ponerlo";
+  plus.addEventListener("click", () => {
+    const m = prompt(`Poner un strike a ${name} (semana del ${dm(breaker.wk)}).\n\nMotivo:`, "");
+    if (m === null) return;
+    if (!m.trim()) return alert("Escribe el motivo del strike.");
+    run(plus, [{ wk: breaker.wk, value: valueFor(breaker, true, m.trim()) }]);
+  });
+  const minus = mk("button", "ghost", "−1 strike");
+  minus.type = "button";
+  const lastOn = hist.find((h) => h.counted);
+  minus.disabled = !lastOn;
+  minus.addEventListener("click", () => {
+    const m = prompt(`Quitar a ${name} el strike de la semana del ${dm(lastOn.wk)}.\n\nMotivo (opcional):`, "");
+    if (m === null) return;
+    run(minus, [{ wk: lastOn.wk, value: valueFor(lastOn, false, m.trim() || "quitado por el jefe") }]);
+  });
+  const all = mk("button", "ghost", "Quitar todos");
+  all.type = "button";
+  const counted = hist.filter((h) => h.counted);
+  all.disabled = !counted.length;
+  all.addEventListener("click", () => {
+    const m = prompt(`Quitar los ${counted.length} strikes seguidos de ${name}.\n\nMotivo (opcional):`, "");
+    if (m === null) return;
+    run(all, counted.map((h) => ({ wk: h.wk, value: valueFor(h, false, m.trim() || "quitado por el jefe") })));
+  });
+  acts.append(plus, minus, all);
+  box.appendChild(acts);
+  const weeks = mk("div", "strike-ed-weeks");
+  if (!hist.length) weeks.appendChild(mk("span", "muted", "Todavía no tiene semanas cerradas."));
+  for (const h of hist.slice(0, 10)) {
+    const b = mk("button", "strike-week" + (h.on ? " on" : "") + (h.forgiven ? " off" : "") + (h.counted ? " counted" : ""));
+    b.type = "button";
+    b.appendChild(mk("b", "", `${dm(h.wk)}–${dm(h.hasta)}`));
+    b.appendChild(mk("span", "", h.on ? `⚠️ ${h.manual ? "✍️ " : ""}${h.motivo || "strike"}` : h.forgiven ? `Quitado${h.motivo ? `: ${h.motivo}` : ""}` : `✅ ${fmtMoney(h.gross)}`));
+    b.title = h.on ? "Clic para quitar este strike" : "Clic para poner un strike esta semana";
+    b.addEventListener("click", () => {
+      if (h.on) {
+        const m = prompt(`Quitar el strike de ${name} de la semana del ${dm(h.wk)}.\n\nMotivo (opcional):`, "");
+        if (m === null) return;
+        run(b, [{ wk: h.wk, value: valueFor(h, false, m.trim() || "quitado por el jefe") }]);
+      } else {
+        const m = prompt(`Poner un strike a ${name} en la semana del ${dm(h.wk)}.\n\nMotivo:`, h.forgiven && h.auto ? "" : "");
+        if (m === null) return;
+        if (!m.trim() && !(h.forgiven && h.auto)) return alert("Escribe el motivo del strike.");
+        run(b, [{ wk: h.wk, value: valueFor(h, true, m.trim()) }]);
+      }
+    });
+    weeks.appendChild(b);
+  }
+  box.appendChild(weeks);
+  box.appendChild(mk("p", "muted strike-ed-hint", "Cuentan los strikes seguidos desde la semana más reciente (marcados en rojo). Un strike quitado no suma ni corta la racha. Los de la semana en curso se gestionan en Pagos."));
+  return box;
 }
 
 function strikeRowIn(week, id, name) {
@@ -4038,6 +4154,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     return normalizeKeySimple(String(s || ""));
   }
 
+  let openStrikeId = null;
   function renderList() {
     const q = normalizeForSearch(searchInput.value);
     const shown = !q
@@ -4055,7 +4172,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       const pctText = e.rank ? (pct ? `${Math.round(pct * 100)}%` : "0%") : "-";
       const sN = hasAccess() ? strikesBefore(e.id, full) : 0;
       tr.innerHTML = `
-        <td class="emp-name-cell"><span class="emp-name-text">${full}</span>${empCloudOn() && AUTH.aguila && !readOnly ? ` <button type="button" class="emp-rename" title="Cambiar nombre (por ejemplo, tras un CK)">✏️</button>` : ""}${sN ? ` <span class="pg-strike${sN >= STRIKE_MAX ? " max" : ""}" title="Strikes seguidos: semanas cerradas sin facturar o sin llegar al mínimo">${sN >= STRIKE_MAX ? "🚫 " : "⚠️ "}${sN}/${STRIKE_MAX}</span>` : ""}</td>
+        <td class="emp-name-cell"><span class="emp-name-text">${full}</span>${empCloudOn() && AUTH.aguila && !readOnly ? ` <button type="button" class="emp-rename" title="Cambiar nombre (por ejemplo, tras un CK)">✏️</button>` : ""}${AUTH.aguila && !readOnly && hasAccess() ? ` <button type="button" class="pg-strike emp-strike-btn${sN >= STRIKE_MAX ? " max" : ""}${sN ? "" : " zero"}" title="Gestionar strikes">${sN >= STRIKE_MAX ? "🚫 " : "⚠️ "}${sN}/${STRIKE_MAX}</button>` : sN ? ` <span class="pg-strike${sN >= STRIKE_MAX ? " max" : ""}" title="Strikes seguidos: semanas cerradas sin facturar o sin llegar al mínimo">${sN >= STRIKE_MAX ? "🚫 " : "⚠️ "}${sN}/${STRIKE_MAX}</span>` : ""}</td>
         <td><select class="text-input emp-rank-select" data-id="${String(e.id)}"></select></td>
         <td class="num" data-pct-cell="${String(e.id)}">${pctText}</td>
         <td><input class="text-input emp-discord-input" type="text" inputmode="numeric" placeholder="ID de Discord" title="ID de Discord: clic derecho sobre la persona → Copiar ID de usuario" /></td>
@@ -4066,6 +4183,26 @@ function setupEmployeesAdminModal({ onChanged }) {
         </td>
       `;
       body.appendChild(tr);
+
+      // Strikes: el Jefe Aguila abre el editor debajo de la fila.
+      tr.querySelector(".emp-strike-btn")?.addEventListener("click", () => {
+        const next = tr.nextElementSibling;
+        if (next?.classList.contains("emp-strike-row")) {
+          next.remove();
+          openStrikeId = null;
+          return;
+        }
+        body.querySelectorAll(".emp-strike-row").forEach((x) => x.remove());
+        openStrikeId = String(e.id);
+        const row = document.createElement("tr");
+        row.className = "emp-strike-row";
+        const td = document.createElement("td");
+        td.colSpan = 7;
+        td.appendChild(buildStrikeEditor(e, () => renderList()));
+        row.appendChild(td);
+        tr.after(row);
+      });
+      if (openStrikeId === String(e.id)) queueMicrotask(() => tr.querySelector(".emp-strike-btn")?.click());
 
       // Cambiar nombre y apellido: solo el Jefe Aguila (por ejemplo, tras un CK).
       tr.querySelector(".emp-rename")?.addEventListener("click", () => {

@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 93 · 1 de noviembre de 2026
+
+- **Gestión de strikes existentes (solo Jefe Aguila):** en Gestión de empleados, el contador de strikes de cada persona (⚠️ N/3) es un botón que abre su historial de semanas cerradas. Desde ahí se puede: poner un strike (＋1, con motivo), quitar el último (−1), quitar todos, o hacer clic en una semana para poner o quitar el strike de esa semana. No hace falta cargar ninguna semana en Pagos. Los demás jefes solo ven el contador.
+
 ### Versión 92 · 1 de noviembre de 2026
 
 - **Ascensos y descensos (solo Jefe Aguila):** la sección ya solo la ve el Jefe Aguila y nada sale marcado; se marcan solo los que sí van tras revisar ausencias y comportamiento IC. Cada fila tiene un campo de motivo que sale en el mensaje de Discord (si está vacío, se usa el texto de siempre) y muestra los strikes de la persona. Además se pueden añadir ascensos o descensos a mano (por ejemplo, por buen o mal comportamiento IC) aunque no lleguen a la meta o al mínimo.
