@@ -231,6 +231,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 86 · 1 de noviembre de 2026
+- Nitro con iconos nuevos: **Instalación de Nitro** = cuentarrevoluciones con la aguja roja disparada y «N₂O»; **Botella de Nitro** = bombona con etiqueta **N₂O**. La pestaña Nitro lleva la bombona con su etiqueta.
+
 ### Versión 85 · 1 de noviembre de 2026
 - Caja: **todas las pestañas de categoría tienen icono pequeño y color propio**, según lo que son: Full Tuning dorado (estrella), Servicios (Taller) verde menta (llave), Servicios (Grúa) gris acero (grúa), Tienda rosa (bolsa), **Camaleónica** y **Neones RGB** con degradado de colores al seleccionarlas, Nitro cian (botella) y Compraventa rojo (documento). Las gamas llevan coche, moto, diamante (VIP), camión o avión.
 - En el móvil, el menú de categorías muestra los mismos iconos en su color.

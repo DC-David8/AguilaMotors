@@ -403,7 +403,7 @@ const CAT_TAB_ICONS = {
   servicios_grua: '<path d="M4 20h16M6 20V8l10-4v4"/><path d="M16 8v5a2 2 0 1 1-2 2"/>',
   tienda: '<path d="M5 8h14l-1 13H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
   camaleonica: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/>',
-  nitro: '<rect x="8" y="6" width="8" height="15" rx="3"/><path d="M10 6V3h4v3M12 10v6M9 13h6"/>',
+  nitro: '<rect x="7" y="5" width="10" height="17" rx="3.8"/><path d="M10.5 5V2.8h3V5M9 2.4h6"/><rect x="7.8" y="10" width="8.4" height="6.5" rx="1" fill="currentColor" stroke="none"/>',
   neones: '<path d="M4 16c2-4 4-4 6 0s4 4 6 0 4-4 4-4"/><path d="M4 10c2-4 4-4 6 0s4 4 6 0"/>',
   compraventa: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>',
   otros: '<circle cx="12" cy="12" r="3"/>',
@@ -975,7 +975,10 @@ const PRODUCT_ICON_PATHS = {
     grua: '<path d="M4 20h16M6 20V8l10-4v4"/><path d="M16 8v5a2 2 0 1 1-2 2"/>',
     mando: '<rect x="8" y="3" width="8" height="18" rx="3"/><circle cx="12" cy="8" r="1.5"/><path d="M10 13h4M10 16h4"/>',
     bayeta: '<path d="M4 8l8-4 8 4-8 12z"/><path d="M8 9l4 6 4-6"/>',
-    nitro: '<rect x="8" y="6" width="8" height="15" rx="3"/><path d="M10 6V3h4v3M12 10v6M9 13h6"/>',
+    // Instalacion de nitro: cuentarrevoluciones con la aguja disparada y "N2O" (v86).
+    nitro: '<path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l5-5" stroke="#ff4d4d"/><circle cx="12" cy="17" r="1.3" fill="{C}"/><path d="M6 13.5l1 .6M8.6 9.8l.6 1M12 8.5v1.2M15.4 9.8l-.6 1"/><text x="12" y="23.3" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="4" fill="{C}" stroke="none">N₂O</text>',
+    // Botella de nitro: bombona con etiqueta "N2O".
+    botella: '<rect x="7" y="5" width="10" height="18" rx="3.8"/><path d="M10.5 5V2.8h3V5M9 2.4h6"/><rect x="7.75" y="10.4" width="8.5" height="6.84" rx="1" fill="{C}" stroke="none"/><text x="12" y="15.3" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="4.1" fill="#0d1416" stroke="none">N₂O</text>',
     camaleon: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/>',
     compra: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>',
     // Helicoptero levantando un coche con el cable.
@@ -985,7 +988,7 @@ const PRODUCT_ICON_PATHS = {
     desvuelco: '<path d="M4 14l2-4h12l2 4v2H4z"/><path d="M8 6a6 6 0 0 1 9 1M17 3v4h-4"/>',
   };
 
-const PRODUCT_ICON_KEYWORDS = [["rescate aéreo","rescate"],["grúa aérea","gruaaerea"],["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["nitro","nitro"],["compraventa","compra"],["desvuelco","desvuelco"]];
+const PRODUCT_ICON_KEYWORDS = [["rescate aéreo","rescate"],["grúa aérea","gruaaerea"],["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["botella","botella"],["nitro","nitro"],["compraventa","compra"],["desvuelco","desvuelco"]];
 
 function productIconKey(name) {
   const n = String(name || "").toLowerCase();
@@ -999,7 +1002,7 @@ const PRODUCT_ICON_COLORS = {
   carroceria: "#ff8a3d", claxon: "#ffd23f", tintado: "#7f8cff", turbo: "#ff4d4d", motor: "#ff7a1a",
   transmision: "#4dd2ff", blindaje: "#3d8bff", suspension: "#5ee38a", frenos: "#ff3b5c", ft: "#ffcc00",
   reparacion: "#5ee38a", limpieza: "#6fd6ff", gas: "#ffb020", grua: "#ffd23f", mando: "#c45cff",
-  bayeta: "#6fd6ff", nitro: "#3df5ff", camaleon: "#ff5fa2", compra: "#5ee38a", gruaaerea: "#4dd2ff",
+  bayeta: "#6fd6ff", nitro: "#3df5ff", botella: "#3df5ff", camaleon: "#ff5fa2", compra: "#5ee38a", gruaaerea: "#4dd2ff",
   rescate: "#ff4d4d", desvuelco: "#ffb020",
 };
 
@@ -1040,7 +1043,8 @@ function buildProductIconSvg(name) {
   const key = productIconKey(name);
   const d = PRODUCT_ICON_PATHS[key];
   const col = PRODUCT_ICON_COLORS[key] || "#ffcf94";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${col}"/></linearGradient><radialGradient id="b"><stop offset="0" stop-color="${col}33"/><stop offset="1" stop-color="#120d09"/></radialGradient></defs><rect x="-6" y="-6" width="36" height="36" rx="9" fill="url(#b)"/><g fill="none" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
+  const dd = String(d || "").split("{C}").join(col);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${col}"/></linearGradient><radialGradient id="b"><stop offset="0" stop-color="${col}33"/><stop offset="1" stop-color="#120d09"/></radialGradient></defs><rect x="-6" y="-6" width="36" height="36" rx="9" fill="url(#b)"/><g fill="none" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${dd}</g></svg>`;
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
