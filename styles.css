@@ -1956,3 +1956,9 @@ dialog.emp-modal { width: min(1180px, 96vw); }
   .emp-kpi b { font-size: 1.1rem; }
   .emp-kpi span { font-size: 0.66rem; }
 }
+/* v95: con muchas personas las filas no se aplastan; se hace scroll */
+.emp-list > *, .emp-srow, .emp-kpi { flex-shrink: 0; }
+.emp-list, .emp-ficha, #employees-admin-modal .modal-card { scrollbar-width: thin; scrollbar-color: #5a4430 transparent; }
+.emp-list::-webkit-scrollbar, .emp-ficha::-webkit-scrollbar { width: 8px; }
+.emp-list::-webkit-scrollbar-thumb, .emp-ficha::-webkit-scrollbar-thumb { background: #5a4430; border-radius: 8px; }
+.emp-list::-webkit-scrollbar-track, .emp-ficha::-webkit-scrollbar-track { background: transparent; }

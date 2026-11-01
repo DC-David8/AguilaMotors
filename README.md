@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 95 · 1 de noviembre de 2026
+
+- **Gestión de empleados:** con muchos empleados las filas del listado se aplastaban unas sobre otras; ahora mantienen su alto y la lista hace scroll. La barra de scroll va en el color oscuro de la página.
+
 ### Versión 94 · 1 de noviembre de 2026
 
 - **Nueva Gestión de empleados por pestañas:** Listado · Nuevo empleado · Strikes · Rangos · Despedidos.
