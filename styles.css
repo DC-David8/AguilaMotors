@@ -1699,8 +1699,7 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
   body.has-rail nav.tabs .tab .tab-ic { width: 20px; height: 20px; margin-right: 12px; }
 }
 
-/* v83 · Pestañas de gama con su color (Motos verde agua, Baja verde, Media amarillo,
-   Alta naranja, VIP morado, Camiones azul, Aéreos celeste) */
+/* v83-85 · Pestañas de categoría con color e icono propio */
 .cat-tab[data-cat="motos"] { --gc: #14c3a8; --gl: #7ff0dd; }
 .cat-tab[data-cat="gama_baja"] { --gc: #4bbf2a; --gl: #a7ec8c; }
 .cat-tab[data-cat="gama_media"] { --gc: #f2b705; --gl: #ffe27a; }
@@ -1708,15 +1707,21 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .cat-tab[data-cat="gama_vip"] { --gc: #a64dff; --gl: #dcb0ff; }
 .cat-tab[data-cat="camiones"] { --gc: #2f6dff; --gl: #a9c3ff; }
 .cat-tab[data-cat="aereos"] { --gc: #20a8e8; --gl: #9fe0ff; }
-.cat-tab[data-cat="motos"], .cat-tab[data-cat="gama_baja"], .cat-tab[data-cat="gama_media"], .cat-tab[data-cat="gama_alta"],
-.cat-tab[data-cat="gama_vip"], .cat-tab[data-cat="camiones"], .cat-tab[data-cat="aereos"] {
-  color: var(--gl); border-color: color-mix(in srgb, var(--gc) 55%, transparent);
+.cat-tab[data-cat="full_tuning"] { --gc: #d4a017; --gl: #ffd966; }
+.cat-tab[data-cat="servicios_taller"] { --gc: #1fb47a; --gl: #8ff0c8; }
+.cat-tab[data-cat="servicios_grua"] { --gc: #7f91a8; --gl: #d3dce8; }
+.cat-tab[data-cat="tienda"] { --gc: #ff6fa8; --gl: #ffc0db; }
+.cat-tab[data-cat="camaleonica"] { --gc: #ff5fa2; --gl: #ffb3d9; --gg: linear-gradient(90deg, #ff5fa2, #ffcf3a, #5ee38a, #4dd2ff); }
+.cat-tab[data-cat="nitro"] { --gc: #00c8d8; --gl: #8ff7ff; }
+.cat-tab[data-cat="neones"] { --gc: #c45cff; --gl: #f0b3ff; --gg: linear-gradient(90deg, #ff3b5c, #ffcc00, #5ee38a, #3d8bff, #c45cff); }
+.cat-tab[data-cat="compraventa"] { --gc: #ff5a4f; --gl: #ffaaa3; }
+.cat-tab[data-cat] { color: var(--gl, inherit); border-color: color-mix(in srgb, var(--gc, #554433) 55%, transparent); display: inline-flex; align-items: center; gap: 6px; }
+.cat-tab[data-cat].is-active {
+  background: var(--gg, linear-gradient(180deg, var(--gl), var(--gc))); color: #0d0905; border-color: transparent;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--gc, #f97d02) 55%, transparent);
 }
-.cat-tab[data-cat].is-active[data-cat="motos"], .cat-tab.is-active[data-cat="gama_baja"], .cat-tab.is-active[data-cat="gama_media"], .cat-tab.is-active[data-cat="gama_alta"],
-.cat-tab.is-active[data-cat="gama_vip"], .cat-tab.is-active[data-cat="camiones"], .cat-tab.is-active[data-cat="aereos"] {
-  background: linear-gradient(180deg, var(--gl), var(--gc)); color: #0d0905; border-color: transparent;
-  box-shadow: 0 0 16px color-mix(in srgb, var(--gc) 55%, transparent);
-}
+.cat-ic { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-nav-item .cat-ic { width: 18px; height: 18px; margin-right: 8px; vertical-align: -3px; }
 .m-nav-item[data-cat="motos"] { box-shadow: inset 4px 0 0 #14c3a8; }
 .m-nav-item[data-cat="gama_baja"] { box-shadow: inset 4px 0 0 #4bbf2a; }
 .m-nav-item[data-cat="gama_media"] { box-shadow: inset 4px 0 0 #f2b705; }
@@ -1726,3 +1731,22 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .m-nav-item[data-cat="aereos"] { box-shadow: inset 4px 0 0 #20a8e8; }
 #m-cat-label[data-cat="motos"] { color: #7ff0dd; } #m-cat-label[data-cat="gama_baja"] { color: #a7ec8c; } #m-cat-label[data-cat="gama_media"] { color: #ffe27a; }
 #m-cat-label[data-cat="gama_alta"] { color: #ffb15c; } #m-cat-label[data-cat="gama_vip"] { color: #dcb0ff; } #m-cat-label[data-cat="camiones"] { color: #a9c3ff; } #m-cat-label[data-cat="aereos"] { color: #9fe0ff; }
+.m-nav-item[data-cat="full_tuning"] { box-shadow: inset 4px 0 0 #d4a017; } .m-nav-item[data-cat="servicios_taller"] { box-shadow: inset 4px 0 0 #1fb47a; }
+.m-nav-item[data-cat="servicios_grua"] { box-shadow: inset 4px 0 0 #7f91a8; } .m-nav-item[data-cat="tienda"] { box-shadow: inset 4px 0 0 #ff6fa8; }
+.m-nav-item[data-cat="camaleonica"] { box-shadow: inset 4px 0 0 #ff5fa2; } .m-nav-item[data-cat="nitro"] { box-shadow: inset 4px 0 0 #00c8d8; }
+.m-nav-item[data-cat="neones"] { box-shadow: inset 4px 0 0 #c45cff; } .m-nav-item[data-cat="compraventa"] { box-shadow: inset 4px 0 0 #ff5a4f; }
+.m-nav-item[data-cat="motos"] .cat-ic { stroke: #7ff0dd; }
+.m-nav-item[data-cat="gama_baja"] .cat-ic { stroke: #a7ec8c; }
+.m-nav-item[data-cat="gama_media"] .cat-ic { stroke: #ffe27a; }
+.m-nav-item[data-cat="gama_alta"] .cat-ic { stroke: #ffb15c; }
+.m-nav-item[data-cat="gama_vip"] .cat-ic { stroke: #dcb0ff; }
+.m-nav-item[data-cat="camiones"] .cat-ic { stroke: #a9c3ff; }
+.m-nav-item[data-cat="aereos"] .cat-ic { stroke: #9fe0ff; }
+.m-nav-item[data-cat="full_tuning"] .cat-ic { stroke: #ffd966; }
+.m-nav-item[data-cat="servicios_taller"] .cat-ic { stroke: #8ff0c8; }
+.m-nav-item[data-cat="servicios_grua"] .cat-ic { stroke: #d3dce8; }
+.m-nav-item[data-cat="tienda"] .cat-ic { stroke: #ffc0db; }
+.m-nav-item[data-cat="camaleonica"] .cat-ic { stroke: #ffb3d9; }
+.m-nav-item[data-cat="nitro"] .cat-ic { stroke: #8ff7ff; }
+.m-nav-item[data-cat="neones"] .cat-ic { stroke: #f0b3ff; }
+.m-nav-item[data-cat="compraventa"] .cat-ic { stroke: #ffaaa3; }

@@ -391,6 +391,28 @@ const PRODUCT_CATEGORIES = [
   { key: "otros", label: "Otros" },
 ];
 
+// Iconos pequenos de las pestanas de categoria (v85).
+const CAT_TAB_ICONS = {
+  motos: '<circle cx="5.5" cy="16.5" r="3.5"/><circle cx="18.5" cy="16.5" r="3.5"/><path d="M5.5 16.5l4-6h5l4 6M9.5 10.5L8 7H5.5M14.5 10.5l1.5-3.5h2.5"/>',
+  car: '<path d="M3 15l2-5h14l2 5v3H3z"/><path d="M7 10l2-3h6l2 3"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/>',
+  vip: '<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6 3-6M12 9v12"/>',
+  camiones: '<path d="M2 6h11v10H2zM13 10h5l3 3v3h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+  aereos: '<path d="M21 15l-8-4V5a1.5 1.5 0 0 0-3 0v6l-8 4v2l8-2v4l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-4l8 2z"/>',
+  full_tuning: '<path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z"/>',
+  servicios_taller: '<path d="M14 6a4 4 0 0 0 5 5l-9 9a2 2 0 0 1-3-3l9-9a4 4 0 0 0 5-5l-2 2-2-2z"/>',
+  servicios_grua: '<path d="M4 20h16M6 20V8l10-4v4"/><path d="M16 8v5a2 2 0 1 1-2 2"/>',
+  tienda: '<path d="M5 8h14l-1 13H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+  camaleonica: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/>',
+  nitro: '<rect x="8" y="6" width="8" height="15" rx="3"/><path d="M10 6V3h4v3M12 10v6M9 13h6"/>',
+  neones: '<path d="M4 16c2-4 4-4 6 0s4 4 6 0 4-4 4-4"/><path d="M4 10c2-4 4-4 6 0s4 4 6 0"/>',
+  compraventa: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/>',
+  otros: '<circle cx="12" cy="12" r="3"/>',
+};
+function catTabIconSvg(key) {
+  const d = CAT_TAB_ICONS[key] || (/^gama_(baja|media|alta)$/.test(key) ? CAT_TAB_ICONS.car : CAT_TAB_ICONS[key === "gama_vip" ? "vip" : "otros"]);
+  return `<svg class="cat-ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+}
+
 function categoryLabel(key) {
   return PRODUCT_CATEGORIES.find((c) => c.key === key)?.label || "Otros";
 }
@@ -1932,7 +1954,8 @@ function setupCaja() {
       btn.type = "button";
       btn.className = "cat-tab" + (c.key === state.activeCategory ? " is-active" : "");
       btn.dataset.cat = c.key;
-      btn.textContent = c.label;
+      btn.innerHTML = catTabIconSvg(c.key);
+      btn.append(c.label);
       btn.addEventListener("click", () => {
         state.activeCategory = c.key;
         renderProductGrid();
@@ -4783,6 +4806,8 @@ function setupMobileNav() {
           byId("product-grid")?.scrollIntoView({ block: "start", behavior: "smooth" });
         });
         if (ct.dataset.cat) item.dataset.cat = ct.dataset.cat;
+        const cic = ct.querySelector(".cat-ic");
+        if (cic) item.prepend(cic.cloneNode(true));
         catsEl.appendChild(item);
       });
     }

@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 85 · 1 de noviembre de 2026
+- Caja: **todas las pestañas de categoría tienen icono pequeño y color propio**, según lo que son: Full Tuning dorado (estrella), Servicios (Taller) verde menta (llave), Servicios (Grúa) gris acero (grúa), Tienda rosa (bolsa), **Camaleónica** y **Neones RGB** con degradado de colores al seleccionarlas, Nitro cian (botella) y Compraventa rojo (documento). Las gamas llevan coche, moto, diamante (VIP), camión o avión.
+- En el móvil, el menú de categorías muestra los mismos iconos en su color.
+
 ### Versión 84 · 1 de noviembre de 2026
 - Caja: los **packs de servicios** («Reparación + Limpieza», «Repostaje + Limpieza», «Reparación + Limpieza + Repostaje»…) tienen un **icono circular partido**: en 2 mitades o en 3 partes, cada una con el icono y el color de su servicio (reparación verde, limpieza celeste, repostaje ámbar), en el orden del nombre. Vale para Taller y Grúa, y para cualquier producto nuevo con «+» en el nombre.
 
