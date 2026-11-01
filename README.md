@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 91 · 1 de noviembre de 2026
+
+- **Pagos:** se quitan el recuadro «Datos compartidos» y la sección «Ver detalle (facturas y kits por separado)», que ya no se usaban. El ranking, el total a pagar y «Copiar para Discord» siguen igual.
+
 ### Versión 90 · 1 de noviembre de 2026
 - Caja (PC): vuelve el **logo grande del Aguila Motors** en el hueco bajo los botones del ticket, con un brillo naranja suave. En el móvil no se muestra (no hay hueco).
 

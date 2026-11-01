@@ -2670,20 +2670,23 @@ function setupContabilidad() {
     ignoredOtherBusiness: 0,
   };
 
+  // El detalle de facturas/kits por separado se quito de la pagina (v91): si no
+  // existe, se escribe en un elemento suelto que no se ve.
+  const off = (id, tag = "div") => byId(id) || document.createElement(tag);
   const refs = {
     input: byId("conta-input"),
-    invLine1: byId("inv-line1"),
-    kitsLine1: byId("kits-line1"),
-    kitsLine2: byId("kits-line2"),
-    kitsLine3: byId("kits-line3"),
+    invLine1: off("inv-line1"),
+    kitsLine1: off("kits-line1"),
+    kitsLine2: off("kits-line2"),
+    kitsLine3: off("kits-line3"),
     kitPrice: byId("kit-price"),
     kitsSelf: byId("kits-line-self"),
-    loaded: byId("conta-loaded"),
-    invTable: byId("inv-table"),
-    salesTable: byId("sales-table"),
-    totalGeneral: byId("conta-total-general"),
+    loaded: off("conta-loaded"),
+    invTable: off("inv-table", "tbody"),
+    salesTable: off("sales-table", "tbody"),
+    totalGeneral: off("conta-total-general"),
     totalAPagar: byId("conta-total-a-pagar"),
-    footer: byId("conta-footer"),
+    footer: off("conta-footer"),
   };
 
   if (refs.kitPrice) refs.kitPrice.value = getKitPrice();

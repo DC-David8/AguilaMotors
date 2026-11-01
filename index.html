@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=90" />
+  <link rel="stylesheet" href="styles.css?v=91" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=90" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=91" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -266,72 +266,6 @@
             </div>
           </section>
 
-          <div class="shared-box">
-            <h3>Datos compartidos</h3>
-            <p class="muted" id="shared-status"></p>
-            <div class="actions">
-              <button type="button" id="shared-editor" class="ghost small">Soy el encargado</button>
-              <button type="button" id="shared-export" hidden>Exportar datos (datos.js)</button>
-              <button type="button" id="shared-copy" class="ghost" hidden>Copiar datos</button>
-              <button type="button" id="shared-import" class="ghost" hidden>Cargar los publicados en esta PC</button>
-              <button type="button" id="shared-exit" class="ghost" hidden>Salir del modo encargado</button>
-            </div>
-          </div>
-
-          <details class="pg-detail">
-            <summary>Ver detalle (facturas y kits por separado)</summary>
-            <div class="summary-grid">
-              <article class="mini-card">
-                <h3>Facturas</h3>
-                <p id="inv-line1">Total: -</p>
-              </article>
-              <article class="mini-card">
-                <h3>Venta de Kits</h3>
-                <p id="kits-line1">Ventas: -</p>
-                <p id="kits-line2">Unidades: -</p>
-                <p id="kits-line-self" title="Kits en los que Vendedor y Comprador son la misma persona">A sí mismos: -</p>
-                <p id="kits-line3">Total: -</p>
-              </article>
-            </div>
-
-            <h3>Facturas por empleado</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Empleado</th>
-                    <th class="num">Total</th>
-                    <th class="num">% según rango</th>
-                    <th class="num">Pendiente de Pago</th>
-                  </tr>
-                </thead>
-                <tbody id="inv-table"></tbody>
-              </table>
-            </div>
-
-            <h3>Kits por empleado</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Empleado</th>
-                    <th class="num">Unidades</th>
-                    <th class="num" title="Kits que se vendió a sí mismo">A sí mismo</th>
-                    <th class="num">% según rango</th>
-                    <th class="num">Pendiente de Pago</th>
-                  </tr>
-                </thead>
-                <tbody id="sales-table"></tbody>
-              </table>
-            </div>
-
-            <div class="kpi-line">
-              <span>Total general</span>
-              <strong id="conta-total-general">$ 0</strong>
-            </div>
-            <p class="muted" id="conta-loaded">Sin datos</p>
-            <p class="muted" id="conta-footer">Facturas: 0 | Kits: 0</p>
-          </details>
         </section>
       </div>
     </section>
@@ -623,7 +557,7 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 90 - Aguila Motors</footer>
+    <footer class="app-version">Versión 91 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -941,7 +875,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=90"></script>
-  <script src="app.js?v=90"></script>
+  <script src="catalogo/vehiculos.js?v=91"></script>
+  <script src="app.js?v=91"></script>
 </body>
 </html>
