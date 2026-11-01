@@ -231,6 +231,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 80 · 1 de noviembre de 2026
+- **Gama de tuning para los 106 vehículos que no la tenían** (Coches, Street Tuning, King of the Street, Coches Rally, Vapid), según su precio de concesionario: **menos de $ 50.000 → Gama Baja**, **de $ 50.000 a $ 149.999 → Gama Media**, **$ 150.000 o más → Gama Alta** (análisis del 1/11/2026 con los precios de las gamas del catálogo). Límites en `CAT_GAMA_LIMITS`.
+- La Caja salta sola a esa gama al buscar el vehículo; el Catálogo y el Almacén muestran la gama como etiqueta.
+- **Vehículos de donación:** los que tienen precio 9999999999999 se cobran con **Gama VIP** y salen como «Donación (VIP)» (sin precios de compraventa).
+- Bicicletas: aviso de que no se tunean. Barcos: siguen pidiendo elegir gama hasta tener precio.
+- Se calcula al momento con el precio del catálogo: si cambias un precio con ✏️, su gama se ajusta sola.
+
 ### Versión 79 · 1 de noviembre de 2026
 - Caja: botones del ticket reorganizados. Arriba, pequeños: **Deshacer · Quitar · Copiar total**. Abajo, grandes: **🧹 Limpiar** y **📋 Copiar concepto** (el más grande y destacado, ocupa dos tercios). Igual en el móvil.
 

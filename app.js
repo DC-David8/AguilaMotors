@@ -5901,7 +5901,12 @@ function setupCompraventa() {
       c.appendChild(pic);
       const body = el("div", "cv-body");
       body.appendChild(el("h4", "", v.nombre));
-      body.appendChild(el("div", "cvc-meta", [v.categoria, v.concesionario, v.seccion].filter(Boolean).join(" · ")));
+      const gk = catGamaKey(v);
+      const gl = gk ? categoryLabel(gk) : "";
+      const meta = el("div", "cvc-meta");
+      if (gl) meta.appendChild(el("span", "cv-gama-chip", gl));
+      meta.append(` ${[gl === v.categoria ? "" : v.categoria, v.concesionario, v.seccion].filter(Boolean).join(" · ")}`);
+      body.appendChild(meta);
       const dl = el("dl");
       const row = (k, val, cls = "") => {
         dl.appendChild(el("dt", "", k));
@@ -5909,7 +5914,7 @@ function setupCompraventa() {
       };
       const ref = cvRef(v.precio);
       if (!ref) {
-        row("Concesionario", "Pendiente", "cvc-pend");
+        row("Concesionario", catPriceText(v), catIsDonation(v) ? "cvc-new" : "cvc-pend");
       } else {
         row("Concesionario", fmtMoney(v.precio), "cvc-new");
         row("Comprar", moneyRange(ref.buy), "cvc-buy");
@@ -6116,8 +6121,12 @@ function setupCompraventa() {
     // Gama / categoria del catalogo (y concesionario) bajo el titulo.
     if (named && (named.categoria || named.concesionario)) {
       const meta = el("div", "cv-gama");
-      if (named.categoria) meta.appendChild(el("span", "cv-gama-chip", named.categoria));
-      if (named.concesionario) meta.appendChild(el("span", "cv-gama-dealer", named.concesionario));
+      const gk = catGamaKey(named);
+      const gl = gk ? categoryLabel(gk) : "";
+      if (gl) meta.appendChild(el("span", "cv-gama-chip", gl));
+      const rest = [named.categoria && named.categoria !== gl ? named.categoria : "", named.concesionario].filter(Boolean).join(" · ");
+      if (!gl && named.categoria) meta.appendChild(el("span", "cv-gama-chip", named.categoria));
+      if (rest) meta.appendChild(el("span", "cv-gama-dealer", gl ? rest : named.concesionario || ""));
       body.appendChild(meta);
     }
     const dl = el("dl");
@@ -7079,8 +7088,34 @@ function catSlug(s) {
   return normalizeKeySimple(s).replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40) || "vehiculo";
 }
 
+// Vehiculos de donacion: el dueno del servidor les pone precio 9999999999999.
+const CAT_DONATION_PRICE = 1e12;
+function catIsDonation(v) {
+  return typeof v?.precio === "number" && v.precio >= CAT_DONATION_PRICE;
+}
+
+// Gama por precio para las categorias que no son una gama (Coches, Street
+// Tuning, King of the Street, Coches Rally, Vapid...): analisis del 1/11/2026
+// con los precios de las gamas que si estan en el catalogo.
+const CAT_GAMA_LIMITS = { baja: 50000, media: 150000 }; // < baja: Baja · < media: Media · resto: Alta
+const CAT_NO_TUNING = ["bicicletas"]; // no se tunean
+
 function catGamaKey(v) {
-  return CAT_GAMA[normalizeKeySimple(v?.categoria)] || "";
+  if (!v) return "";
+  if (catIsDonation(v)) return "gama_vip";
+  const cat = normalizeKeySimple(v.categoria);
+  if (CAT_GAMA[cat]) return CAT_GAMA[cat];
+  if (CAT_NO_TUNING.includes(cat)) return "";
+  if (typeof v.precio !== "number" || !(v.precio > 0)) return "";
+  if (v.precio < CAT_GAMA_LIMITS.baja) return "gama_baja";
+  if (v.precio < CAT_GAMA_LIMITS.media) return "gama_media";
+  return "gama_alta";
+}
+
+// Precio para mostrar (los de donacion no tienen precio en dinero del juego).
+function catPriceText(v) {
+  if (catIsDonation(v)) return "Donación (VIP)";
+  return typeof v?.precio === "number" ? fmtMoney(v.precio) : "Pendiente";
 }
 
 // Busca por nombre o modelo. Primero lo que empieza igual, luego lo que lo contiene.
@@ -7169,7 +7204,7 @@ async function loadCvMargins() {
 }
 
 function cvRef(price) {
-  if (typeof price !== "number" || !(price > 0)) return null;
+  if (typeof price !== "number" || !(price > 0) || price >= CAT_DONATION_PRICE) return null;
   const m = CV_MARGINS;
   const r = (x) => Math.round(price * x);
   return {
@@ -7225,7 +7260,7 @@ function setupVehicleSearch({ onGama } = {}) {
       else img.remove();
       b.querySelector("b").textContent = v.nombre;
       b.querySelector("small").textContent = [v.modelo, v.categoria].filter(Boolean).join(" · ");
-      b.querySelector(".veh-opt-price").textContent = typeof v.precio === "number" ? fmtMoney(v.precio) : "Pendiente";
+      b.querySelector(".veh-opt-price").textContent = catPriceText(v);
       b.addEventListener("mousedown", (ev) => ev.preventDefault());
       b.addEventListener("click", () => pick(v));
       results.appendChild(b);
@@ -7270,15 +7305,18 @@ function setupVehicleSearch({ onGama } = {}) {
       meta.appendChild(code);
     }
     meta.append(` ${[v.categoria, v.concesionario].filter(Boolean).join(" · ")}`);
-    card.querySelector(".veh-price b").textContent = typeof v.precio === "number" ? fmtMoney(v.precio) : "Pendiente";
+    card.querySelector(".veh-price b").textContent = catPriceText(v);
     const g = card.querySelector(".veh-gama");
     if (gama) {
       g.innerHTML = `🛠️ Se cobra con <b></b>`;
       g.querySelector("b").textContent = gamaLabel;
       g.className = "veh-gama ok";
       onGama?.(gama);
+    } else if (CAT_NO_TUNING.includes(normalizeKeySimple(v.categoria))) {
+      g.textContent = "🚲 Las bicicletas no se tunean: solo servicios de taller.";
+      g.className = "veh-gama warn";
     } else {
-      g.textContent = `⚠ «${v.categoria || "Sin categoría"}»: elige tú la gama de tuning.`;
+      g.textContent = `⚠ «${v.categoria || "Sin categoría"}»${typeof v.precio === "number" ? "" : " sin precio"}: elige tú la gama de tuning.`;
       g.className = "veh-gama warn";
     }
     card.querySelector(".veh-x").addEventListener("click", clear);
