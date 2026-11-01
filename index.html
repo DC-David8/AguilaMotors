@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=97" />
+  <link rel="stylesheet" href="styles.css?v=98" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=97" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=98" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -149,8 +149,15 @@
 
     <section id="tab-conta" class="tab-panel">
       <div class="split">
-        <section class="card">
+        <section class="card pg-src" id="pg-src">
           <h2>Texto de Discord</h2>
+          <div class="pg-src-sum" id="pg-src-sum" hidden>
+            <span class="pg-src-sum-txt" id="pg-src-sum-txt"></span>
+            <span class="pg-src-sum-acts">
+              <button type="button" id="pg-src-paste">🧩 Pegar kits</button>
+              <button type="button" id="pg-src-toggle" class="ghost">Ver / cambiar</button>
+            </span>
+          </div>
           <div id="dlog-box" class="dlog-box hidden">
             <div class="dlog-title">📥 Facturas desde el Discord del taller</div>
             <div class="dlog-row">
@@ -566,7 +573,17 @@
       <strong id="m-ticket-total">$ 0</strong>
     </button>
 
-    <footer class="app-version">Versión 97 - Aguila Motors</footer>
+    <div class="m-pay-bar" id="m-pay-bar" hidden>
+      <button type="button" class="m-pay-jump" id="m-pay-jump" aria-label="Ver el total">
+        <span id="m-pay-label">Total a pagar</span>
+        <strong id="m-pay-total">$ 0</strong>
+      </button>
+      <button type="button" class="m-pay-copy" id="m-pay-copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1.1a15.6 15.6 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.2 12.2 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.7 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z" fill="currentColor"/></svg>Copiar</button>
+    </div>
+
+    <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
+
+    <footer class="app-version">Versión 98 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -861,7 +878,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=97"></script>
-  <script src="app.js?v=97"></script>
+  <script src="catalogo/vehiculos.js?v=98"></script>
+  <script src="app.js?v=98"></script>
 </body>
 </html>

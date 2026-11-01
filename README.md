@@ -231,6 +231,16 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 98 · 1 de noviembre de 2026
+
+- **Móvil · barra de secciones abajo:** Caja · Compraventa · Pagos · Sorteo con sus iconos, como en las apps. Cada uno ve solo sus secciones (con una sola, no sale la barra). La barra del ticket de Caja queda justo encima.
+- **Móvil · Pagos más corto** (de unas 6 pantallas a unas 3,5):
+  - Con las facturas ya cargadas, «Texto de Discord» se pliega en una línea («✅ 5 facturas · 0 kits cargados») con los botones «🧩 Pegar kits» y «Ver / cambiar».
+  - Barra fija abajo con el **Total a pagar** y el botón **Copiar** (para Discord). Al tocar el total, baja hasta él.
+  - «Strikes de esta semana» sale plegado; se abre al tocarlo. En PC sigue abierto.
+- **Ascensos y descensos:** el campo de motivo solo aparece al marcar a la persona (en PC y móvil).
+- **Detalles:** la tarjeta de sesión muestra el icono del rango si no hay foto de Discord; las reglas de Sorteo y Compraventa se leen en una línea; en el móvil se quita la frase larga de arriba de Compraventa.
+
 ### Versión 97 · 1 de noviembre de 2026
 
 - **Pagos:** se quita el botón y la ventana «Totales empleados»; «Copiar para Discord» y la Gestión de empleados ya cubren lo que hacía. «Copiar para Discord» sigue funcionando igual.

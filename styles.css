@@ -1983,3 +1983,96 @@ dialog.emp-modal { width: min(1180px, 96vw); }
 /* v97: iconos en los botones de Pagos */
 .pg-ic-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .pg-ic-btn svg { width: 17px; height: 17px; flex: none; }
+
+/* ===== Movil v98: barra de secciones abajo, Pagos plegado, barra del total ===== */
+.m-bnav, .m-pay-bar, .pg-src-sum { display: none; }
+.m-bnav[hidden], .m-pay-bar[hidden], .pg-src-sum[hidden] { display: none !important; }
+/* Strikes de la semana: plegable (abierto en PC) */
+details.pg-warn-box > summary { cursor: pointer; list-style: none; }
+details.pg-warn-box > summary::-webkit-details-marker { display: none; }
+details.pg-warn-box > summary::after { content: "▾"; float: right; margin-left: 8px; opacity: .7; transition: transform .15s; }
+details.pg-warn-box:not([open]) > summary { margin-bottom: 0; }
+details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
+/* Ascensos y descensos: el motivo solo aparece al marcar */
+.pg-promo-row:not(.on) .pg-promo-why { display: none; }
+/* Sorteo / Compraventa: reglas en una linea de texto (no en columnas) */
+.sx-rule { display: block; line-height: 1.45; }
+.sx-rule .sx-ok { margin-right: 8px; }
+/* Tarjeta de sesion: icono del rango si no hay foto de Discord */
+.auth-avatar .auth-rk { width: 100%; height: 100%; }
+.auth-avatar .auth-rk .rk-stars { display: none; }
+.auth-avatar .auth-rk .rk-ic { width: 58%; height: 58%; }
+
+@media (max-width: 700px) {
+  /* Barra de secciones */
+  body.has-bnav .m-bnav {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: rgba(10, 8, 6, 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+  }
+  .m-bnav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 2px 4px;
+    min-height: 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--muted);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+  .m-bnav-item .tab-ic { width: 22px; height: 22px; margin: 0; }
+  .m-bnav-item.is-active { color: #fff; background: rgba(249, 125, 2, 0.16); }
+  .m-bnav-item.is-active span { color: #ffb15c; }
+  body.has-bnav .app-shell { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+  body.has-bnav.is-caja .m-ticket-bar { bottom: calc(70px + env(safe-area-inset-bottom)); }
+  body.m-drawer-open .m-bnav, body.is-gated .m-bnav { display: none !important; }
+
+  /* Pagos: "Texto de Discord" plegado cuando ya hay datos */
+  .pg-src-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; margin: 6px 0 4px; border-radius: 12px; border: 1px solid rgba(80, 220, 140, 0.35); background: rgba(80, 220, 140, 0.07); }
+  .pg-src-sum-txt { flex: 1 1 100%; font-weight: 700; font-size: 0.86rem; color: #a8ecc4; }
+  .pg-src-sum-acts { display: flex; gap: 6px; flex: 1 1 100%; }
+  .pg-src-sum-acts button { flex: 1; padding: 9px 8px; font-size: 0.8rem; min-height: 0; }
+  .pg-src.is-folded > :not(h2):not(.pg-src-sum) { display: none !important; }
+  .pg-src.is-folded { padding-bottom: 8px; }
+
+  /* Pagos: barra fija con el total y Copiar para Discord */
+  body.is-pagos .m-pay-bar {
+    display: flex;
+    gap: 8px;
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 55;
+    padding: 6px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, var(--accent), #ffb15c);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+  body.has-bnav.is-pagos .m-pay-bar { bottom: calc(70px + env(safe-area-inset-bottom)); }
+  body.m-drawer-open .m-pay-bar { display: none !important; }
+  .m-pay-jump { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; min-height: 0; border: 0; background: transparent; box-shadow: none; color: #1a0f04; text-transform: none; letter-spacing: 0; font-weight: 800; font-size: 0.78rem; text-align: left; }
+  .m-pay-jump strong { font-size: 1.1rem; white-space: nowrap; }
+  .m-pay-copy { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; min-height: 0; border-radius: 10px; border: 0; background: #1a0f04; color: #ffcf94; font-weight: 800; font-size: 0.82rem; box-shadow: none; text-transform: none; letter-spacing: 0; }
+  .m-pay-copy svg { width: 18px; height: 18px; }
+
+  /* Compraventa: sin la frase larga de arriba */
+  #cv-mode { display: none; }
+}

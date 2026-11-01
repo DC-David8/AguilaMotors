@@ -2994,6 +2994,7 @@ function setupContabilidad() {
     return out;
   }
 
+  let warnOpen = null; // plegado del cuadro de strikes (se recuerda mientras no se recarga)
   function renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar: baseTotal }) {
     let totalAPagar = baseTotal;
     lastSnapshot = null;
@@ -3149,8 +3150,12 @@ function setupContabilidad() {
       }
     };
     if (idle.length || forgiven.length || boss) {
-      const box = el("div", "pg-warn-box");
-      box.appendChild(el("div", "pg-warn-head", `⚠️ Strikes de esta semana · no facturaron o no llegaron a ${fmtMoney(RANK_RULES.min)} (${idle.length})`));
+      // En el movil sale plegado (solo el titulo); se abre al tocarlo.
+      const box = el("details", "pg-warn-box");
+      box.open = warnOpen ?? !window.matchMedia("(max-width: 700px)").matches;
+      box.addEventListener("toggle", () => (warnOpen = box.open));
+      const head = el("summary", "pg-warn-head", `⚠️ Strikes de esta semana · no facturaron o no llegaron a ${fmtMoney(RANK_RULES.min)} (${idle.length})`);
+      box.appendChild(head);
       const chips = el("div", "pg-warn-list");
       if (!idle.length) chips.appendChild(el("span", "muted pg-strike-why", "Nadie tiene strike esta semana."));
       for (const e of idle) {
@@ -3730,7 +3735,35 @@ function setupContabilidad() {
     refs.loaded.textContent = invSummary.count || kitsSummary.count ? "Datos cargados" : "Sin datos";
     renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar });
     renderClose();
+    syncMobilePagos(invSummary, kitsSummary);
   }
+
+  // ---------- Movil (v98): "Texto de Discord" plegado y barra fija con el total ----------
+  let srcOpen = false;
+  function syncMobilePagos(invSummary, kitsSummary) {
+    const loaded = invSummary.count > 0 || kitsSummary.qty > 0;
+    const sum = byId("pg-src-sum");
+    const card = byId("pg-src");
+    if (sum && card) {
+      sum.hidden = !loaded;
+      card.classList.toggle("is-folded", loaded && !srcOpen);
+      byId("pg-src-sum-txt").textContent = `✅ ${invSummary.count} ${invSummary.count === 1 ? "factura" : "facturas"} · ${kitsSummary.qty} ${kitsSummary.qty === 1 ? "kit" : "kits"} cargados`;
+      byId("pg-src-toggle").textContent = srcOpen ? "Plegar" : "Ver / cambiar";
+    }
+    const bar = byId("m-pay-bar");
+    if (bar) {
+      bar.hidden = !loaded;
+      byId("m-pay-total").textContent = byId("conta-total-a-pagar")?.textContent || "$ 0";
+      byId("m-pay-label").textContent = byId("pg-total-label")?.textContent || "Total a pagar";
+    }
+  }
+  byId("pg-src-toggle")?.addEventListener("click", () => {
+    srcOpen = !srcOpen;
+    refresh();
+  });
+  byId("pg-src-paste")?.addEventListener("click", () => byId("conta-paste")?.click());
+  byId("m-pay-copy")?.addEventListener("click", () => byId("pg-copy-discord")?.click());
+  byId("m-pay-jump")?.addEventListener("click", () => document.querySelector("#tab-conta .pg-total")?.scrollIntoView({ block: "center", behavior: "smooth" }));
 
   function clearState() {
     state.invoices = {};
@@ -5651,8 +5684,42 @@ function setupMobileNav() {
   new MutationObserver(syncCat).observe(byId("cat-tabs"), { childList: true, subtree: true, attributes: true });
   syncCat();
 
-  // La barra del ticket solo se ve en la Caja.
-  const syncSection = () => document.body.classList.toggle("is-caja", isCaja());
+  // Barra de secciones abajo (v98): las mismas pestanas que se ven en PC.
+  const bnav = byId("m-bnav");
+  const SHORT = { "tab-cv": "Compraventa", "tab-conta": "Pagos", "tab-sorteo": "Sorteo", "tab-caja": "Caja" };
+  function buildBnav() {
+    if (!bnav) return;
+    const vis = [...document.querySelectorAll("nav.tabs .tab")].filter((t) => !t.hidden);
+    bnav.textContent = "";
+    bnav.hidden = vis.length < 2;
+    document.body.classList.toggle("has-bnav", !bnav.hidden);
+    for (const t of vis) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "m-bnav-item" + (t.classList.contains("is-active") ? " is-active" : "");
+      const ic = t.querySelector(".tab-ic");
+      if (ic) b.appendChild(ic.cloneNode(true));
+      const s = document.createElement("span");
+      s.textContent = SHORT[t.dataset.tabTarget] || t.textContent.trim();
+      b.appendChild(s);
+      b.addEventListener("click", () => {
+        t.click();
+        window.scrollTo({ top: 0 });
+      });
+      bnav.appendChild(b);
+    }
+  }
+  const tabsObs = new MutationObserver(buildBnav);
+  document.querySelectorAll("nav.tabs .tab").forEach((t) => tabsObs.observe(t, { attributes: true, attributeFilter: ["class", "hidden", "style"] }));
+  buildBnav();
+
+  // La barra del ticket solo se ve en la Caja; la del total, solo en Pagos.
+  const pagosPanel = byId("tab-conta");
+  const syncSection = () => {
+    document.body.classList.toggle("is-caja", isCaja());
+    document.body.classList.toggle("is-pagos", !!pagosPanel?.classList.contains("is-active"));
+  };
+  if (pagosPanel) new MutationObserver(syncSection).observe(pagosPanel, { attributes: true, attributeFilter: ["class"] });
   new MutationObserver(syncSection).observe(cajaPanel, { attributes: true, attributeFilter: ["class"] });
   syncSection();
 
@@ -6392,7 +6459,8 @@ function renderAuthCard() {
   const initials = name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
   const av = document.createElement("span");
   av.className = "auth-avatar";
-  av.textContent = initials;
+  if (rankKey) av.appendChild(rankAvatar(rankKey, initials, "auth-rk"));
+  else av.textContent = initials;
   if (AUTH.avatar) {
     const img = document.createElement("img");
     img.alt = "";
