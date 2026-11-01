@@ -1750,3 +1750,8 @@ tr.emp-locked td:first-child::after { content: " 🔒"; }
 .m-nav-item[data-cat="nitro"] .cat-ic { stroke: #8ff7ff; }
 .m-nav-item[data-cat="neones"] .cat-ic { stroke: #f0b3ff; }
 .m-nav-item[data-cat="compraventa"] .cat-ic { stroke: #ffaaa3; }
+
+/* v90 · Logo grande del Aguila Motors en el hueco bajo los botones del ticket (solo PC) */
+.ticket-card { display: flex; flex-direction: column; }
+.ticket-card .ticket-logo { flex: 1 1 auto; min-height: 160px; padding: 18px 10px 8px; }
+.ticket-card .ticket-logo img { width: min(78%, 360px); height: auto; max-height: 360px; opacity: .9; filter: drop-shadow(0 0 28px rgba(249,125,2,.35)) drop-shadow(0 12px 22px rgba(0,0,0,.55)); }

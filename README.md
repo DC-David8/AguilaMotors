@@ -231,6 +231,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 90 · 1 de noviembre de 2026
+- Caja (PC): vuelve el **logo grande del Aguila Motors** en el hueco bajo los botones del ticket, con un brillo naranja suave. En el móvil no se muestra (no hay hueco).
+
 ### Versión 89 · 1 de noviembre de 2026
 - **Full Tuning** con icono nuevo: **escudo con velocímetro** (aguja roja al tope) y la palabra **FULL**, en el color de cada gama. La pestaña lleva el escudo con el velocímetro.
 
