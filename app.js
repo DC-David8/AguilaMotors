@@ -1037,12 +1037,21 @@ function buildPackIconSvg(keys) {
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
+const GAMA_ICON_COLORS = { motos: "#2ee6c8", gama_baja: "#6ad94a", gama_media: "#ffd02a", gama_alta: "#ff9a3c", gama_vip: "#c07bff", camiones: "#5a8cff", aereos: "#4cc3ff" };
+function gamaIconColor(name) {
+  const n = normalizeKeySimple(name);
+  const g = /\bvip\b/.test(n) ? "gama_vip" : /camion/.test(n) ? "camiones" : /aereo/.test(n) ? "aereos" : /\bmotos?\b/.test(n) ? "motos"
+    : /\bbaja\b/.test(n) ? "gama_baja" : /\bmedia\b/.test(n) ? "gama_media" : /\balta\b/.test(n) ? "gama_alta" : "";
+  return GAMA_ICON_COLORS[g] || "";
+}
+
 function buildProductIconSvg(name) {
   const pack = packIconKeys(name);
   if (pack) return buildPackIconSvg(pack);
   const key = productIconKey(name);
   const d = PRODUCT_ICON_PATHS[key];
-  const col = PRODUCT_ICON_COLORS[key] || "#ffcf94";
+  // Full Tuning y Compraventa: el color de su gama (v87).
+  const col = (["ft", "compra"].includes(key) && gamaIconColor(name)) || PRODUCT_ICON_COLORS[key] || "#ffcf94";
   const dd = String(d || "").split("{C}").join(col);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 36 36"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${col}"/></linearGradient><radialGradient id="b"><stop offset="0" stop-color="${col}33"/><stop offset="1" stop-color="#120d09"/></radialGradient></defs><rect x="-6" y="-6" width="36" height="36" rx="9" fill="url(#b)"/><g fill="none" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${dd}</g></svg>`;
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);

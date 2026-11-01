@@ -231,6 +231,9 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 87 · 1 de noviembre de 2026
+- Caja: los iconos de **Full Tuning** y **Compraventa** llevan el **color de su gama** (Motos verde agua, Baja verde, Media amarillo, Alta naranja, VIP morado, Camiones azul, Aéreos celeste), igual que las pestañas.
+
 ### Versión 86 · 1 de noviembre de 2026
 - Nitro con iconos nuevos: **Instalación de Nitro** = cuentarrevoluciones con la aguja roja disparada y «N₂O»; **Botella de Nitro** = bombona con etiqueta **N₂O**. La pestaña Nitro lleva la bombona con su etiqueta.
 
