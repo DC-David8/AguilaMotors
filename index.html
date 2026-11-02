@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=101" />
+  <link rel="stylesheet" href="styles.css?v=102" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=101" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=102" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -467,7 +467,10 @@
         <section class="card">
           <div class="card-head-row">
             <h2>Catálogo de vehículos</h2>
-            <span class="muted" id="cvc-count"></span>
+            <span class="cvc-head-right">
+              <span class="muted" id="cvc-count"></span>
+              <button type="button" id="cvc-export" class="ghost small cvc-export" title="Descargar en Excel los vehículos que se ven ahora (con sus filtros), con foto y todos sus datos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg><span id="cvc-export-txt">Exportar a Excel</span></button>
+            </span>
           </div>
           <div class="cvc-admin" id="cvc-admin" hidden>
             <span id="cvc-admin-txt"></span>
@@ -583,7 +586,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 101 - Aguila Motors</footer>
+    <footer class="app-version">Versión 102 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -890,7 +893,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=101"></script>
-  <script src="app.js?v=101"></script>
+  <script src="catalogo/vehiculos.js?v=102"></script>
+  <script src="app.js?v=102"></script>
 </body>
 </html>

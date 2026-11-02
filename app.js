@@ -6845,6 +6845,7 @@ function setupCompraventa() {
 
   // ---------- Catalogo con precios de referencia ----------
   let catReady = false;
+  let catShown = [];
   function fillCatFilters() {
     const list = catVehicles();
     const opts = (sel, vals, all) => {
@@ -7105,7 +7106,9 @@ function setupCompraventa() {
     else list = list.slice().sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), "es"));
     const grid = $("cvc-grid");
     grid.innerHTML = "";
+    catShown = list;
     $("cvc-count").textContent = `${list.length} de ${catVehicles().length} vehículos`;
+    $("cvc-export-txt").textContent = list.length === catVehicles().length ? "Exportar a Excel" : `Exportar ${list.length} a Excel`;
     for (const v of list) {
       const c = el("article", "cv-car cvc-car");
       const pic = el("div", "cv-pic");
@@ -7157,6 +7160,46 @@ function setupCompraventa() {
     }
     $("cvc-empty").hidden = list.length > 0;
   }
+  // ---------- Exportar el catalogo a Excel (v102) ----------
+  // Lo que se ve ahora (con sus filtros), con foto incrustada y todos los datos.
+  $("cvc-export")?.addEventListener("click", async () => {
+    const btn = $("cvc-export");
+    const txt = $("cvc-export-txt");
+    const label = txt.textContent;
+    const list = catShown.length ? catShown : catVehicles();
+    if (!list.length) return alert("No hay vehículos que exportar.");
+    btn.disabled = true;
+    try {
+      txt.textContent = "Preparando…";
+      const ExcelJS = await loadExcelJS();
+      const filters = [
+        $("cvc-q").value.trim() ? `Búsqueda: «${$("cvc-q").value.trim()}»` : "",
+        $("cvc-cat").value ? `Categoría: ${$("cvc-cat").value}` : "",
+        selectedDealers().length ? `Concesionarios: ${selectedDealers().join(", ")}` : "",
+      ].filter(Boolean);
+      const blob = await buildCatalogXlsx(ExcelJS, list, {
+        filters,
+        onProgress: (n, total) => (txt.textContent = `Fotos ${n}/${total}…`),
+      });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `Catalogo_AguilaMotors_${empToday()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        a.remove();
+      }, 2000);
+      txt.textContent = `✔ Descargado (${list.length})`;
+      await new Promise((r) => setTimeout(r, 2500));
+    } catch (err) {
+      alert(`No se pudo crear el Excel: ${err.message || err}`);
+    } finally {
+      btn.disabled = false;
+      txt.textContent = label;
+    }
+  });
+
   if ($("cv-p-cat")) {
     if (!catVehicles().length) root.querySelector('[data-cv="cv-p-cat"]')?.setAttribute("hidden", "");
     for (const id of ["cvc-q", "cvc-cat", "cvc-sort"]) $(id).addEventListener(id === "cvc-q" ? "input" : "change", renderCatalog);
@@ -8444,6 +8487,192 @@ const moneyRange = ([a, b]) => (a === b ? fmtMoney(a) : `${fmtMoney(a)} – ${fm
 
 function catPhoto(v) {
   return v?.foto || "";
+}
+
+// ExcelJS (crea el .xlsx en el navegador). Se carga solo al exportar.
+let EXCELJS_PROMISE = null;
+function loadExcelJS() {
+  if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  if (EXCELJS_PROMISE) return EXCELJS_PROMISE;
+  const urls = [
+    "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",
+    "https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js",
+  ];
+  EXCELJS_PROMISE = new Promise((resolve, reject) => {
+    const tryAt = (i) => {
+      if (i >= urls.length) {
+        EXCELJS_PROMISE = null;
+        return reject(new Error("no se pudo cargar el generador de Excel (¿sin internet?)."));
+      }
+      const s = document.createElement("script");
+      s.src = urls[i];
+      s.onload = () => (window.ExcelJS ? resolve(window.ExcelJS) : tryAt(i + 1));
+      s.onerror = () => {
+        s.remove();
+        tryAt(i + 1);
+      };
+      document.head.appendChild(s);
+    };
+    tryAt(0);
+  });
+  return EXCELJS_PROMISE;
+}
+
+// Foto del catalogo reducida a JPEG (base64) para meterla en el Excel. Si no
+// se puede leer (sin foto, error o sin permiso), devuelve null.
+function catPhotoJpeg(src, w = 320, h = 180) {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    const done = (v) => {
+      clearTimeout(t);
+      resolve(v);
+    };
+    const t = setTimeout(() => done(null), 15000);
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const g = c.getContext("2d");
+        g.fillStyle = "#ffffff";
+        g.fillRect(0, 0, w, h);
+        const r = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+        const dw = img.naturalWidth * r;
+        const dh = img.naturalHeight * r;
+        g.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+        done(c.toDataURL("image/jpeg", 0.82).split(",")[1]);
+      } catch {
+        done(null);
+      }
+    };
+    img.onerror = () => done(null);
+    img.src = src;
+  });
+}
+
+async function buildCatalogXlsx(ExcelJS, list, { filters = [], onProgress } = {}) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Aguila Motors";
+  wb.created = new Date();
+  const ws = wb.addWorksheet("Catálogo", { views: [{ state: "frozen", ySplit: 1, xSplit: 2 }] });
+  const m = CV_MARGINS;
+  const pc = (x) => `${Math.round(x * 100)} %`;
+  ws.columns = [
+    { header: "Foto", key: "foto", width: 25 },
+    { header: "Vehículo", key: "nombre", width: 28 },
+    { header: "Modelo (spawn)", key: "modelo", width: 18 },
+    { header: "Categoría", key: "categoria", width: 18 },
+    { header: "Gama en Caja", key: "gama", width: 15 },
+    { header: "Concesionario", key: "concesionario", width: 16 },
+    { header: "Sección", key: "seccion", width: 16 },
+    { header: "Precio concesionario", key: "precio", width: 15 },
+    { header: `Comprar desde (${pc(m.buyMin)})`, key: "buyMin", width: 15 },
+    { header: `Comprar hasta (${pc(m.buyMax)})`, key: "buyMax", width: 15 },
+    { header: `Vender desde (${pc(m.sellMin)})`, key: "sellMin", width: 15 },
+    { header: `Vender hasta (${pc(m.sellMax)})`, key: "sellMax", width: 15 },
+    { header: "Margen mínimo", key: "marMin", width: 14 },
+    { header: "Margen máximo", key: "marMax", width: 14 },
+    { header: "Donación (VIP)", key: "don", width: 11 },
+    { header: "Modelos del log asociados", key: "alias", width: 22 },
+    { header: "Enlace de la foto", key: "url", width: 30 },
+    { header: "ID", key: "id", width: 18 },
+  ];
+  const head = ws.getRow(1);
+  head.height = 34;
+  head.eachCell((c) => {
+    c.font = { bold: true, color: { argb: "FF1A0F04" } };
+    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF97D02" } };
+    c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    c.border = { bottom: { style: "thin", color: { argb: "FF7A3D00" } } };
+  });
+  const aliasOf = {};
+  for (const [k, id] of Object.entries(CV_ALIAS || {})) (aliasOf[id] ||= []).push(k);
+  const abs = (u) => {
+    try {
+      return u ? new URL(u, location.href).href : "";
+    } catch {
+      return u || "";
+    }
+  };
+  const MONEY = '"$" #,##0';
+  list.forEach((v, i) => {
+    const ref = cvRef(v.precio);
+    const gk = catGamaKey(v);
+    const url = abs(catPhoto(v));
+    const row = ws.addRow({
+      nombre: v.nombre || "",
+      modelo: v.modelo || "",
+      categoria: v.categoria || "",
+      gama: gk ? categoryLabel(gk) : "",
+      concesionario: v.concesionario || "",
+      seccion: v.seccion || "",
+      precio: catIsDonation(v) ? "Donación" : typeof v.precio === "number" ? v.precio : "Pendiente",
+      buyMin: ref ? ref.buy[0] : null,
+      buyMax: ref ? ref.buy[1] : null,
+      sellMin: ref ? ref.sell[0] : null,
+      sellMax: ref ? ref.sell[1] : null,
+      marMin: ref ? ref.margin[0] : null,
+      marMax: ref ? ref.margin[1] : null,
+      don: catIsDonation(v) ? "Sí" : "No",
+      alias: (aliasOf[v.id] || []).join(", "),
+      url: url ? { text: "Abrir foto", hyperlink: url } : "",
+      id: v.id || "",
+    });
+    row.height = 82;
+    row.alignment = { vertical: "middle", wrapText: true };
+    for (const k of ["precio", "buyMin", "buyMax", "sellMin", "sellMax", "marMin", "marMax"]) row.getCell(k).numFmt = MONEY;
+    row.getCell("nombre").font = { bold: true };
+    if (url) row.getCell("url").font = { color: { argb: "FF1F5FBF" }, underline: true };
+    if (i % 2) row.eachCell({ includeEmpty: true }, (c) => (c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF4E8" } }));
+  });
+  ws.autoFilter = { from: { row: 1, column: 2 }, to: { row: 1, column: ws.columns.length } };
+
+  // Fotos: de 6 en 6 para no saturar.
+  let done = 0;
+  const jobs = list.map((v, i) => async () => {
+    const b64 = await catPhotoJpeg(catPhoto(v));
+    done++;
+    onProgress?.(done, list.length);
+    if (!b64) {
+      const c = ws.getCell(i + 2, 1);
+      c.value = catPhoto(v) ? "(foto no disponible)" : "(sin foto)";
+      c.font = { italic: true, color: { argb: "FF999999" } };
+      c.alignment = { vertical: "middle", horizontal: "center" };
+      return;
+    }
+    const id = wb.addImage({ base64: b64, extension: "jpeg" });
+    ws.addImage(id, { tl: { col: 0.08, row: i + 1.06 }, ext: { width: 170, height: 96 }, editAs: "oneCell" });
+  });
+  const workers = Array.from({ length: 6 }, async () => {
+    while (jobs.length) await jobs.shift()();
+  });
+  await Promise.all(workers);
+
+  // Hoja de informacion
+  const info = wb.addWorksheet("Información");
+  info.columns = [{ width: 30 }, { width: 70 }];
+  const rows = [
+    ["Aguila Motors · Catálogo de vehículos", ""],
+    ["Exportado", new Date().toLocaleString("es-ES")],
+    ["Vehículos en este archivo", list.length],
+    ["Vehículos en el catálogo", catVehicles().length],
+    ["Filtros aplicados", filters.length ? filters.join(" · ") : "Ninguno (catálogo completo)"],
+    ["Comprar (sobre el precio de concesionario)", `${pc(m.buyMin)} – ${pc(m.buyMax)}`],
+    ["Vender (sobre el precio de concesionario)", `${pc(m.sellMin)} – ${pc(m.sellMax)}`],
+    ["Margen", "Vender − Comprar (peor y mejor caso)"],
+    ["Gama en Caja", "La gama con la que se cobra el tuning en la Caja (por categoría o por precio). Donación = Gama VIP."],
+    ["Origen de los datos", CATALOG.source === "cloud" ? "Catálogo en línea (Supabase)" : "Catálogo de la página (catalogo/vehiculos.js)"],
+  ];
+  rows.forEach((r) => info.addRow(r));
+  info.getRow(1).font = { bold: true, size: 14, color: { argb: "FFF97D02" } };
+  info.getColumn(1).font = { bold: true };
+  info.getCell("A1").font = { bold: true, size: 14, color: { argb: "FFF97D02" } };
+  info.getColumn(2).alignment = { wrapText: true, vertical: "top" };
+
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
 // ---------- Caja: buscador de vehículo ----------

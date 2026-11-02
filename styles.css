@@ -2113,3 +2113,9 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
   .emp-datefilter label { flex: 1 1 40%; }
   .emp-sort { flex-wrap: wrap; }
 }
+
+/* v102: exportar catálogo a Excel */
+.cvc-head-right { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.cvc-export { display: inline-flex; align-items: center; gap: 6px; }
+.cvc-export svg { width: 15px; height: 15px; color: #2fbf71; }
+.cvc-export:disabled { opacity: .7; cursor: progress; }
