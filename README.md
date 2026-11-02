@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 100 · 1 de noviembre de 2026
+
+- **Nuevo empleado:** el ID de Discord y el IBAN que se ponen al darlo de alta ya se guardan. Antes se mandaban en guardados aparte, sin esperar, y se pisaban entre ellos o con la recarga de la lista, así que había que volver a ponerlos en «Editar datos». Ahora todo va en un solo guardado y sale un aviso con lo que se añadió.
+
 ### Versión 99 · 1 de noviembre de 2026
 
 - **Caja · Servicios (Taller) con subdivisiones:** las pestañas Tienda y Neones RGB pasan a estar dentro de Servicios (Taller). Arriba de la lista salen los filtros **Todos · Taller · Tienda · Neones RGB** (con cuántos productos tiene cada uno) y, en «Todos», la lista va separada por títulos de color. Los productos no cambian de categoría por dentro (Gestión de Productos, ticket y Pagos siguen igual). También en el menú de categorías del móvil.

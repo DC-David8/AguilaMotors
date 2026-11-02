@@ -1843,7 +1843,9 @@ async function addEmployee(payload, password) {
   }
 
   if (empCloudOn()) {
-    const e = { id: safeRandomId(), name: payload.name, surname: payload.surname, rank: payload.rank || "", discord: "", iban: "", noPay: false, altaAt: new Date().toISOString() };
+    // Todo en un solo guardado (v100): antes Discord e IBAN iban en guardados
+    // aparte, sin esperar, y se pisaban entre ellos o con la recarga de la lista.
+    const e = { id: safeRandomId(), name: payload.name, surname: payload.surname, rank: payload.rank || "", discord: payload.discord || "", iban: payload.iban || "", noPay: !!payload.noPay, altaAt: new Date().toISOString() };
     await empCloudSave(e);
     EMP_CLOUD.list.push(e);
     empLog(e.id, "alta", `➕ Entró al taller${e.rank ? ` como ${rankLabel(e.rank)}` : ""}`);
@@ -5011,11 +5013,16 @@ function setupEmployeesAdminModal({ onChanged }) {
       return;
     }
     try {
-      await addEmployee({ name, surname, rank }, adminPass);
-      if (discord) setEmployeeDiscord(`${name} ${surname}`, discord);
+      if (empCloudOn()) {
+        await addEmployee({ name, surname, rank, discord, iban }, adminPass);
+      } else {
+        await addEmployee({ name, surname, rank }, adminPass);
+        if (discord) setEmployeeDiscord(`${name} ${surname}`, discord);
+        if (iban) setEmployeeIban(`${name} ${surname}`, iban);
+      }
       if (discordInput) discordInput.value = "";
-      if (iban) setEmployeeIban(`${name} ${surname}`, iban);
       if (ibanInput) ibanInput.value = "";
+      setStatus(`✔ ${name} ${surname} añadido${discord ? " con su Discord" : ""}${iban ? `${discord ? " e" : " con su"} IBAN` : ""}.`, true);
       nameInput.value = "";
       surInput.value = "";
       rankInput.value = "";
