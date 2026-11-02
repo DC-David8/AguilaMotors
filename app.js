@@ -1845,7 +1845,7 @@ async function addEmployee(payload, password) {
   if (empCloudOn()) {
     // Todo en un solo guardado (v100): antes Discord e IBAN iban en guardados
     // aparte, sin esperar, y se pisaban entre ellos o con la recarga de la lista.
-    const e = { id: safeRandomId(), name: payload.name, surname: payload.surname, rank: payload.rank || "", discord: payload.discord || "", iban: payload.iban || "", noPay: !!payload.noPay, altaAt: new Date().toISOString() };
+    const e = { id: safeRandomId(), name: payload.name, surname: payload.surname, rank: payload.rank || "", discord: payload.discord || "", iban: payload.iban || "", noPay: !!payload.noPay, altaAt: payload.altaAt || empToday(), contratadoAt: payload.contratadoAt || payload.altaAt || empToday() };
     await empCloudSave(e);
     EMP_CLOUD.list.push(e);
     empLog(e.id, "alta", `➕ Entró al taller${e.rank ? ` como ${rankLabel(e.rank)}` : ""}`);
@@ -1884,6 +1884,8 @@ async function updateEmployee(id, payload, password) {
     if ("noPay" in payload && !!before.noPay !== !!next.noPay) empLog(id, "datos", next.noPay ? "💸 Marcado como «No cobra»" : "💸 Vuelve a cobrar la nómina");
     if ("discord" in payload && (before.discord || "") !== (next.discord || "")) empLog(id, "datos", next.discord ? "🔗 Discord cambiado" : "🔗 Discord quitado");
     if ("iban" in payload && (before.iban || "") !== (next.iban || "")) empLog(id, "datos", `🏦 IBAN: ${next.iban || "quitado"}`);
+    if ("altaAt" in payload && (before.altaAt || "") !== (next.altaAt || "")) empLog(id, "datos", `📅 Fecha de ingreso al taller: ${empDate(next.altaAt) || "sin fecha"}`);
+    if ("contratadoAt" in payload && (before.contratadoAt || "") !== (next.contratadoAt || "")) empLog(id, "datos", `📝 Fecha de contratación: ${empDate(next.contratadoAt) || "sin fecha"}`);
     return true;
   }
 
@@ -4311,6 +4313,19 @@ function setupEmployeesAdminModal({ onChanged }) {
     renderList();
   });
 
+  byId("emp-date-toggle")?.addEventListener("click", () => {
+    const box = byId("emp-datefilter");
+    box.hidden = !box.hidden;
+    byId("emp-date-toggle").classList.toggle("is-on", !box.hidden);
+    renderList();
+  });
+  for (const id of ["emp-df-field", "emp-df-from", "emp-df-to"]) byId(id)?.addEventListener("change", () => renderList());
+  byId("emp-df-clear")?.addEventListener("click", () => {
+    byId("emp-df-from").value = "";
+    byId("emp-df-to").value = "";
+    renderList();
+  });
+
   function avatar(e, big = false) {
     return rankAvatar(e.rank, empInitials(e), `emp-av${big ? " big" : ""}`);
   }
@@ -4328,13 +4343,29 @@ function setupEmployeesAdminModal({ onChanged }) {
     { k: "fire", label: `Para despido (${STRIKE_MAX}/${STRIKE_MAX})`, test: (e) => strikesOf(e) >= STRIKE_MAX, cls: "r", access: true },
     { k: "iban", label: "Sin IBAN", test: (e) => !getEmployeeIban(fullName(e)) && !isEmployeeNoPay(fullName(e)), cls: "w" },
     { k: "discord", label: "Sin Discord", test: (e) => !getEmployeeDiscord(fullName(e)), cls: "w" },
+    { k: "nodates", label: "Sin fecha de ingreso", test: (e) => !e.altaAt, cls: "w", dates: true },
   ];
+  // Filtro por fechas (ingreso o contratacion) entre "desde" y "hasta".
+  const dateFilter = () => {
+    const box = byId("emp-datefilter");
+    if (!box || box.hidden) return null;
+    const from = byId("emp-df-from").value;
+    const to = byId("emp-df-to").value;
+    if (!from && !to) return null;
+    return { field: byId("emp-df-field").value, from, to };
+  };
 
   function shownList() {
     const q = normalizeForSearch(searchInput.value);
     const f = FILTERS.find((x) => x.k === filter) || FILTERS[0];
     let out = employees.filter((e) => f.test(e) && (!q || normalizeForSearch(`${e.name} ${e.surname} ${e.rank || ""} ${rankLabel(e.rank)}`).includes(q)));
-    if (sortBy === "az") out = out.slice().sort((x, y) => fullName(x).localeCompare(fullName(y), "es", { sensitivity: "base" }));
+    const df = dateFilter();
+    if (df) out = out.filter((e) => {
+      const v = e[df.field] || "";
+      return !!v && (!df.from || v >= df.from) && (!df.to || v <= df.to);
+    });
+    if (sortBy === "seniority") out = out.slice().sort((x, y) => (x.altaAt || "9999") .localeCompare(y.altaAt || "9999") || byRankThenName(x, y));
+    else if (sortBy === "az") out = out.slice().sort((x, y) => fullName(x).localeCompare(fullName(y), "es", { sensitivity: "base" }));
     else if (sortBy === "strikes") out = out.slice().sort((x, y) => strikesOf(y) - strikesOf(x) || byRankThenName(x, y));
     return out;
   }
@@ -4345,6 +4376,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     box.textContent = "";
     for (const f of FILTERS) {
       if (f.access && !hasAccess()) continue;
+      if (f.dates && !EMP_CLOUD.hasDates) continue;
       const n = employees.filter(f.test).length;
       const k = mk("button", `emp-kpi${f.cls && n ? " " + f.cls : ""}${filter === f.k ? " is-on" : ""}`);
       k.type = "button";
@@ -4381,6 +4413,12 @@ function setupEmployeesAdminModal({ onChanged }) {
       nm.append(mk("b", "", full), mk("small", "", `${e.rank ? rankLabel(e.rank) : "Sin rango"} · ${pctText(e)}`));
       const alts = empCloudOn() ? empAltsOf(e) : [];
       if (alts.length) nm.appendChild(mk("small", "emp-alt", `👥 Mismo Discord: ${alts.map(fullName).join(", ")}`));
+      if (EMP_CLOUD.hasDates || e.altaAt) {
+        const parts = [];
+        if (e.altaAt) parts.push(`Ingreso ${empDate(e.altaAt)}`);
+        if (e.contratadoAt && e.contratadoAt !== e.altaAt) parts.push(`Contratado ${empDate(e.contratadoAt)}`);
+        nm.appendChild(mk("small", "emp-dates" + (parts.length ? "" : " none"), parts.length ? `📅 ${parts.join(" · ")}` : "📅 Sin fechas"));
+      }
       const flags = mk("div", "emp-row-flags");
       const disc = getEmployeeDiscord(full);
       const iban = getEmployeeIban(full);
@@ -4460,7 +4498,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     line.appendChild(badge(e.rank));
     if (hasAccess() && n) line.appendChild(strikeChip(n));
     const since = e.altaAt || (STRIKE_HIST.slice().reverse().find((w) => strikeRowIn(w, e.id, full))?.semana ?? "");
-    if (since) line.appendChild(mk("span", "muted", `· en el taller desde ${dm(since)}${e.altaAt ? "" : " (primera semana cerrada)"}`));
+    if (since) line.appendChild(mk("span", "muted", `· en el taller desde ${empDate(since)}${e.altaAt ? ` (${empSeniority(since)})` : " (primera semana cerrada)"}`));
     who.appendChild(line);
     const alts = empCloudOn() ? empAltsOf(e) : [];
     if (alts.length) who.appendChild(mk("small", "emp-alt", `👥 Mismo Discord: ${alts.map(fullName).join(", ")}`));
@@ -4495,6 +4533,12 @@ function setupEmployeesAdminModal({ onChanged }) {
         kv("Comisión", pctText(e)),
         kv("Cobra nómina", noPay ? "No" : "Sí")
       );
+      if (EMP_CLOUD.hasDates || e.altaAt) {
+        datos.append(
+          kv("Ingreso al taller", e.altaAt ? `${empDate(e.altaAt)} · ${empSeniority(e.altaAt)}` : "⚠ Sin fecha", e.altaAt ? "" : "emp-no"),
+          kv("Contratación", e.contratadoAt ? empDate(e.contratadoAt) : EMP_CLOUD.hasDates ? "⚠ Sin fecha" : "—", e.contratadoAt || !EMP_CLOUD.hasDates ? "" : "emp-no")
+        );
+      }
     }
     card.appendChild(datos);
 
@@ -4657,6 +4701,17 @@ function setupEmployeesAdminModal({ onChanged }) {
     npL.append(np, mk("span", "", "No cobra la nómina"));
     const grid = mk("div", "emp-edit-grid");
     grid.append(field("Nombre", nIn), field("Apellido", sIn), field("Rango", rSel), field("IBAN", iIn), field("ID de Discord", dIn));
+    const aIn = mk("input", "text-input");
+    aIn.type = "date";
+    aIn.value = e.altaAt || "";
+    aIn.max = empToday();
+    const cIn = mk("input", "text-input");
+    cIn.type = "date";
+    cIn.value = e.contratadoAt || "";
+    cIn.max = empToday();
+    const dates = mk("div", "emp-edit-grid emp-edit-dates");
+    if (EMP_CLOUD.hasDates) dates.append(field("📅 Ingreso al taller", aIn), field("📝 Contratación", cIn));
+    else dates.appendChild(mk("p", "muted emp-small", "Para guardar las fechas de ingreso y contratación, pega en Supabase el SQL 11_fechas_empleados.sql."));
     const save = btn("Guardar", "");
     const cancel = btn("Cancelar");
     cancel.addEventListener("click", () => {
@@ -4671,6 +4726,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (discord === null) return alert("Eso no parece un ID de Discord. Es un número de 17 a 20 cifras (clic derecho sobre la persona → Copiar ID de usuario).");
       const ib = parseIban(iIn.value);
       if (ib === null) return alert("El IBAN no es válido. Es una letra y 6 números, como J739745.");
+      if (EMP_CLOUD.hasDates && aIn.value && cIn.value && cIn.value < aIn.value) return alert("La fecha de contratación no puede ser anterior a la de ingreso al taller.");
       const newFull = `${name} ${surname}`;
       if (newFull !== full) {
         const clash = [...EMP_CLOUD.list, ...EMP_CLOUD.fired].find((x) => String(x.id) !== String(e.id) && normalizeKeySimple(fullName(x)) === normalizeKeySimple(newFull));
@@ -4682,7 +4738,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       try {
         if (empCloudOn()) {
           empCloudRequireSession();
-          await updateEmployee(e.id, { name, surname, rank: rSel.value, discord, iban: ib, noPay: np.checked }, adminPass);
+          await updateEmployee(e.id, { name, surname, rank: rSel.value, discord, iban: ib, noPay: np.checked, ...(EMP_CLOUD.hasDates ? { altaAt: aIn.value, contratadoAt: cIn.value } : {}) }, adminPass);
         } else {
           await updateEmployee(e.id, { name, surname, rank: rSel.value }, adminPass);
           if (newFull !== full) {
@@ -4705,7 +4761,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     });
     const acts = mk("div", "emp-acts");
     acts.append(save, cancel);
-    f.append(grid, npL, acts);
+    f.append(grid, dates, npL, acts);
     return f;
   }
 
@@ -4865,6 +4921,19 @@ function setupEmployeesAdminModal({ onChanged }) {
 
   function renderAll() {
     byId("emp-tab-new").hidden = readOnly;
+    const nd = byId("emp-new-dates");
+    if (nd) {
+      nd.hidden = !EMP_CLOUD.hasDates;
+      for (const id of ["emp-new-alta", "emp-new-contrato"]) {
+        const x = byId(id);
+        if (x && !x.value) x.value = empToday();
+        if (x) x.max = empToday();
+      }
+    }
+    const dt = byId("emp-date-toggle");
+    if (dt) dt.hidden = !EMP_CLOUD.hasDates;
+    const ds = modal.querySelector('[data-sort="seniority"]');
+    if (ds) ds.hidden = !EMP_CLOUD.hasDates;
     if (tab === "new" && readOnly) tab = "list";
     if (tab === "list") renderList();
     else {
@@ -5013,8 +5082,13 @@ function setupEmployeesAdminModal({ onChanged }) {
       return;
     }
     try {
+      const altaIn = byId("emp-new-alta");
+      const contIn = byId("emp-new-contrato");
+      const altaAt = (EMP_CLOUD.hasDates && altaIn?.value) || empToday();
+      const contratadoAt = (EMP_CLOUD.hasDates && contIn?.value) || altaAt;
+      if (contratadoAt < altaAt) return alert("La fecha de contratación no puede ser anterior a la de ingreso al taller.");
       if (empCloudOn()) {
-        await addEmployee({ name, surname, rank, discord, iban }, adminPass);
+        await addEmployee({ name, surname, rank, discord, iban, altaAt, contratadoAt }, adminPass);
       } else {
         await addEmployee({ name, surname, rank }, adminPass);
         if (discord) setEmployeeDiscord(`${name} ${surname}`, discord);
@@ -5022,6 +5096,8 @@ function setupEmployeesAdminModal({ onChanged }) {
       }
       if (discordInput) discordInput.value = "";
       if (ibanInput) ibanInput.value = "";
+      if (altaIn) altaIn.value = empToday();
+      if (contIn) contIn.value = empToday();
       setStatus(`✔ ${name} ${surname} añadido${discord ? " con su Discord" : ""}${iban ? `${discord ? " e" : " con su"} IBAN` : ""}.`, true);
       nameInput.value = "";
       surInput.value = "";
@@ -6248,9 +6324,12 @@ async function empCloudLoad() {
         firedBy: String(r.despedido_por || ""),
         firedReason: String(r.despedido_motivo || ""),
         discordPrev: String(r.discord_previo || ""),
-        altaAt: r.alta_at || "",
+        altaAt: String(r.alta_at || "").slice(0, 10),
+        contratadoAt: String(r.contratado_at || "").slice(0, 10),
       }))
       .filter((e) => e.name && e.surname);
+    // Con el SQL 11 la tabla tiene la fecha de contratacion: se pueden guardar las dos fechas.
+    EMP_CLOUD.hasDates = rows.some((r) => "contratado_at" in r);
     // Los despedidos quedan en la tabla como registro, pero fuera de la plantilla.
     EMP_CLOUD.fired = all.filter((e) => e.firedAt).sort((x, y) => String(y.firedAt).localeCompare(String(x.firedAt)));
     EMP_CLOUD.list = all.filter((e) => !e.firedAt);
@@ -6287,7 +6366,34 @@ function empAltsOf(e) {
   return EMP_CLOUD.list.filter((x) => x.discord === e.discord && String(x.id) !== String(e.id));
 }
 
+// Fecha de hoy (AAAA-MM-DD, hora del equipo) y formato dd/mm/aaaa.
+function empToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function empDate(iso) {
+  const s = String(iso || "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : "";
+}
+// "3 meses", "1 año y 2 meses", "12 días"...
+function empSeniority(iso) {
+  const s = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  const a = new Date(`${s}T12:00:00`);
+  const b = new Date(`${empToday()}T12:00:00`);
+  const days = Math.round((b - a) / 86400000);
+  if (days < 0) return "";
+  if (days < 31) return `${days} ${days === 1 ? "día" : "días"}`;
+  let months = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+  if (b.getDate() < a.getDate()) months--;
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (!y) return `${m} ${m === 1 ? "mes" : "meses"}`;
+  return `${y} ${y === 1 ? "año" : "años"}${m ? ` y ${m} ${m === 1 ? "mes" : "meses"}` : ""}`;
+}
+
 const empCloudRow = (e) => ({
+  ...(EMP_CLOUD.hasDates ? { alta_at: e.altaAt || null, contratado_at: e.contratadoAt || null } : {}),
   id: e.id,
   name: e.name,
   surname: e.surname,
@@ -6328,6 +6434,7 @@ async function empCloudReadmit(f) {
   empCloudRequireSession();
   await cvCloud.upsert("employees", [{
     ...empCloudRow(f),
+    ...(EMP_CLOUD.hasDates ? { contratado_at: empToday() } : {}), // nuevo contrato; el ingreso no cambia
     discord: f.discordPrev || "",
     discord_previo: null,
     despedido_at: null,

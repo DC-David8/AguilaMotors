@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=100" />
+  <link rel="stylesheet" href="styles.css?v=101" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=100" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=101" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -583,7 +583,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 100 - Aguila Motors</footer>
+    <footer class="app-version">Versión 101 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -716,8 +716,16 @@
               <button type="button" class="emp-chip is-on" data-sort="rank">Por rango</button>
               <button type="button" class="emp-chip" data-sort="az">A–Z</button>
               <button type="button" class="emp-chip" data-sort="strikes">Más strikes</button>
+              <button type="button" class="emp-chip" data-sort="seniority">Antigüedad</button>
+              <button type="button" class="emp-chip" id="emp-date-toggle">📅 Fechas</button>
             </div>
             <button type="button" id="emp-refresh" class="ghost" title="Volver a cargar">↻</button>
+          </div>
+          <div class="emp-datefilter" id="emp-datefilter" hidden>
+            <label>Fecha de <select id="emp-df-field" class="text-input"><option value="altaAt">ingreso al taller</option><option value="contratadoAt">contratación</option></select></label>
+            <label>Desde <input id="emp-df-from" class="text-input" type="date" /></label>
+            <label>Hasta <input id="emp-df-to" class="text-input" type="date" /></label>
+            <button type="button" id="emp-df-clear" class="ghost">Quitar filtro</button>
           </div>
           <div class="emp-list" id="emp-list"></div>
         </div>
@@ -734,6 +742,10 @@
             <select id="emp-new-rank" class="text-input"></select>
             <input id="emp-new-discord" class="text-input emp-discord-new" type="text" inputmode="numeric" placeholder="ID de Discord (opcional)" />
             <input id="emp-new-iban" class="text-input emp-iban-new" type="text" maxlength="9" placeholder="IBAN (ej. J739745)" />
+          </div>
+          <div class="emp-new-dates" id="emp-new-dates">
+            <label>📅 Ingreso al taller <input id="emp-new-alta" class="text-input" type="date" /></label>
+            <label>📝 Contratación <input id="emp-new-contrato" class="text-input" type="date" /></label>
           </div>
           <div class="actions">
             <button type="button" id="emp-new-add">Añadir</button>
@@ -878,7 +890,7 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=100"></script>
-  <script src="app.js?v=100"></script>
+  <script src="catalogo/vehiculos.js?v=101"></script>
+  <script src="app.js?v=101"></script>
 </body>
 </html>

@@ -231,6 +231,15 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 101 · 2 de noviembre de 2026
+
+- **Fechas de cada empleado** (SQL nuevo `bot-facturas/11_fechas_empleados.sql`):
+  - **Ingreso al taller** (su primer día; no cambia aunque le despidan y le readmitan) y **Contratación** (la del contrato actual; al readmitir se pone la del día).
+  - Se ponen al dar de alta (por defecto, hoy) y se cambian en «Editar datos» (solo Jefe Aguila). La de contratación no puede ser anterior a la de ingreso.
+  - En el listado sale debajo del nombre («📅 Ingreso 12/08/2026 · Contratado 01/10/2026»); en la ficha, con la antigüedad («5 meses»).
+  - Nuevo recuadro **Sin fecha de ingreso**, orden por **Antigüedad** y filtro **📅 Fechas** (por ingreso o contratación, desde / hasta).
+  - Los cambios de fecha se apuntan en el historial. Sin el SQL 11 la página sigue igual y avisa de que falta.
+
 ### Versión 100 · 1 de noviembre de 2026
 
 - **Nuevo empleado:** el ID de Discord y el IBAN que se ponen al darlo de alta ya se guardan. Antes se mandaban en guardados aparte, sin esperar, y se pisaban entre ellos o con la recarga de la lista, así que había que volver a ponerlos en «Editar datos». Ahora todo va en un solo guardado y sale un aviso con lo que se añadió.
