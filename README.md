@@ -231,6 +231,17 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 103 · 2 de noviembre de 2026
+
+- **Nueva sección 🛡️ Informes** (solo el Jefe Aguila; SQL nuevo `bot-facturas/12_informes.sql`). Informes de una página A4 con estilo «Expediente de inspección», descargables en **PNG** y **PDF**:
+  - Tipos: **Nitro** (detectado / no detectado con *certificado de ausencia de nitro* / rastros), **Peritaje de daños** (con valoración según la tarifa de la Caja), **Vehículo incautado / robado**, **Certificado de modificaciones** (solo el nitro es ilegal: APTO / NO APTO), **Grúa y depósito** y **Presupuesto de reparación** (conceptos de la Caja, total y aceptación del cliente).
+  - Solicitante: **FBI, LSPD, LSSD** (con su escudo) o **Particular**. Se pide la **placa** del agente; el nombre es opcional. Sin número de caso: cada informe lleva su **Nº de inspección** del taller (INSP-AAAA-NNNN, al emitirlo) y un **código de verificación**.
+  - Vehículo: **captura pegada con Ctrl+V** (o arrastrada / elegida), vehículo con sugerencias del catálogo (los custom se escriben a mano), matrícula, color y propietario.
+  - **11 esquemas** (sedán, coupé, superdeportivo, SUV, pickup, furgoneta, camión, moto, helicóptero, avión, barco). El tipo sale solo (lo elegido antes para ese vehículo, la categoría del catálogo, una lista por modelo o el nombre) y se cambia con un toque; se recuerda por vehículo.
+  - Se marca tocando el esquema; la tabla de hallazgos, el resultado y la **conclusión se redactan solos** (editable). Cadena de custodia con firmas, firma en caligrafía y sello del taller.
+  - **Vista previa en vivo**, borradores, **registro** con buscador, filtros, abrir, PDF, duplicar y **verificar código**.
+  - Código en `informes.js`; logos, sello y letra de la firma en la carpeta `informes/`. Para generar PNG/PDF se cargan html2canvas y jsPDF (necesita internet).
+
 ### Versión 102 · 2 de noviembre de 2026
 
 - **Catálogo · Exportar a Excel:** botón en Compraventa → Catálogo. Descarga un `.xlsx` con los vehículos que se ven (si hay filtros, solo esos; el botón dice cuántos) con la **foto incrustada** de cada uno y todos sus datos: vehículo, modelo (spawn), categoría, gama en Caja, concesionario, sección, precio, comprar desde/hasta, vender desde/hasta, margen mínimo/máximo, donación, modelos del log asociados, enlace a la foto e ID. Encabezado fijo con filtros, precios en formato $ y una hoja «Información» con la fecha, los filtros y los % usados. El Excel se crea en el navegador con ExcelJS (se carga solo al exportar; necesita internet).

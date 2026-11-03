@@ -5689,6 +5689,7 @@ Promise.allSettled([
     setupSorteo();
     setupCompraventa();
     setupAuthUI();
+    if (typeof setupInformes === "function") setupInformes();
     setupSideRail();
     setupMobileNav();
   });
@@ -5829,7 +5830,7 @@ function setupMobileNav() {
 
   // Barra de secciones abajo (v98): las mismas pestanas que se ven en PC.
   const bnav = byId("m-bnav");
-  const SHORT = { "tab-cv": "Compraventa", "tab-conta": "Pagos", "tab-sorteo": "Sorteo", "tab-caja": "Caja" };
+  const SHORT = { "tab-cv": "Compraventa", "tab-conta": "Pagos", "tab-sorteo": "Sorteo", "tab-caja": "Caja", "tab-inf": "Informes" };
   function buildBnav() {
     if (!bnav) return;
     const vis = [...document.querySelectorAll("nav.tabs .tab")].filter((t) => !t.hidden);
@@ -6752,7 +6753,7 @@ function setupAuthUI() {
   const tabs = document.querySelectorAll("nav.tabs .tab");
   tabs.forEach((t) => {
     const target = t.dataset.tabTarget;
-    t.hidden = PROTECTED_TABS.includes(target) && !(target === "tab-cv" ? canSeeCv() : hasAccess());
+    t.hidden = target === "tab-inf" ? !AUTH.aguila : PROTECTED_TABS.includes(target) && !(target === "tab-cv" ? canSeeCv() : hasAccess());
   });
   const active = document.querySelector("nav.tabs .tab.is-active");
   if (active?.hidden) document.querySelector('nav.tabs .tab[data-tab-target="tab-caja"]')?.click();

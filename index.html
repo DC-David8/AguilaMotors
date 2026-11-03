@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=102" />
+  <link rel="stylesheet" href="styles.css?v=103" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=102" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=103" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -80,6 +80,7 @@
       <button class="tab" data-tab-target="tab-cv"><svg class="tab-ic ic-cv" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16v-3l2-5c.4-1 1.2-1.5 2.2-1.5h9.6c1 0 1.8.5 2.2 1.5l2 5v3"/><path d="M3 13h18M2.5 16h19"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/><path d="M9 4.5l3-2 3 2"/></svg>Compraventa</button>
       <button class="tab" data-tab-target="tab-conta"><svg class="tab-ic ic-pagos" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M15.2 9.3c0-1.4-1.4-2.3-3.2-2.3s-3.2.9-3.2 2.3c0 3.2 6.4 1.6 6.4 4.8 0 1.4-1.4 2.4-3.2 2.4s-3.2-1-3.2-2.4M12 5v14"/></svg>Pagos</button>
       <button class="tab" data-tab-target="tab-sorteo"><svg class="tab-ic ic-sorteo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.8 2.8M15.9 15.9l2.8 2.8M18.7 5.3l-2.8 2.8M8.1 15.9l-2.8 2.8"/><circle cx="16.3" cy="8.9" r="1.1" class="tab-ic-ball"/></svg>Sorteo</button>
+      <button class="tab" data-tab-target="tab-inf" hidden><svg class="tab-ic ic-inf" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l8 3v6c0 5-3.4 8.8-8 10-4.6-1.2-8-5-8-10v-6z"/><path d="M8.5 12l2.4 2.4 4.6-4.8"/></svg>Informes</button>
     </nav>
 
     <section id="tab-caja" class="tab-panel is-active">
@@ -282,6 +283,100 @@
             </div>
           </section>
 
+        </section>
+      </div>
+    </section>
+
+    <section id="tab-inf" class="tab-panel">
+      <div class="inf-top">
+        <h2>🛡️ Informes</h2>
+        <div class="inf-tabs">
+          <button type="button" class="is-on" data-inf-view="new">➕ Nuevo informe</button>
+          <button type="button" data-inf-view="reg">📁 Registro <span id="inf-reg-n"></span></button>
+        </div>
+        <span class="inf-only">🔒 Solo visible para el Jefe Aguila</span>
+      </div>
+      <p class="inf-warn" id="inf-warn" hidden></p>
+
+      <div data-inf-pane="new">
+        <div class="inf-grid">
+          <div class="inf-form">
+            <section class="card inf-card"><h4><i>1</i>Tipo de informe</h4><div class="inf-types" id="inf-types"></div></section>
+
+            <section class="card inf-card"><h4><i>2</i>Solicitante</h4>
+              <div class="inf-ags" id="inf-ags"></div>
+              <div class="inf-row">
+                <label class="inf-field" id="inf-placa-wrap"><span>Placa del agente</span><input id="inf-placa" class="text-input" list="inf-placas" placeholder="p. ej. 0412" autocomplete="off"></label>
+                <label class="inf-field"><span>Motivo</span><select id="inf-motivo" class="text-input"></select></label>
+              </div>
+              <button type="button" class="inf-link" id="inf-agente-add">+ Añadir nombre del agente (opcional)</button>
+              <label class="inf-field" id="inf-agente-wrap" hidden><span>Nombre del agente (opcional)</span><input id="inf-agente" class="text-input" placeholder="Solo si te lo dan"></label>
+              <datalist id="inf-placas"></datalist>
+            </section>
+
+            <section class="card inf-card"><h4><i>3</i>Vehículo</h4>
+              <div class="inf-vrow">
+                <div class="inf-paste" id="inf-paste" title="Pega con Ctrl+V, arrastra una imagen o haz clic">
+                  <img alt="" hidden>
+                  <span class="inf-paste-txt">📋 Pega la captura con <b>Ctrl+V</b><br>o arrástrala aquí · o haz clic</span>
+                  <button type="button" class="inf-photo-del" id="inf-photo-del" title="Quitar captura">✕</button>
+                  <input type="file" id="inf-file" accept="image/*" hidden>
+                </div>
+                <div class="inf-vfields">
+                  <label class="inf-field"><span>Vehículo</span><input id="inf-vehiculo" class="text-input" list="inf-vehs" placeholder="Nombre o modelo" autocomplete="off"></label>
+                  <label class="inf-field"><span>Matrícula</span><input id="inf-matricula" class="text-input mono" placeholder="46TRK812" autocomplete="off"></label>
+                  <label class="inf-field"><span>Color</span><span class="inf-color"><i id="inf-color-sw"></i><select id="inf-color" class="text-input"></select></span><input id="inf-color-otro" class="text-input" placeholder="Escribe el color" hidden></label>
+                  <label class="inf-field"><span>Propietario</span><input id="inf-propietario" class="text-input" placeholder="Nombre del propietario" autocomplete="off"></label>
+                  <datalist id="inf-vehs"></datalist>
+                </div>
+              </div>
+              <div class="inf-badges" id="inf-badges"></div>
+              <p class="inf-lbl">Tipo de carrocería (toca para cambiarlo; se recuerda para ese vehículo)</p>
+              <div class="inf-bodies" id="inf-bodies"></div>
+            </section>
+
+            <section class="card inf-card"><h4><i>4</i>Inspección</h4>
+              <div class="inf-insp">
+                <div>
+                  <div class="inf-scheme" id="inf-scheme"></div>
+                  <div class="inf-tools" id="inf-tools"></div>
+                  <div class="inf-points" id="inf-points"></div>
+                </div>
+                <div class="inf-extra" id="inf-extra"></div>
+              </div>
+              <p class="inf-hint" id="inf-concl-hint"></p>
+              <textarea id="inf-concl" class="text-input inf-concl" rows="4"></textarea>
+              <button type="button" class="inf-link" id="inf-concl-auto" hidden>↺ Volver a la conclusión automática</button>
+            </section>
+          </div>
+
+          <aside class="inf-prev">
+            <section class="card inf-card">
+              <div class="inf-prev-head"><b>VISTA PREVIA</b><span id="inf-prev-num"></span></div>
+              <div class="inf-preview" id="inf-preview"></div>
+              <div class="inf-btns">
+                <button type="button" id="inf-png">⬇ Descargar PNG</button>
+                <button type="button" id="inf-pdf">⬇ Descargar PDF</button>
+                <button type="button" id="inf-draft" class="ghost">💾 Guardar borrador</button>
+                <button type="button" id="inf-new" class="ghost">📄 Nuevo en blanco</button>
+                <button type="button" id="inf-emit" class="inf-emit">✔ Emitir y guardar en el registro</button>
+              </div>
+              <p class="inf-status" id="inf-status" role="status"></p>
+            </section>
+          </aside>
+        </div>
+      </div>
+
+      <div data-inf-pane="reg" hidden>
+        <section class="card inf-card">
+          <div class="inf-reg-bar">
+            <input id="inf-reg-q" class="text-input" placeholder="🔍 Buscar por nº, vehículo, matrícula, placa o código…">
+            <select id="inf-reg-ag" class="text-input"><option value="">Todas las agencias</option><option>FBI</option><option>LSPD</option><option>LSSD</option><option>Particular</option></select>
+            <select id="inf-reg-tipo" class="text-input"><option value="">Todos los tipos</option></select>
+            <button type="button" id="inf-verify" class="ghost">🔎 Verificar código</button>
+          </div>
+          <div class="table-wrap inf-reg-wrap"><table class="inf-reg-table"><thead><tr><th>Nº</th><th>Fecha</th><th>Tipo</th><th>Solicitante</th><th>Vehículo</th><th>Matrícula</th><th>Resultado</th><th></th></tr></thead><tbody id="inf-reg"></tbody></table></div>
+          <p class="muted inf-reg-empty" id="inf-reg-empty" hidden></p>
         </section>
       </div>
     </section>
@@ -586,7 +681,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 102 - Aguila Motors</footer>
+    <footer class="app-version">Versión 103 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -893,7 +988,8 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=102"></script>
-  <script src="app.js?v=102"></script>
+  <script src="catalogo/vehiculos.js?v=103"></script>
+  <script src="app.js?v=103"></script>
+  <script src="informes.js?v=103"></script>
 </body>
 </html>
