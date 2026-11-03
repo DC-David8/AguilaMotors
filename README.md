@@ -231,6 +231,15 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 104 · 2 de noviembre de 2026
+
+- **Caja · pestaña 🛡️ Informes** (solo la ve el Jefe Aguila; ningún otro rango). Subdivisiones:
+  - **Policía:** Informe Nitro $ 15.000 · Informe Incautado $ 12.000 · Peritaje de Daños $ 10.000 · Certificado de Modificaciones $ 8.000 · Gestión de Grúa $ 5.000.
+  - **Particular:** Informe Nitro $ 3.000 · Peritaje de Daños $ 2.500 · Certificado de Modificaciones $ 2.500 · Presupuesto $ 500.
+  - **Recargos:** Urgencia +50 % y Horario Nocturno +100 % (se calculan solos sobre los informes del ticket y se recalculan si cambian) · Fuera del Taller $ 5.000 · Vehículo Adicional 70 % del informe más caro (uno por vehículo).
+  - Abreviaturas para el datáfono («Nitro Inf Pol, Urg+Fuera+2xVehAd Rec»). Los precios se cambian en Gestión de Productos.
+- Arreglo: los productos de servicios con abreviatura propia ya la conservan al armar el concepto.
+
 ### Versión 103 · 2 de noviembre de 2026
 
 - **Nueva sección 🛡️ Informes** (solo el Jefe Aguila; SQL nuevo `bot-facturas/12_informes.sql`). Informes de una página A4 con estilo «Expediente de inspección», descargables en **PNG** y **PDF**:

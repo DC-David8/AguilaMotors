@@ -388,11 +388,19 @@ const PRODUCT_CATEGORIES = [
   { key: "nitro", label: "Nitro" },
   { key: "neones", label: "Neones RGB" },
   { key: "compraventa", label: "Mediación de Venta" },
+  { key: "informes", label: "Informes" },
+  { key: "informes_policia", label: "Informes · Policía" },
+  { key: "informes_particular", label: "Informes · Particular" },
+  { key: "informes_recargos", label: "Informes · Recargos" },
   { key: "otros", label: "Otros" },
 ];
 
 // Iconos pequenos de las pestanas de categoria (v85).
 const CAT_TAB_ICONS = {
+  informes: '<path d="M12 2.5l8 3v6c0 5-3.4 8.8-8 10-4.6-1.2-8-5-8-10v-6z"/><path d="M8.5 12l2.4 2.4 4.6-4.8"/>',
+  informes_policia: '<path d="M12 3l1.8 3.6 4 .6-2.9 2.8.7 4L12 12.1 8.4 14l.7-4-2.9-2.8 4-.6z"/><path d="M7 21h10M9 17h6"/>',
+  informes_particular: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  informes_recargos: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/>',
   motos: '<circle cx="5.5" cy="16.5" r="3.5"/><circle cx="18.5" cy="16.5" r="3.5"/><path d="M5.5 16.5l4-6h5l4 6M9.5 10.5L8 7H5.5M14.5 10.5l1.5-3.5h2.5"/>',
   car: '<path d="M3 15l2-5h14l2 5v3H3z"/><path d="M7 10l2-3h6l2 3"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/>',
   vip: '<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6 3-6M12 9v12"/>',
@@ -573,6 +581,22 @@ const SERVICE_PRODUCTS = [
   { name: "Grúa Aérea", price: 3500, category: "servicios_grua" },
   { name: "Rescate Aéreo Completo", price: 4500, category: "servicios_grua", note: "Incluye grúa aérea, reparación, limpieza y repostaje" },
 
+  // Informes de inspeccion (v104): solo los ve el Jefe Aguila en la Caja.
+  // Tarifa policia / particular y recargos (los de % se calculan con los informes del ticket).
+  { name: "Informe Nitro (Policía)", price: 15000, category: "informes_policia", short: "Nitro", group: "Inf Pol" },
+  { name: "Informe Incautado (Policía)", price: 12000, category: "informes_policia", short: "Incaut", group: "Inf Pol" },
+  { name: "Peritaje Daños (Policía)", price: 10000, category: "informes_policia", short: "Perit", group: "Inf Pol" },
+  { name: "Certif. Modificaciones (Policía)", price: 8000, category: "informes_policia", short: "Modif", group: "Inf Pol" },
+  { name: "Gestión Grúa (Policía)", price: 5000, category: "informes_policia", short: "Grua", group: "Inf Pol" },
+  { name: "Informe Nitro (Particular)", price: 3000, category: "informes_particular", short: "Nitro", group: "Inf Part" },
+  { name: "Peritaje Daños (Particular)", price: 2500, category: "informes_particular", short: "Perit", group: "Inf Part" },
+  { name: "Certif. Modificaciones (Particular)", price: 2500, category: "informes_particular", short: "Modif", group: "Inf Part" },
+  { name: "Presupuesto (Particular)", price: 500, category: "informes_particular", short: "Presup", group: "Inf Part" },
+  { name: "Urgencia +50% (Informe)", price: 0, category: "informes_recargos", short: "Urg", group: "Rec", note: "50 % de los informes del ticket" },
+  { name: "Horario Nocturno +100% (Informe)", price: 0, category: "informes_recargos", short: "Noct", group: "Rec", note: "100 % de los informes del ticket" },
+  { name: "Fuera del Taller (Informe)", price: 5000, category: "informes_recargos", short: "Fuera", group: "Rec" },
+  { name: "Vehículo Adicional 70% (Informe)", price: 0, category: "informes_recargos", short: "VehAd", group: "Rec", note: "70 % del informe más caro, por cada vehículo" },
+
   // Tienda junto al taller: productos que se compran a precio de taller y se
   // revenden aqui.
   { name: "Kit de Desvuelco", price: 1500, category: "tienda" },
@@ -602,7 +626,7 @@ const SERVICE_PRODUCTS = [
 const PRODUCTS = [
   ...buildTuningProducts(),
   ...SERVICE_PRODUCTS.map((p) => {
-    const [short, group] = SERVICE_SHORT[p.name] || [p.name, ""];
+    const [short, group] = SERVICE_SHORT[p.name] || [p.short || p.name, p.group || ""];
     return { ...p, short, group };
   }),
 ];
@@ -1244,9 +1268,19 @@ const PRODUCT_ICON_PATHS = {
     // Salvavidas bajo la helice: rescate aereo con todo incluido.
     rescate: '<path d="M4 2.5h16M12 2.5v3"/><circle cx="12" cy="14" r="7.5"/><circle cx="12" cy="14" r="3"/><path d="M12 6.5v4.5M12 17v4.5M4.5 14H9M15 14h4.5"/><path d="M19.5 4.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/>',
     desvuelco: '<path d="M4 14l2-4h12l2 4v2H4z"/><path d="M8 6a6 6 0 0 1 9 1M17 3v4h-4"/>',
+    // Informes (v104)
+    informe: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><circle cx="11.5" cy="13" r="3"/><path d="M13.7 15.2l2.8 2.8"/>',
+    incautado: '<path d="M12 2.5l8 3v6c0 5-3.4 8.8-8 10-4.6-1.2-8-5-8-10v-6z"/><path d="M12 7.5l1.3 2.7 3 .4-2.2 2.1.5 3-2.6-1.4-2.6 1.4.5-3-2.2-2.1 3-.4z"/>',
+    peritaje: '<path d="M3 15l2-5h14l2 5v3H3z"/><path d="M7 10l2-3h6l2 3"/><path d="M14 11l-2 3 3 1-2 3" stroke="#ff4d4d"/>',
+    certificado: '<rect x="4" y="3" width="16" height="13" rx="1.5"/><path d="M8 7h8M8 10h5"/><circle cx="15" cy="16.5" r="3"/><path d="M13.5 19l-1 3 2.5-1 2.5 1-1-3"/>',
+    presupuesto: '<path d="M6 2.5h12v19l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5z"/><path d="M9 7h6M9 10.5h6M9 14h4"/>',
+    urgencia: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2.5h6M12 2.5V5"/>',
+    nocturno: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/><path d="M17 3.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z"/>',
+    salida: '<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+    vehadd: '<path d="M2 16l1.6-4h10.8l1.6 4v2.5H2z"/><path d="M5 12l1.6-2.6h5.8L14 12"/><circle cx="5.5" cy="18.5" r="1.4"/><circle cx="12.5" cy="18.5" r="1.4"/><path d="M19 4v6M16 7h6"/>',
   };
 
-const PRODUCT_ICON_KEYWORDS = [["rescate aéreo","rescate"],["grúa aérea","gruaaerea"],["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["botella","botella"],["nitro","nitro"],["mediaci","compra"],["compraventa","compra"],["desvuelco","desvuelco"]];
+const PRODUCT_ICON_KEYWORDS = [["informe nitro","informe"],["incautado","incautado"],["peritaje","peritaje"],["certif.","certificado"],["presupuesto","presupuesto"],["urgencia","urgencia"],["nocturno","nocturno"],["fuera del taller","salida"],["vehículo adicional","vehadd"],["gestión grúa","grua"],["rescate aéreo","rescate"],["grúa aérea","gruaaerea"],["full tuning","ft"],["neones rgb","mando"],["mando","mando"],["pintura camale","camaleon"],["camale","camaleon"],["pintura","pintura"],["humo","humo"],["neon","neon"],["luces","luces"],["rueda","rueda"],["carrocer","carroceria"],["claxon","claxon"],["tintado","tintado"],["turbo","turbo"],["motor","motor"],["transmis","transmision"],["blindaje","blindaje"],["suspens","suspension"],["frenos","frenos"],["reparaci","reparacion"],["repostaje","gas"],["limpieza","limpieza"],["bayeta","bayeta"],["grúa","grua"],["botella","botella"],["nitro","nitro"],["mediaci","compra"],["compraventa","compra"],["desvuelco","desvuelco"]];
 
 function productIconKey(name) {
   const n = String(name || "").toLowerCase();
@@ -1262,13 +1296,15 @@ const PRODUCT_ICON_COLORS = {
   reparacion: "#5ee38a", limpieza: "#6fd6ff", gas: "#ffb020", grua: "#ffd23f", mando: "#c45cff",
   bayeta: "#6fd6ff", nitro: "#3df5ff", botella: "#3df5ff", camaleon: "#ff5fa2", compra: "#5ee38a", gruaaerea: "#4dd2ff",
   rescate: "#ff4d4d", desvuelco: "#ffb020",
+  informe: "#9cc0ff", incautado: "#ffd23f", peritaje: "#ff8a3d", certificado: "#5ee38a", presupuesto: "#ffcf94",
+  urgencia: "#ff4d4d", nocturno: "#b9a4ff", salida: "#ff9a3c", vehadd: "#4dd2ff",
 };
 
 // Packs ("Reparación + Limpieza (Taller)"): circulo partido en 2 o 3, cada parte
 // con el icono y el color de su servicio.
 function packIconKeys(name) {
   const base = String(name || "").replace(/\([^)]*\)/g, "");
-  if (!base.includes("+")) return null;
+  if (!base.includes("+") || /\+\s*\d/.test(base)) return null; // "+50%" no es un pack
   const keys = base.split("+").map((p) => productIconKey(p)).filter((k) => PRODUCT_ICON_PATHS[k]);
   return keys.length >= 2 && keys.length <= 3 ? keys : null;
 }
@@ -2143,6 +2179,7 @@ function setupCaja() {
   }
 
   function renderTicket() {
+    refreshInfDyn();
     ticketBody.innerHTML = "";
     let total = 0;
     for (const [name, row] of Object.entries(state.cart)) {
@@ -2228,11 +2265,48 @@ function setupCaja() {
 
   // Categorias que se muestran juntas en una pestana, con subdivisiones (v99):
   // Servicios (Taller) reune Taller, Tienda y Neones RGB.
-  const CAT_GROUPS = { servicios_taller: [
-    { key: "servicios_taller", label: "Taller" },
-    { key: "tienda", label: "Tienda" },
-    { key: "neones", label: "Neones RGB" },
-  ] };
+  const CAT_GROUPS = {
+    servicios_taller: [
+      { key: "servicios_taller", label: "Taller" },
+      { key: "tienda", label: "Tienda" },
+      { key: "neones", label: "Neones RGB" },
+    ],
+    informes: [
+      { key: "informes_policia", label: "Policía" },
+      { key: "informes_particular", label: "Particular" },
+      { key: "informes_recargos", label: "Recargos" },
+    ],
+  };
+  // Informes: solo el Jefe Aguila los ve y los cobra en la Caja (v104).
+  const isInfCat = (c) => String(c || "").startsWith("informes");
+  const cajaProducts = () => getAllProducts().filter((p) => AUTH.aguila || !isInfCat(p.category));
+  // Recargos que se calculan con los informes del ticket.
+  const INF_DYN = {
+    "Urgencia +50% (Informe)": (base) => Math.round(base.sum * 0.5),
+    "Horario Nocturno +100% (Informe)": (base) => Math.round(base.sum),
+    "Vehículo Adicional 70% (Informe)": (base) => Math.round(base.max * 0.7),
+  };
+  function infBase() {
+    const all = getAllProducts();
+    let sum = 0;
+    let max = 0;
+    for (const [name, row] of Object.entries(state.cart)) {
+      const p = all.find((x) => x.name === name);
+      if (!p || !["informes_policia", "informes_particular"].includes(p.category)) continue;
+      sum += row.price * row.qty;
+      max = Math.max(max, row.price);
+    }
+    return { sum, max };
+  }
+  function refreshInfDyn() {
+    const base = infBase();
+    for (const [name, fn] of Object.entries(INF_DYN)) {
+      const row = state.cart[name];
+      if (!row) continue;
+      row.price = fn(base);
+      if (name !== "Vehículo Adicional 70% (Informe)") row.qty = 1;
+    }
+  }
   const CAT_CHILD = {};
   for (const [g, subs] of Object.entries(CAT_GROUPS)) for (const s of subs) if (s.key !== g) CAT_CHILD[s.key] = g;
   const groupOf = (key) => CAT_CHILD[key] || key;
@@ -2279,7 +2353,7 @@ function setupCaja() {
   }
 
   function renderProductGrid() {
-    const all = getAllProducts();
+    const all = cajaProducts();
     renderCategoryTabs(all);
     let shown = all.filter((p) => groupOf(p.category || "otros") === state.activeCategory);
     const subs = (CAT_GROUPS[state.activeCategory] || []).filter((s) => shown.some((p) => (p.category || "otros") === s.key));
@@ -2332,10 +2406,18 @@ function setupCaja() {
       button.innerHTML = `
         <img src="${getProductIcon(product)}" alt="${product.name}" />
         <strong>${product.name}${product.note ? `<span class="product-note">${product.note}</span>` : ""}</strong>
-        <small>${fmtMoney(product.price)}</small>
+        <small>${INF_DYN[product.name] ? (product.name.includes("70%") ? "70 %" : product.name.includes("100%") ? "+100 %" : "+50 %") : fmtMoney(product.price)}</small>
         <span class="qty-badge"></span>
       `;
-      button.addEventListener("click", () => addItemDelta(product.name, product.price, +1));
+      button.addEventListener("click", () => {
+        if (INF_DYN[product.name]) {
+          const base = infBase();
+          if (!base.sum) return showToast("☝ Primero añade al ticket el informe al que se aplica el recargo");
+          if (product.name !== "Vehículo Adicional 70% (Informe)" && state.cart[product.name]) return showToast("ℹ Ese recargo ya está en el ticket");
+          return addItemDelta(product.name, INF_DYN[product.name](base), +1);
+        }
+        addItemDelta(product.name, product.price, +1);
+      });
       button.addEventListener("contextmenu", (ev) => {
         ev.preventDefault();
         addItemDelta(product.name, product.price, -1);
