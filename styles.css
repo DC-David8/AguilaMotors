@@ -2176,8 +2176,9 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .rp .cust i { margin-top: auto; border-top: 1px dotted #1a1a1a; font-style: normal; font-size: 9px; opacity: .6; padding-top: 2px; }
 .rp-foot { margin-top: auto; display: flex; align-items: flex-end; gap: 20px; position: relative; }
 .rp-sig { width: 300px; border-top: 1.5px solid #1a1a1a; font-size: 11px; padding-top: 3px; }
+.rp-tit { display: block; font-size: 9.5px; letter-spacing: .02em; color: #555; font-style: italic; margin-top: 1px; white-space: nowrap; }
 .rp-cal { font-family: "Great Vibes", cursive; font-size: 40px; margin-bottom: -4px; color: #1a2a55; line-height: 1.15; white-space: nowrap; }
-.rp-stamp { position: absolute; left: 230px; bottom: -12px; width: 126px; height: 126px; opacity: .9; }
+.rp-stamp { position: absolute; left: 335px; bottom: -12px; width: 126px; height: 126px; opacity: .9; }
 .rp-code { margin-left: auto; text-align: right; font-size: 10px; }
 /* Si no cabe en una pagina, se compacta */
 .rp.tight .rp-photo img, .rp.tight .rp-nophoto { height: 140px; }

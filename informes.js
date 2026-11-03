@@ -386,7 +386,7 @@ function infReportHtml(st) {
 <div class="rp-bar">${st.agencia === "Particular" ? "" : `<img class="s" src="${ag.logo}" alt="">`}<div><h1>${tipo.title}</h1><p>Solicitado por ${solicit}</p></div><img class="am" src="aguila_motors_logo.png" alt=""></div>
 <div class="rp-cls">${pres ? "PRESUPUESTO · AGUILA MOTORS" : "CONFIDENCIAL · USO POLICIAL"}</div>
 <div class="rp-body">
-<div class="rp-row"><div><span>Nº DE INSPECCIÓN</span><b>${infEsc(num)}</b></div><div><span>FECHA</span><b>${infEsc(st.fecha)} ${infEsc(st.hora)}</b></div><div><span>MOTIVO</span><b>${infEsc(st.motivo)}</b></div><div><span>INSPECTOR</span><b>${infEsc(st.inspector)}</b></div></div>
+<div class="rp-row"><div><span>Nº DE INSPECCIÓN</span><b>${infEsc(num)}</b></div><div><span>FECHA</span><b>${infEsc(st.fecha)} ${infEsc(st.hora)}</b></div><div><span>MOTIVO</span><b>${infEsc(st.motivo)}</b></div><div><span>INSPECTOR</span><b>Ing. ${infEsc(st.inspector)}</b></div></div>
 <div class="rp-two"><div class="rp-photo">${st.captura ? `<img src="${st.captura}" alt="">` : '<div class="rp-nophoto">Sin captura</div>'}<small>EVIDENCIA FOTOGRÁFICA Nº 1</small></div>
 <div class="rp-veh"><h3>VEHÍCULO</h3><dl>${veh.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
 <div class="rp-verdict" style="border-color:${col};color:${col};background:${col}12">${v.t}<small>${v.s}</small></div></div></div>
@@ -395,7 +395,7 @@ function infReportHtml(st) {
 ${infSectionsHtml(st)}
 <h3>CONCLUSIÓN</h3><p class="rp-concl">${concl}</p>
 ${bottom}
-<div class="rp-foot"><div><div class="rp-cal">${infEsc(st.inspector)}</div><div class="rp-sig">${infEsc(st.inspector).toUpperCase()} · JEFE AGUILA · AGUILA MOTORS</div></div><img class="rp-stamp" src="informes/sello.png" alt=""><div class="rp-code">VERIFICACIÓN<br><b>${infEsc(st.codigo)}</b></div></div>
+<div class="rp-foot"><div><div class="rp-cal">${infEsc(st.inspector)}</div><div class="rp-sig">ING. ${infEsc(st.inspector).toUpperCase()} · JEFE AGUILA<span class="rp-tit">Ingeniero en Mecánica Automotriz · Aguila Motors</span></div></div><img class="rp-stamp" src="informes/sello.png" alt=""><div class="rp-code">VERIFICACIÓN<br><b>${infEsc(st.codigo)}</b></div></div>
 </div></div>`;
 }
 

@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 105 · 2 de noviembre de 2026
+
+- **Informes:** el inspector aparece como «Ing. Esteban Dido» y la firma añade «Ingeniero en Mecánica Automotriz · Aguila Motors». El sello se movió a la derecha para no tapar el título.
+
 ### Versión 104 · 2 de noviembre de 2026
 
 - **Caja · pestaña 🛡️ Informes** (solo la ve el Jefe Aguila; ningún otro rango). Subdivisiones:
