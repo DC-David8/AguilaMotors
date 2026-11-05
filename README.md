@@ -231,6 +231,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 106 · 4 de noviembre de 2026
+
+- **Informes · 7 carrocerías nuevas:** Compacto / hatchback, Muscle / clásico, Descapotable, Limusina, Autobús, Quad / ATV y Monoplaza / kart (18 en total). Se detectan solas por el modelo del catálogo o por el nombre.
+- **Informes · vistas del esquema:** Planta (la de la carrocería), Vista lateral (bajos y escape), Multivista (planta, lateral, frontal y trasera) y Despiece del vano motor (admisión, batería, bloque / inyectores, turbo, radiador). Cada punto dice la zona o la pieza donde está. Al cambiar de vista se quitan los puntos marcados (avisa antes).
+
 ### Versión 105 · 2 de noviembre de 2026
 
 - **Informes:** el inspector aparece como «Ing. Esteban Dido» y la firma añade «Ingeniero en Mecánica Automotriz · Aguila Motors». El sello se movió a la derecha para no tapar el título.
