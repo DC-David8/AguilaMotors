@@ -231,6 +231,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 107 · 4 de noviembre de 2026
+
+- **Informes · estilo nuevo del esquema:** zonas coloreadas (cada zona de su color, con leyenda) y cuadrícula de referencia A–H × 1–3. Cada hallazgo lleva su casilla (B3, G2…) en el esquema, en la lista y en el formulario.
+- **Informes · esquema y zonas lado a lado:** en nitro, daños, incautado y modificaciones el esquema va a la izquierda y las zonas revisadas / hallazgos a la derecha. El espacio que sobra agranda la foto y se reparte entre las secciones, sin huecos en blanco.
+
 ### Versión 106 · 4 de noviembre de 2026
 
 - **Informes · 7 carrocerías nuevas:** Compacto / hatchback, Muscle / clásico, Descapotable, Limusina, Autobús, Quad / ATV y Monoplaza / kart (18 en total). Se detectan solas por el modelo del catálogo o por el nombre.

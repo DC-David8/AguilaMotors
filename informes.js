@@ -250,7 +250,7 @@ const INF_GRUA_MOTIVOS = ["Estacionamiento indebido", "Vehículo abandonado", "A
 // ---------- Resultado y textos automaticos ----------
 function infNumbered(st) {
   let n = 0;
-  return st.points.map((p) => ({ ...p, n: INF_TOOLS[p.t]?.num ? ++n : 0, zone: infZone(infScheme(st), p.x, p.y) }));
+  return st.points.map((p) => ({ ...p, n: INF_TOOLS[p.t]?.num ? ++n : 0, zone: infZone(infScheme(st), p.x, p.y), cell: infCell(p.x, p.y) }));
 }
 
 function infVerdict(st) {
@@ -351,11 +351,44 @@ function infPointsSvg(st) {
     .join("");
 }
 
+// Estilo v107: zonas coloreadas + cuadricula de referencia (A-H x 1-3).
+const INF_ZONE_COLORS = ["#ffe3c2", "#dbe9ff", "#ffd6d6", "#dff3e1", "#efe0ff", "#fff3b8"];
+const INF_ZONE_INK = ["#a35a00", "#2357a8", "#b02020", "#1b7f3b", "#6b3fb0", "#8a6d00"];
+const INF_COLS = "ABCDEFGH";
+const infCell = (x, y) => `${INF_COLS[Math.min(7, Math.max(0, Math.floor(x / 55)))]}${Math.min(3, Math.max(1, Math.floor(y / 50) + 1))}`;
+let infSvgSeq = 0;
 function infSchemeSvg(st, attrs = 'width="100%" height="100%" preserveAspectRatio="xMidYMid meet"') {
-  return `<svg viewBox="0 0 440 150" ${attrs}>${infScheme(st).svg}${infPointsSvg(st)}</svg>`;
+  const def = infScheme(st);
+  const id = `infclip${++infSvgSeq}`;
+  const shapes = def.svg.replace(/<text[\s\S]*?<\/text>/g, "").replace(/fill="[^"]*"/g, 'fill="#fff"').replace(/stroke="[^"]*"/g, 'stroke="#fff"');
+  let prev = 0;
+  const rects = def.z.map((z, i) => {
+    const r = { x: z.y0 != null || z.y1 != null ? 0 : prev, x2: z.x1, y: z.y0 ?? 0, y2: z.y1 ?? 150, c: INF_ZONE_COLORS[i % INF_ZONE_COLORS.length] };
+    if (z.y0 == null && z.y1 == null) prev = z.x1;
+    return r;
+  });
+  // zonas con limite de y (multivista, despiece): el x de inicio es el x1 de la anterior con el mismo limite
+  def.z.forEach((z, i) => {
+    if (z.y0 == null && z.y1 == null) return;
+    const before = def.z.slice(0, i).filter((q) => q.y0 === z.y0 && q.y1 === z.y1).pop();
+    rects[i].x = before ? before.x1 : 0;
+  });
+  def.z.forEach((z, i) => {
+    if (z.y0 != null || z.y1 != null) return;
+    const before = def.z.slice(0, i).filter((q) => q.y0 == null && q.y1 == null).pop();
+    rects[i].x = before ? before.x1 : 0;
+  });
+  const zones = rects.map((r) => `<rect x="${r.x}" y="${r.y}" width="${Math.max(0, r.x2 - r.x)}" height="${r.y2 - r.y}" fill="${r.c}"/>`).reverse().join("");
+  let grid = "";
+  for (let i = 0; i <= 8; i++) grid += `<line x1="${i * 55}" y1="0" x2="${i * 55}" y2="150" stroke="#8a8a8a" stroke-width=".6" stroke-dasharray="2 3"/>`;
+  for (let j = 0; j <= 3; j++) grid += `<line x1="0" y1="${j * 50}" x2="440" y2="${j * 50}" stroke="#8a8a8a" stroke-width=".6" stroke-dasharray="2 3"/>`;
+  for (let i = 0; i < 8; i++) grid += `<text x="${i * 55 + 27.5}" y="-3" font-size="8" fill="#777" text-anchor="middle" font-family="Courier New, monospace" font-weight="700">${INF_COLS[i]}</text>`;
+  for (let j = 0; j < 3; j++) grid += `<text x="-8" y="${j * 50 + 28}" font-size="8" fill="#777" text-anchor="middle" font-family="Courier New, monospace" font-weight="700">${j + 1}</text>`;
+  const cells = infNumbered(st).filter((p) => p.n).map((p) => `<text x="${p.x + 11}" y="${p.y - 7}" font-size="7.5" fill="#1a1a1a" font-family="Courier New, monospace" font-weight="700">${p.cell}</text>`).join("");
+  return `<svg viewBox="-16 -12 462 168" ${attrs}><defs><mask id="${id}" maskUnits="userSpaceOnUse" x="-16" y="-12" width="462" height="168">${shapes}</mask></defs><g mask="url(#${id})">${zones}</g>${grid}${def.svg}${infPointsSvg(st)}${cells}</svg>`;
 }
 
-function infSectionsHtml(st) {
+function infSectionsHtml(st, raw = false) {
   const pts = infNumbered(st);
   const zones = infScheme(st).z.map((z) => z.n);
   const hit = (z) => pts.filter((p) => p.zone === z && p.n);
@@ -365,19 +398,19 @@ function infSectionsHtml(st) {
       out.push(["ZONAS REVISADAS", `<ol>${zones.map((z) => `<li>${z}: <span class="g">sin hallazgos.</span></li>`).join("")}<li>Bajos / chasis: <span class="g">sin hallazgos.</span></li></ol>`]);
       out.push(["CERTIFICACIÓN", `<p class="cert"><b class="h">CERTIFICADO DE AUSENCIA DE NITRO</b>Aguila Motors <b>certifica</b> que, en la inspección del vehículo <b>${infEsc(st.vehiculo || "—")}</b>${st.matricula ? ` con matrícula <b>${infEsc(st.matricula)}</b>` : ""}, realizada el <b>${infEsc(st.fecha)} a las ${infEsc(st.hora)}</b>, <b>no se detectó ningún sistema de óxido nitroso (N₂O)</b> ni restos de su instalación en ninguna de las zonas revisadas.</p>`]);
     } else {
-      const items = pts.filter((p) => p.n).map((p) => `<li>${INF_TOOLS[p.t].l} · ${p.zone.toLowerCase()}.</li>`);
+      const items = pts.filter((p) => p.n).map((p) => `<li>${INF_TOOLS[p.t].l} · ${p.zone.toLowerCase()} <span class="cell">${p.cell}</span></li>`);
       const clean = zones.filter((z) => !hit(z).length);
       if (clean.length) items.push(`<li>${clean.join(", ")} y bajos: <span class="g">sin hallazgos.</span></li>`);
       out.push([st.res === "rastros" ? "RESTOS ENCONTRADOS" : "HALLAZGOS", `<ol>${items.join("") || "<li>Sin puntos marcados.</li>"}</ol>`]);
     }
   } else if (st.tipo === "danos") {
-    const rows = pts.filter((p) => p.n).map((p) => `<tr><td>(${p.n}) ${p.zone}</td><td>${p.t === "grave" ? '<span class="lvl"><i style="width:80%;background:#d93025"></i></span><span class="r">Grave</span>' : '<span class="lvl"><i style="width:35%;background:#f2a900"></i></span><span class="a">Leve</span>'}</td></tr>`);
+    const rows = pts.filter((p) => p.n).map((p) => `<tr><td>(${p.n}) ${p.zone} <span class="cell">${p.cell}</span></td><td>${p.t === "grave" ? '<span class="lvl"><i style="width:80%;background:#d93025"></i></span><span class="r">Grave</span>' : '<span class="lvl"><i style="width:35%;background:#f2a900"></i></span><span class="a">Leve</span>'}</td></tr>`);
     const clean = zones.filter((z) => !hit(z).length).map((z) => `<tr><td>${z}</td><td><span class="lvl"><i style="width:8%;background:#1b7f3b"></i></span><span class="g">Sin daños</span></td></tr>`);
     out.push(["DAÑOS REGISTRADOS", `<table><tr><th>ZONA</th><th>NIVEL</th></tr>${rows.join("")}${clean.join("")}</table>`]);
     const val = infValuation(st);
     if (val.length) out.push(["VALORACIÓN DE LA REPARACIÓN", `<table><tr><th>CONCEPTO</th><th class="n">IMPORTE</th></tr>${val.map((i) => `<tr><td>${infEsc(i.name)}</td><td class="n">${infMoney(i.price * i.qty)}</td></tr>`).join("")}<tr class="tot"><td>TOTAL</td><td class="n">${infMoney(val.reduce((a, i) => a + i.price * i.qty, 0))}</td></tr></table>`]);
   } else if (st.tipo === "incautado") {
-    out.push(["COMPROBACIONES", `<table><tr><th>ELEMENTO</th><th>ESTADO</th></tr>${INF_CHECKS.map(([k, l, b, g]) => `<tr><td>${l}</td><td class="${st.checks[k] === "bad" ? "r" : "g"}">${st.checks[k] === "bad" ? b : g}</td></tr>`).join("")}${pts.filter((p) => p.n).map((p) => `<tr><td>(${p.n}) ${p.zone}</td><td class="r">${INF_TOOLS[p.t].l}</td></tr>`).join("")}</table>`]);
+    out.push(["COMPROBACIONES", `<table><tr><th>ELEMENTO</th><th>ESTADO</th></tr>${INF_CHECKS.map(([k, l, b, g]) => `<tr><td>${l}</td><td class="${st.checks[k] === "bad" ? "r" : "g"}">${st.checks[k] === "bad" ? b : g}</td></tr>`).join("")}${pts.filter((p) => p.n).map((p) => `<tr><td>(${p.n}) ${p.zone} <span class="cell">${p.cell}</span></td><td class="r">${INF_TOOLS[p.t].l}</td></tr>`).join("")}</table>`]);
   } else if (st.tipo === "modificaciones") {
     out.push(["MODIFICACIONES INSTALADAS", `<table><tr><th>ELEMENTO</th><th>ESTADO</th><th>LEGALIDAD</th></tr>${Object.entries(st.mods).map(([k, val]) => {
       const bad = k === "Nitro" && val === "Instalado";
@@ -390,7 +423,20 @@ function infSectionsHtml(st) {
     const tot = st.items.reduce((a, i) => a + i.price * i.qty, 0);
     out.push(["DETALLE DEL PRESUPUESTO", `<table><tr><th>CONCEPTO</th><th class="n">CANT.</th><th class="n">PRECIO</th><th class="n">IMPORTE</th></tr>${st.items.map((i) => `<tr><td>${infEsc(i.name)}</td><td class="n">${i.qty}</td><td class="n">${infMoney(i.price)}</td><td class="n">${infMoney(i.price * i.qty)}</td></tr>`).join("") || '<tr><td colspan="4">Añade conceptos desde el formulario.</td></tr>'}<tr class="tot"><td>TOTAL</td><td></td><td></td><td class="n">${infMoney(tot)}</td></tr></table>`]);
   }
+  if (raw) return out;
   return out.map(([t, b]) => `<h3>${t}</h3>${b}`).join("");
+}
+
+// Esquema a la izquierda y la primera seccion (zonas / hallazgos / danos) a la derecha.
+const INF_SIDE = { nitro: 1, danos: 1, incautado: 1, modificaciones: 1 };
+function infSchemeBlock(st) {
+  const h = st.tipo === "danos" ? "MAPA DE DAÑOS" : st.tipo === "grua" ? "ESTADO AL LLEGAR AL TALLER" : st.tipo === "presupuesto" ? "ZONAS A REPARAR" : "ESQUEMA DE HALLAZGOS";
+  const secs = infSectionsHtml(st, true);
+  const sch = `<h3>${h}</h3><div class="rp-sch">${infSchemeSvg(st)}</div>`;
+  if (!INF_SIDE[st.tipo] || !secs.length) return sch + secs.map(([t, b]) => `<h3>${t}</h3>${b}`).join("");
+  const [first, ...rest] = secs;
+  const legend = `<div class="rp-legend">${infScheme(st).z.map((z, i) => `<span><i style="background:${INF_ZONE_COLORS[i % INF_ZONE_COLORS.length]}"></i>${z.n}</span>`).join("")}<em>Cuadrícula A–H · 1–3: posición exacta de cada hallazgo.</em></div>`;
+  return `<div class="rp-side"><div class="rp-side-l">${sch}</div><div class="rp-side-r"><h3>${first[0]}</h3>${first[1]}${legend}</div></div>${rest.map(([t, b]) => `<h3>${t}</h3>${b}`).join("")}`;
 }
 
 function infReportHtml(st) {
@@ -415,9 +461,7 @@ function infReportHtml(st) {
 <div class="rp-two"><div class="rp-photo">${st.captura ? `<img src="${st.captura}" alt="">` : '<div class="rp-nophoto">Sin captura</div>'}<small>EVIDENCIA FOTOGRÁFICA Nº 1</small></div>
 <div class="rp-veh"><h3>VEHÍCULO</h3><dl>${veh.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
 <div class="rp-verdict" style="border-color:${col};color:${col};background:${col}12">${v.t}<small>${v.s}</small></div></div></div>
-<h3>${st.tipo === "danos" ? "MAPA DE DAÑOS" : st.tipo === "grua" ? "ESTADO AL LLEGAR AL TALLER" : st.tipo === "presupuesto" ? "ZONAS A REPARAR" : "ESQUEMA DE HALLAZGOS"}</h3>
-<div class="rp-sch">${infSchemeSvg(st)}</div>
-${infSectionsHtml(st)}
+${infSchemeBlock(st)}
 <h3>CONCLUSIÓN</h3><p class="rp-concl">${concl}</p>
 ${bottom}
 <div class="rp-foot"><div><div class="rp-cal">${infEsc(st.inspector)}</div><div class="rp-sig">ING. ${infEsc(st.inspector).toUpperCase()} · JEFE AGUILA<span class="rp-tit">Ingeniero en Mecánica Automotriz · Aguila Motors</span></div></div><img class="rp-stamp" src="informes/sello.png" alt=""><div class="rp-code">VERIFICACIÓN<br><b>${infEsc(st.codigo)}</b></div></div>
@@ -428,6 +472,22 @@ ${bottom}
 function infMountReport(host, st) {
   host.innerHTML = infReportHtml(st);
   const page = host.querySelector(".rp");
+  // Con el esquema al lado, el hueco que sobra se lo lleva la foto (hasta 300 px).
+  const foot = page?.querySelector(".rp-foot");
+  const img = page?.querySelector(".rp-photo img, .rp-nophoto");
+  if (foot && img && page.querySelector(".rp-side")) {
+    const prev = foot.previousElementSibling;
+    const free = foot.offsetTop - (prev.offsetTop + prev.offsetHeight) - 14;
+    if (free > 10) {
+      const grow = Math.min(free, Math.max(0, 250 - img.offsetHeight));
+      img.style.height = `${img.offsetHeight + grow}px`;
+      // El resto se reparte como aire entre las secciones (sin huecos grandes).
+      const body = page.querySelector(".rp-body");
+      const rest = free - grow;
+      const n = body.children.length - 1;
+      if (rest > 10 && n > 0) body.style.gap = `${8 + Math.min(18, Math.floor(rest / n))}px`;
+    }
+  }
   if (page && page.scrollHeight > page.clientHeight + 1) page.classList.add("tight");
   if (page && page.scrollHeight > page.clientHeight + 1) page.classList.add("tighter");
   return page;
@@ -822,7 +882,7 @@ function setupInformes() {
       const r = mk("div", "inf-pt");
       const i = mk("i", "", p.n || "✓");
       i.style.background = INF_TOOLS[p.t].c;
-      r.append(i, mk("span", "", p.zone), mk("b", "", INF_TOOLS[p.t].l));
+      r.append(i, mk("span", "", p.n ? `${p.zone} · ${p.cell}` : p.zone), mk("b", "", INF_TOOLS[p.t].l));
       box.appendChild(r);
     }
   }

@@ -2236,7 +2236,7 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .inf-body { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 3px; border-radius: 9px; border: 2px solid transparent; background: #f3efe4; color: #1a1a1a; font-size: 0.66rem; font-weight: 700; text-transform: none; letter-spacing: 0; box-shadow: none; min-height: 0; }
 .inf-body.is-on { border-color: var(--accent); box-shadow: 0 0 10px rgba(255,154,31,.5); }
 .inf-insp { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; }
-.inf-scheme { background: #fff; border: 1.5px dashed #1a1a1a; border-radius: 10px; padding: 6px; aspect-ratio: 440 / 150; cursor: crosshair; }
+.inf-scheme { background: #fff; border: 1.5px dashed #1a1a1a; border-radius: 10px; padding: 6px; aspect-ratio: 462 / 168; cursor: crosshair; }
 .inf-scheme svg { display: block; width: 100%; height: 100%; }
 .inf-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .inf-tool { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; min-height: 0; border-radius: 99px; border: 1px solid #3a2c1d; background: #2a2017; color: #eee; font-size: 0.76rem; text-transform: none; letter-spacing: 0; box-shadow: none; font-weight: 600; }
@@ -2311,3 +2311,19 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .cat-sub-chip[data-cat="informes_particular"], .prod-sub-h[data-cat="informes_particular"] { --gc: #f97d02; --gl: #ffcf94; }
 .cat-sub-chip[data-cat="informes_recargos"], .prod-sub-h[data-cat="informes_recargos"] { --gc: #d93025; --gl: #ffaaa3; }
 .cat-sub-chip[data-cat="informes"] { --gc: #3d6fd6; --gl: #a9c3ff; }
+
+/* Informes v107: esquema y zonas lado a lado */
+.rp-side { flex: 0 0 auto; display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; min-height: 0; align-items: start; }
+.rp-side-l, .rp-side-r { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rp-side .rp-sch { flex: 0 0 auto !important; min-height: 0 !important; max-height: none; padding: 4px; }
+.rp-side .rp-sch svg { height: auto; }
+.rp-legend { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 9.5px; color: #444; }
+.rp-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.rp-legend i { width: 10px; height: 10px; border: 1px solid #999; border-radius: 2px; display: inline-block; }
+.rp-legend em { flex-basis: 100%; font-size: 9px; color: #777; }
+.rp-side-r ol { padding-left: 18px; font-size: 11px; line-height: 1.5; }
+.rp-side-r table { font-size: 10.6px; }
+.rp .cell { font: 700 9px "Courier New", monospace; color: #555; border: 1px solid #bbb; border-radius: 3px; padding: 0 3px; margin-left: 2px; white-space: nowrap; }
+.inf-point .cell, .inf-points span { white-space: nowrap; }
+.rp-side-r .lvl { width: 30px !important; }
+.rp-side-r td { padding-top: 3px; padding-bottom: 3px; }
