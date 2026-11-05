@@ -2332,3 +2332,5 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .rp-rub { position: absolute; right: 10px; bottom: 8px; width: 92px; pointer-events: none; }
 .rp .cust div.ret:has(.rp-rub) { padding-bottom: 8px; }
 .rp .cust { grid-auto-rows: minmax(74px, auto); }
+.rp-row b.rp-dt { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12px; line-height: 1.5; }
+.rp-flag { flex: 0 0 auto; border-radius: 1.5px; }

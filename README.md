@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 110 · 4 de noviembre de 2026
+
+- **Informes · fecha en dos horarios:** la casilla «Fecha» muestra la fecha y hora de España y la de Guatemala, cada una con su bandera (dibujada, para que se vea igual en Windows). Se calculan del mismo instante, con el cambio de horario de España incluido. El certificado de ausencia de nitro también lleva las dos. Los informes antiguos toman su hora como hora de Guatemala.
+
 ### Versión 109 · 4 de noviembre de 2026
 
 - **Informes · rúbrica del inspector:** en «Inspeccionado por» de la cadena de custodia sale la rúbrica (iniciales ED cruzadas, tinta azul) sobre la línea de firma. La fila de la cadena de custodia es un poco más alta para que quepan la rúbrica y los sellos.

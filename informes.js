@@ -168,6 +168,27 @@ function infNowParts() {
   const p = (n) => String(n).padStart(2, "0");
   return { date: `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`, time: `${p(d.getHours())}:${p(d.getMinutes())}` };
 }
+// Fecha y hora del informe en Espana y en Guatemala (v110). st.ts = instante del informe;
+// los antiguos (sin ts) se leen como hora de Guatemala.
+function infInstant(st) {
+  if (st.ts) return new Date(st.ts);
+  const m = String(st.fecha || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const h = String(st.hora || "").match(/(\d{1,2}):(\d{2})/);
+  if (!m) return new Date();
+  return new Date(Date.UTC(+m[3], +m[2] - 1, +m[1], (h ? +h[1] : 0) + 6, h ? +h[2] : 0));
+}
+function infDateIn(st, tz) {
+  const f = new Intl.DateTimeFormat("es-ES", { timeZone: tz, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(infInstant(st));
+  const g = (t) => f.find((x) => x.type === t)?.value || "";
+  return { date: `${g("day")}/${g("month")}/${g("year")}`, time: `${g("hour") === "24" ? "00" : g("hour")}:${g("minute")}` };
+}
+const INF_FLAG_ES = '<svg class="rp-flag" viewBox="0 0 18 12" width="18" height="12"><rect width="18" height="12" fill="#c60b1e"/><rect y="3" width="18" height="6" fill="#ffc400"/><rect width="18" height="12" fill="none" stroke="#0003" stroke-width=".6"/></svg>';
+const INF_FLAG_GT = '<svg class="rp-flag" viewBox="0 0 18 12" width="18" height="12"><rect width="18" height="12" fill="#fff"/><rect width="6" height="12" fill="#4997d0"/><rect x="12" width="6" height="12" fill="#4997d0"/><circle cx="9" cy="6" r="1.8" fill="none" stroke="#3a8a3a" stroke-width=".9"/><rect width="18" height="12" fill="none" stroke="#0003" stroke-width=".6"/></svg>';
+function infDatesHtml(st) {
+  const es = infDateIn(st, "Europe/Madrid");
+  const gt = infDateIn(st, "America/Guatemala");
+  return `<b class="rp-dt">${INF_FLAG_ES}${es.date} ${es.time}</b><b class="rp-dt">${INF_FLAG_GT}${gt.date} ${gt.time}</b>`;
+}
 function infCode() {
   const a = new Uint8Array(4);
   (window.crypto || window.msCrypto).getRandomValues(a);
@@ -201,6 +222,7 @@ function infNewState(tipo = "nitro") {
     codigo: infCode(),
     fecha: now.date,
     hora: now.time,
+    ts: Date.now(),
     agencia: "FBI",
     placa: "",
     agente: "",
@@ -396,7 +418,7 @@ function infSectionsHtml(st, raw = false) {
   if (st.tipo === "nitro") {
     if (st.res === "no") {
       out.push(["ZONAS REVISADAS", `<ol>${zones.map((z) => `<li>${z}: <span class="g">sin hallazgos.</span></li>`).join("")}<li>Bajos / chasis: <span class="g">sin hallazgos.</span></li></ol>`]);
-      out.push(["CERTIFICACIÓN", `<p class="cert"><b class="h">CERTIFICADO DE AUSENCIA DE NITRO</b>Aguila Motors <b>certifica</b> que, en la inspección del vehículo <b>${infEsc(st.vehiculo || "—")}</b>${st.matricula ? ` con matrícula <b>${infEsc(st.matricula)}</b>` : ""}, realizada el <b>${infEsc(st.fecha)} a las ${infEsc(st.hora)}</b>, <b>no se detectó ningún sistema de óxido nitroso (N₂O)</b> ni restos de su instalación en ninguna de las zonas revisadas.</p>`]);
+      out.push(["CERTIFICACIÓN", `<p class="cert"><b class="h">CERTIFICADO DE AUSENCIA DE NITRO</b>Aguila Motors <b>certifica</b> que, en la inspección del vehículo <b>${infEsc(st.vehiculo || "—")}</b>${st.matricula ? ` con matrícula <b>${infEsc(st.matricula)}</b>` : ""}, realizada el <b>${infDateIn(st, "Europe/Madrid").date} a las ${infDateIn(st, "Europe/Madrid").time} (hora de España)</b> · <b>${infDateIn(st, "America/Guatemala").date} a las ${infDateIn(st, "America/Guatemala").time} (hora de Guatemala)</b>, <b>no se detectó ningún sistema de óxido nitroso (N₂O)</b> ni restos de su instalación en ninguna de las zonas revisadas.</p>`]);
     } else {
       const items = pts.filter((p) => p.n).map((p) => `<li>${INF_TOOLS[p.t].l} · ${p.zone.toLowerCase()} <span class="cell">${p.cell}</span></li>`);
       const clean = zones.filter((z) => !hit(z).length);
@@ -457,7 +479,7 @@ function infReportHtml(st) {
 <div class="rp-bar">${st.agencia === "Particular" ? "" : `<img class="s" src="${ag.logo}" alt="">`}<div><h1>${tipo.title}</h1><p>Solicitado por ${solicit}</p></div><img class="am" src="aguila_motors_logo.png" alt=""></div>
 <div class="rp-cls">${pres ? "PRESUPUESTO · AGUILA MOTORS" : "CONFIDENCIAL · USO POLICIAL"}</div>
 <div class="rp-body">
-<div class="rp-row"><div><span>Nº DE INSPECCIÓN</span><b>${infEsc(num)}</b></div><div><span>FECHA</span><b>${infEsc(st.fecha)} ${infEsc(st.hora)}</b></div><div><span>MOTIVO</span><b>${infEsc(st.motivo)}</b></div><div><span>INSPECTOR</span><b>Ing. ${infEsc(st.inspector)}</b></div></div>
+<div class="rp-row"><div><span>Nº DE INSPECCIÓN</span><b>${infEsc(num)}</b></div><div><span>FECHA</span>${infDatesHtml(st)}</div><div><span>MOTIVO</span><b>${infEsc(st.motivo)}</b></div><div><span>INSPECTOR</span><b>Ing. ${infEsc(st.inspector)}</b></div></div>
 <div class="rp-two"><div class="rp-photo">${st.captura ? `<img src="${st.captura}" alt="">` : '<div class="rp-nophoto">Sin captura</div>'}<small>EVIDENCIA FOTOGRÁFICA Nº 1</small></div>
 <div class="rp-veh"><h3>VEHÍCULO</h3><dl>${veh.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
 <div class="rp-verdict" style="border-color:${col};color:${col};background:${col}12">${v.t}<small>${v.s}</small></div></div></div>
@@ -1302,7 +1324,7 @@ function setupInformes() {
     const d = { ...infNewState(row.datos.tipo || "nitro"), ...row.datos };
     if (mode === "dup") {
       const fresh = infNewState(d.tipo);
-      Object.assign(d, { id: fresh.id, codigo: fresh.codigo, numero: "", anio: null, correlativo: null, estado: "borrador", emitidoAt: null, fecha: fresh.fecha, hora: fresh.hora, points: [], captura: "", concl: "", conclEdited: false, inspector: fresh.inspector });
+      Object.assign(d, { id: fresh.id, codigo: fresh.codigo, numero: "", anio: null, correlativo: null, estado: "borrador", emitidoAt: null, fecha: fresh.fecha, hora: fresh.hora, ts: fresh.ts, points: [], captura: "", concl: "", conclEdited: false, inspector: fresh.inspector });
     }
     return d;
   }
