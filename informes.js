@@ -486,8 +486,28 @@ function infReportHtml(st) {
 ${infSchemeBlock(st)}
 <h3>CONCLUSIÓN</h3><p class="rp-concl">${concl}</p>
 ${bottom}
-<div class="rp-foot"><div><div class="rp-cal">${infEsc(st.inspector)}</div><div class="rp-sig">ING. ${infEsc(st.inspector).toUpperCase()} · JEFE AGUILA<span class="rp-tit">Ingeniero en Mecánica Automotriz · Aguila Motors</span></div></div><img class="rp-stamp" src="informes/sello.png" alt=""><div class="rp-code">VERIFICACIÓN<br><b>${infEsc(st.codigo)}</b></div></div>
+<div class="rp-foot"><div><div class="rp-cal">${infEsc(st.inspector)}</div><div class="rp-sig">ING. ${infEsc(st.inspector).toUpperCase()} · JEFE AGUILA<span class="rp-tit">Ingeniero en Mecánica Automotriz · Aguila Motors</span></div></div><img class="rp-stamp" src="informes/sello.png" alt=""><div class="rp-code"><div>VERIFICACIÓN<br><b>${infEsc(st.codigo)}</b><small>Escanea para<br>comprobar el documento</small></div>${infQrHtml(st.codigo)}</div></div>
 </div></div>`;
+}
+
+// QR de verificacion (v112): lleva a v.html?CODIGO. Correccion H para que el logo del centro no lo rompa.
+const INF_VERIFY_URL = "https://dc-david8.github.io/AguilaMotors/v.html?";
+function infQrHtml(code) {
+  if (typeof qrcode !== "function" || !code) return "";
+  try {
+    const q = qrcode(0, "H");
+    q.addData(INF_VERIFY_URL + code);
+    q.make();
+    const n = q.getModuleCount();
+    const fin = (x, y) => (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7);
+    let r = "";
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x) && !fin(x, y)) r += `<rect x="${x + 0.03}" y="${y + 0.03}" width=".94" height=".94" rx=".22"/>`;
+    let f = "";
+    for (const [fx, fy] of [[0, 0], [n - 7, 0], [0, n - 7]]) f += `<path d="M${fx} ${fy}h7v7h-7z M${fx + 1} ${fy + 1}v5h5v-5z" fill-rule="evenodd"/><rect x="${fx + 2}" y="${fy + 2}" width="3" height="3" rx=".5"/>`;
+    return `<div class="rp-qr"><svg viewBox="-1.5 -1.5 ${n + 3} ${n + 3}" width="100%" height="100%"><rect x="-1.5" y="-1.5" width="${n + 3}" height="${n + 3}" fill="#fff"/><g fill="#1a1a1a">${r}</g><g fill="#c85a0c">${f}</g></svg><img src="aguila_motors_logo.png" alt=""></div>`;
+  } catch {
+    return "";
+  }
 }
 
 // Mete el informe en "host" y lo ajusta para que quepa en una pagina.

@@ -2179,7 +2179,10 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .rp-tit { display: block; font-size: 9.5px; letter-spacing: .02em; color: #555; font-style: italic; margin-top: 1px; white-space: nowrap; }
 .rp-cal { font-family: "Great Vibes", cursive; font-size: 40px; margin-bottom: -4px; color: #1a2a55; line-height: 1.15; white-space: nowrap; }
 .rp-stamp { position: absolute; left: 335px; bottom: -12px; width: 126px; height: 126px; opacity: .9; }
-.rp-code { margin-left: auto; text-align: right; font-size: 10px; }
+.rp-code { margin-left: auto; text-align: right; font-size: 10px; display: flex; align-items: center; gap: 8px; }
+.rp-code small { display: block; font-size: 8px; opacity: .7; margin-top: 2px; line-height: 1.3; }
+.rp-qr { position: relative; width: 98px; height: 98px; flex: 0 0 auto; border: 1px solid #1a1a1a; background: #fff; }
+.rp-qr img { position: absolute; left: 38.5%; top: 38.5%; width: 23%; height: 23%; border-radius: 50%; background: #fff; border: 1.5px solid #e06e14; box-sizing: border-box; padding: 1px; }
 /* Si no cabe en una pagina, se compacta */
 .rp.tight .rp-photo img, .rp.tight .rp-nophoto { height: 140px; }
 .rp.tight .rp-sch { min-height: 105px; }

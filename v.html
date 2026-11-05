@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verificación · Aguila Motors</title><link rel="icon" href="aguila_motors_logo.png">
+<style>
+@font-face{font-family:GV;src:url(informes/greatvibes.woff2)}
+:root{--ok:#2fbf6a;--bad:#e5484d;--acc:#ff9a1f}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%,#3a2108 0%,#120c06 45%,#0a0a0a 100%);color:#eee;font-family:"Segoe UI",Arial,sans-serif;display:flex;flex-direction:column;align-items:center;padding:28px 16px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}.top img{width:58px}.top b{display:block;font-size:20px;letter-spacing:.14em}.top span{font-size:12px;color:#c9a27a;letter-spacing:.2em}
+.card{width:100%;max-width:520px;background:linear-gradient(180deg,#1b1611,#121212);border:1px solid #3a2a18;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px #000a}
+.hero{padding:26px 22px 20px;text-align:center;position:relative}
+.ok .hero{background:linear-gradient(180deg,#0f2e1c,#121212)}.bad .hero{background:linear-gradient(180deg,#3a1214,#121212)}
+.ring{width:92px;height:92px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;font-size:48px;font-weight:900}
+.ok .ring{border:4px solid var(--ok);color:var(--ok);box-shadow:0 0 30px #2fbf6a66}.bad .ring{border:4px solid var(--bad);color:var(--bad);box-shadow:0 0 30px #e5484d66}
+.hero h1{margin:0;font-size:26px;letter-spacing:.08em}.ok h1{color:var(--ok)}.bad h1{color:var(--bad)}
+.hero p{margin:6px 0 0;color:#bbb;font-size:13.5px}
+.code{display:inline-block;margin-top:12px;font:700 15px "Courier New",monospace;letter-spacing:.1em;border:1px dashed #666;padding:5px 12px;border-radius:8px;color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #2a2a2a}
+.grid div{padding:11px 18px;border-bottom:1px solid #222}.grid div:nth-child(odd){border-right:1px solid #222}
+.grid span{display:block;font-size:10.5px;letter-spacing:.14em;color:#8d8d8d}.grid b{font-size:14.5px;display:flex;align-items:center;gap:7px;margin-top:2px}
+.grid .full{grid-column:1/-1;border-right:0!important}
+.chip{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12.5px;font-weight:800;letter-spacing:.05em}.chip.r{background:#e5484d22;color:#ff7b7f;border:1px solid #e5484d66}
+.ag img{width:22px}
+.flag{width:18px;height:12px;border-radius:1.5px}
+.sig{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;gap:10px}
+.sig .n{font-family:GV;font-size:34px;color:#e8d7bf;line-height:1}.sig small{display:block;color:#9a8a76;font-size:11px;letter-spacing:.06em}
+.sig img{width:86px;opacity:.95;transform:rotate(-8deg)}
+.foot{padding:12px 18px 16px;border-top:1px solid #222;display:flex;gap:8px}
+.foot input{flex:1;background:#0d0d0d;border:1px solid #3a3a3a;border-radius:10px;color:#fff;padding:10px 12px;font:700 14px "Courier New",monospace;letter-spacing:.08em}
+.foot button{background:var(--acc);color:#1a0f00;border:0;border-radius:10px;padding:0 16px;font-weight:800}
+.meta{margin-top:14px;font-size:11.5px;color:#777;text-align:center;max-width:520px}
+.why{padding:14px 20px;color:#ccc;font-size:13.5px;line-height:1.5}.why li{margin:3px 0}
+.load{padding:40px;text-align:center;color:#aaa}.chip.g{background:#2fbf6a22;color:#5fe39a;border:1px solid #2fbf6a66}.chip.a{background:#f2a90022;color:#ffc65c;border:1px solid #f2a90066}
+.warn .hero{background:linear-gradient(180deg,#3a2a0e,#121212)}.warn .ring{border:4px solid #f2a900;color:#f2a900}.warn h1{color:#f2a900}</style></head><body>
+<div class="top"><img src="aguila_motors_logo.png" alt=""><div><b>AGUILA MOTORS</b><span>VERIFICACIÓN DE DOCUMENTOS</span></div></div>
+<div class="card" id="card"><div class="load">Comprobando el documento…</div></div>
+<div class="meta" id="meta">Este servicio solo confirma los documentos emitidos por Aguila Motors.</div>
+<script>
+// Pagina publica de verificacion de informes (v112). Lee un solo codigo con la
+// funcion verificar_informe de Supabase (SQL 13); no ve nada mas del registro.
+const SB_URL = "https://tguizsunuekxqfgiclfq.supabase.co";
+const SB_KEY = "sb_publishable_ur32LOkr30IpJlc8ek9Rfg_UDYo_D7X";
+const TIPOS = { nitro: "Expediente de nitro", danos: "Peritaje de daños", incautado: "Vehículo incautado", modificaciones: "Certificado de modificaciones", grua: "Gestión de grúa", presupuesto: "Presupuesto" };
+const LOGOS = { FBI: "informes/fbi.png", LSPD: "informes/lspd.png", LSSD: "informes/lssd.png", Particular: "aguila_motors_logo.png" };
+const flagES = '<svg class="flag" viewBox="0 0 18 12"><rect width="18" height="12" fill="#c60b1e"/><rect y="3" width="18" height="6" fill="#ffc400"/></svg>';
+const flagGT = '<svg class="flag" viewBox="0 0 18 12"><rect width="18" height="12" fill="#fff"/><rect width="6" height="12" fill="#4997d0"/><rect x="12" width="6" height="12" fill="#4997d0"/><circle cx="9" cy="6" r="1.8" fill="none" stroke="#3a8a3a" stroke-width=".9"/></svg>';
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+function fmt(ts, tz) {
+  const f = new Intl.DateTimeFormat("es-ES", { timeZone: tz, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(ts));
+  const g = (t) => f.find((x) => x.type === t)?.value || "";
+  return `${g("day")}/${g("month")}/${g("year")} ${g("hour") === "24" ? "00" : g("hour")}:${g("minute")}`;
+}
+function chip(r) {
+  const t = String(r || "").toUpperCase();
+  const c = /NO DETECTADO|SIN |CORRECT|LEGAL$|SIN DAÑOS|NINGÚN|AUSENCIA|CONFORME/.test(t) && !/ILEGAL/.test(t) ? "g" : /DETECTADO|ROBO|ILEGAL|GRAVE|RASTROS|RESTOS/.test(t) ? "r" : "a";
+  return `<span class="chip ${c}">${esc(r || "—")}</span>`;
+}
+function readCode() {
+  const q = location.search.replace(/^\?/, "");
+  const p = new URLSearchParams(q);
+  return decodeURIComponent((p.get("c") || (q.includes("=") ? "" : q)) || "").trim().toUpperCase();
+}
+const form = (v = "") => `<form class="foot" id="f"><input id="code" value="${esc(v)}" placeholder="Código: AM-XXXX-XXXX" autocomplete="off" spellcheck="false"><button>Verificar</button></form>`;
+function bind() {
+  const f = document.getElementById("f");
+  f.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const c = document.getElementById("code").value.trim().toUpperCase();
+    if (c) location.search = "?" + encodeURIComponent(c);
+  });
+}
+async function run() {
+  const card = document.getElementById("card");
+  const code = readCode();
+  const now = `Comprobado el ${fmt(Date.now(), "America/Guatemala")} (Guatemala) · ${fmt(Date.now(), "Europe/Madrid")} (España). Este servicio solo confirma los documentos emitidos por Aguila Motors.`;
+  document.getElementById("meta").textContent = now;
+  if (!code) {
+    card.className = "card";
+    card.innerHTML = `<div class="hero"><h1 style="color:#ff9a1f">VERIFICAR DOCUMENTO</h1><p>Escanea el QR del informe o escribe el código de verificación que aparece abajo a la derecha.</p></div>${form()}`;
+    return bind();
+  }
+  let d = null;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/verificar_informe`, { method: "POST", headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_codigo: code }) });
+    if (!r.ok) throw new Error(r.status);
+    d = await r.json();
+  } catch {
+    card.className = "card warn";
+    card.innerHTML = `<div class="hero"><div class="ring">!</div><h1>NO SE PUDO COMPROBAR</h1><p>No hay conexión con el registro de Aguila Motors. Inténtalo de nuevo en unos minutos.</p><div class="code">${esc(code)}</div></div>${form(code)}`;
+    return bind();
+  }
+  if (!d) {
+    card.className = "card bad";
+    card.innerHTML = `<div class="hero"><div class="ring">✖</div><h1>DOCUMENTO NO VÁLIDO</h1><p>No existe ningún informe emitido por Aguila Motors con este código.</p><div class="code">${esc(code)}</div></div>
+<div class="why"><b>Posibles motivos:</b><ul><li>El documento ha sido falsificado o modificado.</li><li>Es un borrador que nunca llegó a emitirse.</li><li>El código se escribió mal (revisa letras y números).</li></ul>Si sospechas de una falsificación, contacta con Aguila Motors.</div>${form()}`;
+    return bind();
+  }
+  const ag = d.agencia || "Particular";
+  const sol = ag === "Particular" ? "Cliente particular" : `${esc(ag)}${d.placa ? ` · placa ${esc(d.placa)}` : ""}`;
+  const insp = d.inspector || "Esteban Dido";
+  card.className = "card ok";
+  card.innerHTML = `<div class="hero"><div class="ring">✔</div><h1>DOCUMENTO VÁLIDO</h1><p>Este informe es auténtico y fue emitido por Aguila Motors.</p><div class="code">${esc(d.codigo)}</div></div>
+<div class="grid"><div><span>Nº DE INSPECCIÓN</span><b>${esc(d.numero || "—")}</b></div><div><span>TIPO</span><b>${esc(TIPOS[d.tipo] || d.tipo)}</b></div>
+<div><span>SOLICITADO POR</span><b class="ag"><img src="${LOGOS[ag] || LOGOS.Particular}" alt="">${sol}</b></div><div><span>RESULTADO</span><b>${chip(d.resultado)}</b></div>
+<div><span>VEHÍCULO</span><b>${esc(d.vehiculo || "—")}</b></div><div><span>MATRÍCULA</span><b>${esc(d.matricula || "—")}</b></div>
+<div class="full"><span>FECHA DEL INFORME</span><b>${flagES} ${fmt(d.ts, "Europe/Madrid")} &nbsp;&nbsp; ${flagGT} ${fmt(d.ts, "America/Guatemala")}</b></div></div>
+<div class="sig"><div><div class="n">${esc(insp)}</div><small>ING. ${esc(insp.toUpperCase())} · JEFE AGUILA</small><small>Ingeniero en Mecánica Automotriz</small></div><img src="informes/sello.png" alt=""></div>${form()}`;
+  bind();
+}
+run();
+</script></body></html>

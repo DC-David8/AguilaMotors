@@ -231,6 +231,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 112 · 4 de noviembre de 2026
+
+- **Informes · QR de verificación:** abajo a la derecha de cada informe, junto al código, va un QR con el logo de Aguila Motors en el centro y las esquinas en naranja. Lleva a `v.html?CÓDIGO`.
+- **Página pública `v.html`:** muestra «✔ DOCUMENTO VÁLIDO» con el número, el tipo, quién lo pidió, el resultado, el vehículo, la matrícula, la fecha en España y en Guatemala, y la firma con el sello del taller. Si el código no existe o es un borrador, muestra «✖ DOCUMENTO NO VÁLIDO». Tiene una casilla para comprobar un código a mano. No enseña ni el propietario ni la captura.
+- **SQL nuevo** `bot-facturas/13_verificar_informes.sql`: crea la función `verificar_informe`, que solo comprueba un código concreto de un informe emitido; la tabla de informes sigue siendo solo del Jefe Aguila.
+
 ### Versión 111 · 4 de noviembre de 2026
 
 - **Informes · sello personal del Jefe Aguila:** en la casilla «Inspector» salen el título («Ingeniero en Mecánica Automotriz · Jefe Aguila») y el sello rectangular de colegiado en tinta azul (águila, nombre, título, cargo y Perito Nº AM-001). Así se distingue del sello naranja del taller. La casilla «Inspector» es un poco más ancha para que quepa.
