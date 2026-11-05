@@ -487,6 +487,7 @@ ${infSchemeBlock(st)}
 <h3>CONCLUSIÓN</h3><p class="rp-concl">${concl}</p>
 ${bottom}
 <div class="rp-foot"><div><div class="rp-cal">${infEsc(st.inspector)}</div><div class="rp-sig">ING. ${infEsc(st.inspector).toUpperCase()} · JEFE AGUILA<span class="rp-tit">Ingeniero en Mecánica Automotriz · Aguila Motors</span></div></div><img class="rp-stamp" src="informes/sello.png" alt=""><div class="rp-code"><div>VERIFICACIÓN<br><b>${infEsc(st.codigo)}</b><small>Escanea para<br>comprobar el documento</small></div>${infQrHtml(st.codigo)}</div></div>
+<div class="rp-rol">Documento de rol · Uso exclusivo en el servidor de FiveM JerarquíaRP · Ficticio, sin validez real</div>
 </div></div>`;
 }
 

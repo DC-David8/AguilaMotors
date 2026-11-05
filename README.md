@@ -231,6 +231,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 113 · 4 de noviembre de 2026
+
+- **Aviso de rol:** la página de verificación `v.html` lleva al pie la píldora «🎭 ROLEPLAY · JERARQUÍARP» y un aviso que dice que todo es ficción del servidor de FiveM JerarquíaRP, sin relación con organismos, empresas ni personas reales y sin validez legal.
+- **Informes:** al pie de cada informe, en letra pequeña, «Documento de rol · Uso exclusivo en el servidor de FiveM JerarquíaRP · Ficticio, sin validez real». El sello del taller sube un poco para dejarle sitio.
+
 ### Versión 112 · 4 de noviembre de 2026
 
 - **Informes · QR de verificación:** abajo a la derecha de cada informe, junto al código, va un QR con el logo de Aguila Motors en el centro y las esquinas en naranja. Lleva a `v.html?CÓDIGO`.
