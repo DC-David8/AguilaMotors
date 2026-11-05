@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 116 · 4 de noviembre de 2026
+
+- **Página de verificación:** el texto del aviso de rol va justificado (con guiones donde hace falta) para que quede ordenado en el móvil.
+
 ### Versión 115 · 4 de noviembre de 2026
 
 - **Informes:** la foto llena todo el alto de su recuadro, sin hueco bajo «Evidencia fotográfica Nº 1». El sello de la facción en «Devuelto a» sube un poco y ya no toca el QR.
