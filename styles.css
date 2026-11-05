@@ -2142,7 +2142,7 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .rp-row div:last-child { border-right: 0; }
 .rp-row span, .rp .kv span, .rp .cust span { display: block; font-size: 9.5px; letter-spacing: .1em; opacity: .7; }
 .rp-row b { font-size: 12.5px; word-break: break-word; }
-.rp-two { display: grid; grid-template-columns: 320px 1fr; gap: 14px; }
+.rp-two { display: grid; grid-template-columns: 320px 1fr; gap: 14px; align-items: start; }
 .rp-photo { border: 1.5px solid #1a1a1a; padding: 6px; background: #fff; transform: rotate(-1.2deg); box-shadow: 3px 3px 0 rgba(0,0,0,.15); }
 .rp-photo img, .rp-nophoto { width: 100%; height: 170px; object-fit: cover; display: block; }
 .rp-nophoto { display: grid; place-items: center; background: #e9e4d6; color: #8a8374; font-size: 12px; }
@@ -2331,7 +2331,7 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .rp-side-r .lvl { width: 30px !important; }
 .rp-side-r td { padding-top: 3px; padding-bottom: 3px; }
 .rp .cust div.ret { position: relative; }
-.rp-fstamp { position: absolute; right: -8px; top: 2px; width: 160px; opacity: .92; pointer-events: none; }
+.rp-fstamp { position: absolute; right: -8px; top: -8px; width: 148px; opacity: .92; pointer-events: none; }
 .rp-rub { position: absolute; right: 10px; bottom: 8px; width: 92px; pointer-events: none; }
 .rp .cust div.ret:has(.rp-rub) { padding-bottom: 8px; }
 .rp .cust { grid-auto-rows: minmax(74px, auto); }

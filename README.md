@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 115 · 4 de noviembre de 2026
+
+- **Informes:** la foto llena todo el alto de su recuadro, sin hueco bajo «Evidencia fotográfica Nº 1». El sello de la facción en «Devuelto a» sube un poco y ya no toca el QR.
+
 ### Versión 114 · 4 de noviembre de 2026
 
 - **Arreglo · informes desde el móvil:** en el iPhone, Safari agrandaba solo el texto del informe al generarlo (ajuste automático de texto) y el PNG/PDF salía con letras enormes y cortado. Ahora el informe tiene el tamaño de texto fijo y sale igual que en el PC. También en la página de verificación.

@@ -515,6 +515,14 @@ function infQrHtml(code) {
 function infMountReport(host, st) {
   host.innerHTML = infReportHtml(st);
   const page = host.querySelector(".rp");
+  // La foto llena todo el alto de su fila (sin hueco bajo «Evidencia fotografica»).
+  const two = page?.querySelector(".rp-two");
+  const ph = two?.querySelector(".rp-photo");
+  const pimg = ph?.querySelector("img, .rp-nophoto");
+  if (two && ph && pimg) {
+    const gap = two.offsetHeight - ph.offsetHeight;
+    if (gap > 2) pimg.style.height = `${pimg.offsetHeight + gap}px`;
+  }
   // Con el esquema al lado, el hueco que sobra se lo lleva la foto (hasta 300 px).
   const foot = page?.querySelector(".rp-foot");
   const img = page?.querySelector(".rp-photo img, .rp-nophoto");
