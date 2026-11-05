@@ -2327,3 +2327,5 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .inf-point .cell, .inf-points span { white-space: nowrap; }
 .rp-side-r .lvl { width: 30px !important; }
 .rp-side-r td { padding-top: 3px; padding-bottom: 3px; }
+.rp .cust div.ret { position: relative; }
+.rp-fstamp { position: absolute; right: -8px; top: 2px; width: 160px; opacity: .92; pointer-events: none; }

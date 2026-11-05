@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 108 · 4 de noviembre de 2026
+
+- **Informes · sello de recepción de cada facción:** en «Devuelto a» de la cadena de custodia sale el sello rectangular de la facción (LSPD azul, FBI granate, LSSD verde) con su escudo, «RECIBIDO», el nombre completo, fecha y hora para rellenar y «Vo.Bo. JEFATURA». En los informes de particulares no sale ningún sello.
+
 ### Versión 107 · 4 de noviembre de 2026
 
 - **Informes · estilo nuevo del esquema:** zonas coloreadas (cada zona de su color, con leyenda) y cuadrícula de referencia A–H × 1–3. Cada hallazgo lleva su casilla (B3, G2…) en el esquema, en la lista y en el formulario.
