@@ -2342,3 +2342,8 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .rp-jstamp { position: absolute; right: 2px; top: 50%; transform: translateY(-46%); width: 102px; opacity: .9; pointer-events: none; }
 .rp-body { padding-bottom: 20px; }
 .rp-rol { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font-size: 7.5px; letter-spacing: .08em; color: #1a1a1a; opacity: .55; pointer-events: none; }
+
+/* v114: en el movil (Safari de iPhone) el navegador agrandaba el texto del informe al
+   generarlo (autoajuste de texto), y el PNG salia con letras enormes y cortado. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.rp, .rp * { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; }

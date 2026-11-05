@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 114 · 4 de noviembre de 2026
+
+- **Arreglo · informes desde el móvil:** en el iPhone, Safari agrandaba solo el texto del informe al generarlo (ajuste automático de texto) y el PNG/PDF salía con letras enormes y cortado. Ahora el informe tiene el tamaño de texto fijo y sale igual que en el PC. También en la página de verificación.
+
 ### Versión 113 · 4 de noviembre de 2026
 
 - **Aviso de rol:** la página de verificación `v.html` lleva al pie la píldora «🎭 ROLEPLAY · JERARQUÍARP» y un aviso que dice que todo es ficción del servidor de FiveM JerarquíaRP, sin relación con organismos, empresas ni personas reales y sin validez legal.
