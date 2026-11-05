@@ -479,7 +479,7 @@ function infReportHtml(st) {
 <div class="rp-bar">${st.agencia === "Particular" ? "" : `<img class="s" src="${ag.logo}" alt="">`}<div><h1>${tipo.title}</h1><p>Solicitado por ${solicit}</p></div><img class="am" src="aguila_motors_logo.png" alt=""></div>
 <div class="rp-cls">${pres ? "PRESUPUESTO · AGUILA MOTORS" : "CONFIDENCIAL · USO POLICIAL"}</div>
 <div class="rp-body">
-<div class="rp-row"><div><span>Nº DE INSPECCIÓN</span><b>${infEsc(num)}</b></div><div><span>FECHA</span>${infDatesHtml(st)}</div><div><span>MOTIVO</span><b>${infEsc(st.motivo)}</b></div><div><span>INSPECTOR</span><b>Ing. ${infEsc(st.inspector)}</b></div></div>
+<div class="rp-row"><div><span>Nº DE INSPECCIÓN</span><b>${infEsc(num)}</b></div><div><span>FECHA</span>${infDatesHtml(st)}</div><div><span>MOTIVO</span><b>${infEsc(st.motivo)}</b></div><div class="rp-insp"><span>INSPECTOR</span><b>Ing. ${infEsc(st.inspector)}</b><em>Ingeniero en Mecánica<br>Automotriz · Jefe Aguila</em><img class="rp-jstamp" src="informes/sello_jefe.png" alt=""></div></div>
 <div class="rp-two"><div class="rp-photo">${st.captura ? `<img src="${st.captura}" alt="">` : '<div class="rp-nophoto">Sin captura</div>'}<small>EVIDENCIA FOTOGRÁFICA Nº 1</small></div>
 <div class="rp-veh"><h3>VEHÍCULO</h3><dl>${veh.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
 <div class="rp-verdict" style="border-color:${col};color:${col};background:${col}12">${v.t}<small>${v.s}</small></div></div></div>

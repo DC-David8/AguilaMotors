@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 111 · 4 de noviembre de 2026
+
+- **Informes · sello personal del Jefe Aguila:** en la casilla «Inspector» salen el título («Ingeniero en Mecánica Automotriz · Jefe Aguila») y el sello rectangular de colegiado en tinta azul (águila, nombre, título, cargo y Perito Nº AM-001). Así se distingue del sello naranja del taller. La casilla «Inspector» es un poco más ancha para que quepa.
+
 ### Versión 110 · 4 de noviembre de 2026
 
 - **Informes · fecha en dos horarios:** la casilla «Fecha» muestra la fecha y hora de España y la de Guatemala, cada una con su bandera (dibujada, para que se vea igual en Windows). Se calculan del mismo instante, con el cambio de horario de España incluido. El certificado de ausencia de nitro también lleva las dos. Los informes antiguos toman su hora como hora de Guatemala.
