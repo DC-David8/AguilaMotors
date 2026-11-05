@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 109 · 4 de noviembre de 2026
+
+- **Informes · rúbrica del inspector:** en «Inspeccionado por» de la cadena de custodia sale la rúbrica (iniciales ED cruzadas, tinta azul) sobre la línea de firma. La fila de la cadena de custodia es un poco más alta para que quepan la rúbrica y los sellos.
+
 ### Versión 108 · 4 de noviembre de 2026
 
 - **Informes · sello de recepción de cada facción:** en «Devuelto a» de la cadena de custodia sale el sello rectangular de la facción (LSPD azul, FBI granate, LSSD verde) con su escudo, «RECIBIDO», el nombre completo, fecha y hora para rellenar y «Vo.Bo. JEFATURA». En los informes de particulares no sale ningún sello.

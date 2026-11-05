@@ -2329,3 +2329,6 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
 .rp-side-r td { padding-top: 3px; padding-bottom: 3px; }
 .rp .cust div.ret { position: relative; }
 .rp-fstamp { position: absolute; right: -8px; top: 2px; width: 160px; opacity: .92; pointer-events: none; }
+.rp-rub { position: absolute; right: 10px; bottom: 8px; width: 92px; pointer-events: none; }
+.rp .cust div.ret:has(.rp-rub) { padding-bottom: 8px; }
+.rp .cust { grid-auto-rows: minmax(74px, auto); }
