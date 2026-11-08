@@ -231,6 +231,16 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 118 · 8 de noviembre de 2026
+
+- **Precios de tuning actualizados** con la tabla nueva del servidor:
+  - **Gama VIP:** Full Tuning $40.000 → **$50.000**; Tintado de lunas $1.500 → $1.600; Pintura, Neones, Cambio de luces y Humo $1.500 → $1.550; Carrocería $1.100 → $1.150.
+  - **Gama Alta y Camiones:** Pintura, Neones, Cambio de luces y Humo $1.500 → $1.550; Carrocería $1.100 → $1.150.
+  - **Gama Media:** las piezas de estética $900 → $950; Carrocería $700 → $750.
+  - **Gama Baja:** Humo de ruedas $600 → $800; Carrocería $400 → $450.
+  - **Motos:** Carrocería $600 → $650.
+  - Sin cambios: rendimiento (Turbo, Motor, Transmisión, Blindaje, Suspensión, Frenos), los demás Full Tuning y la Gama Aéreos.
+
 ### Versión 117 · 8 de noviembre de 2026
 
 - **Gestión de empleados → 📣 Ascensos para Discord** (solo Jefes): arma el mensaje de **ascensos de la semana** (domingo a sábado; por defecto la última cerrada, con ◀ ▶ para cambiar) a partir del historial: busca los ascensos dados desde el sábado de cierre hasta el sábado siguiente. Cada línea menciona al empleado, el rol de Discord del rango anterior y del nuevo, y una felicitación al azar distinta para cada uno. Al final, una frase del taller al azar y la etiqueta del rol **Jefatura** (`DC_JEFATURA_ID` en `app.js`). 🎲 *Otras frases* las cambia todas. Cada ascenso tiene su casilla para quitarlo. Si alguien sube dos veces sale una sola línea, de su primer rango al último. Al subir a alguien desde su ficha aparece un botón que lleva directo al mensaje.
