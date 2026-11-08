@@ -251,6 +251,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 126 · 8 de noviembre de 2026
+
+- **📣 Para Discord → 🏆 Empleado de la Semana**: después de los ascensos, el mensaje reconoce al Empleado de la Semana (el que se llevó el bono en la semana cerrada en Pagos; si hay empate, todos) con su mención, la del rol de Empleado de la Semana y una frase de agradecimiento y motivación al azar (20 distintas, sin cifras). Si la semana aún no está cerrada en Pagos, se elige de una lista. 🎲 *Otras frases* también la cambia.
+- Más frases en los ascensos: 30 felicitaciones por persona y 25 frases de cierre.
+
 ### Versión 125 · 8 de noviembre de 2026
 
 - **Código dividido en módulos** (carpeta `js/`): el antiguo `app.js` (9.700 líneas) pasa a 17 archivos por secciones (Caja, Pagos, Empleados, Compraventa, Sesión, etc.), más `informes.js`, `panel.js` y `main.js` (el arranque, que se carga el último). No cambia nada de lo que se ve. Para el programa de escritorio hay que copiar también la carpeta `js/`.
