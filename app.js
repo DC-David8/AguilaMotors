@@ -755,22 +755,9 @@ function ascMotivosAzar(n) {
   }
   return out;
 }
-// Rol de Discord de la Jefatura (se etiqueta al final). El Jefe Aguila lo
-// pega en la pestaña y se guarda en línea (app_settings "dc_jefatura").
-let DC_JEFATURA_ID = "";
-async function dcJefaturaLoad() {
-  try {
-    const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.dc_jefatura");
-    DC_JEFATURA_ID = String(rows?.[0]?.value || "").replace(/\D/g, "");
-  } catch {
-    // sin conexión: se queda el que hubiera
-  }
-}
-async function dcJefaturaSave(id) {
-  const v = String(id || "").replace(/\D/g, "");
-  await cvCloud.upsert("app_settings", [{ key: "dc_jefatura", value: v }], "key");
-  DC_JEFATURA_ID = v;
-}
+// Rol de Discord de la Jefatura: se etiqueta siempre al final del mensaje.
+// Para cambiar de rol, cambia solo el número.
+const DC_JEFATURA_ID = "1430927770938114230";
 // Nombre visible (o interno) de un rango → nombre interno ("Aprendiz" → "Chalán").
 function rankFromText(t) {
   const k = normalizeKeySimple(t);
@@ -5179,10 +5166,6 @@ function setupEmployeesAdminModal({ onChanged }) {
     const t = dcText();
     byId("emp-dc-prev").textContent = t || "No hay ascensos marcados para esa semana.";
     byId("emp-dc-copy").disabled = !t;
-    const j = byId("emp-dc-jef");
-    if (j && document.activeElement !== j) j.value = DC_JEFATURA_ID;
-    byId("emp-dc-jef-box").hidden = !AUTH.aguila;
-    byId("emp-dc-jef-warn").hidden = !!DC_JEFATURA_ID;
   }
   async function renderDiscordTab(force = false) {
     const list = byId("emp-dc-list");
@@ -5201,7 +5184,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       list.innerHTML = "";
       list.appendChild(mk("p", "muted emp-empty", "Buscando ascensos…"));
       try {
-        const [items] = await Promise.all([ascensosSemana(dc.sun, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]), dcJefaturaLoad()]);
+        const items = await ascensosSemana(dc.sun, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]);
         if (dc.key !== key) return;
         const mot = ascMotivosAzar(items.length);
         items.forEach((it, i) => (it.motivo = mot[i]));
@@ -5246,17 +5229,6 @@ function setupEmployeesAdminModal({ onChanged }) {
     const mot = ascMotivosAzar(dc.items.length);
     dc.items.forEach((it, i) => (it.motivo = mot[i]));
     renderDiscordTab();
-  });
-  byId("emp-dc-jef-save")?.addEventListener("click", async () => {
-    const v = byId("emp-dc-jef").value.replace(/\D/g, "");
-    if (v && v.length < 15) return alert("Eso no parece un ID de rol de Discord (son 17-20 números).");
-    try {
-      await dcJefaturaSave(v);
-      setStatus(v ? "✔ Rol de Jefatura guardado: se etiquetará al final del mensaje." : "Rol de Jefatura quitado.", true);
-      renderDiscordPreview();
-    } catch (err) {
-      alert(`No se pudo guardar: ${err.message || err}`);
-    }
   });
   byId("emp-dc-copy")?.addEventListener("click", async () => {
     const t = dcText();
