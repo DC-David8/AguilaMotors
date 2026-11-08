@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=116" />
+  <link rel="stylesheet" href="styles.css?v=117" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=116" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=117" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -683,7 +683,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 116 - Aguila Motors</footer>
+    <footer class="app-version">Versión 117 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -802,6 +802,7 @@
         <button type="button" class="emp-tab" data-emp-tab="strikes">⚠️ Strikes <span class="emp-tab-n r" id="emp-tab-n-strikes"></span></button>
         <button type="button" class="emp-tab" data-emp-tab="ranks" id="emp-tab-ranks">🏷️ Rangos</button>
         <button type="button" class="emp-tab" data-emp-tab="fired" id="emp-tab-fired">🚪 Despedidos <span class="emp-tab-n" id="emp-fired-n"></span></button>
+        <button type="button" class="emp-tab" data-emp-tab="discord" id="emp-tab-discord" hidden>📣 Ascensos para Discord</button>
       </nav>
 
       <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
@@ -879,6 +880,26 @@
         <div class="emp-fired" id="emp-fired">
           <p class="muted">Registro de despidos: no cuentan en Pagos ni pueden entrar en la página. «Readmitir» les devuelve su rango y su Discord.</p>
           <div id="emp-fired-list" class="emp-fired-list"></div>
+        </div>
+      </section>
+
+      <!-- Ascensos para Discord (v117) -->
+      <section class="emp-pane" data-emp-pane="discord" hidden>
+        <div class="emp-dc">
+          <div class="emp-dc-bar">
+            <label>Día <input type="date" id="emp-dc-day"></label>
+            <button type="button" class="ghost" id="emp-dc-today">Hoy</button>
+            <span class="muted emp-small" id="emp-dc-info"></span>
+          </div>
+          <div class="emp-dc-list" id="emp-dc-list"></div>
+          <div class="emp-dc-prev-head">
+            <b>Vista previa del mensaje</b>
+            <button type="button" class="ghost" id="emp-dc-frase" title="Cambiar la frase final">🎲 Otra frase</button>
+          </div>
+          <pre class="emp-dc-prev" id="emp-dc-prev"></pre>
+          <div class="emp-acts">
+            <button type="button" id="emp-dc-copy">📋 Copiar para Discord</button>
+          </div>
         </div>
       </section>
 
@@ -990,9 +1011,9 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=116"></script>
-  <script src="app.js?v=116"></script>
-    <script src="informes/qrcode.js?v=116"></script>
-    <script src="informes.js?v=116"></script>
+  <script src="catalogo/vehiculos.js?v=117"></script>
+  <script src="app.js?v=117"></script>
+    <script src="informes/qrcode.js?v=117"></script>
+    <script src="informes.js?v=117"></script>
 </body>
 </html>

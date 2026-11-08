@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 117 · 8 de noviembre de 2026
+
+- **Gestión de empleados → 📣 Ascensos para Discord** (solo Jefes): junta los ascensos de un día (hoy por defecto) leyendo el historial y arma el mensaje para el canal de ascensos, con la mención de cada empleado, su nombre y los roles de Discord del rango anterior y del nuevo. Cada ascenso tiene su casilla para quitarlo del mensaje. Cierra con una frase de felicitación al azar sobre el taller (🎲 *Otra frase* la cambia). Si alguien sube dos veces el mismo día sale una sola línea, de su primer rango al último. Al subir a alguien desde su ficha aparece un botón que lleva directo al mensaje.
+
 ### Versión 116 · 4 de noviembre de 2026
 
 - **Página de verificación:** el texto del aviso de rol va justificado (con guiones donde hace falta) para que quede ordenado en el móvil.

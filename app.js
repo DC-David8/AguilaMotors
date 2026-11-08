@@ -699,6 +699,87 @@ const UP_REASONS = [
 ];
 const DOWN_REASON = "por no alcanzar el mínimo de facturación de su rango.";
 
+// ---------------------------------------------------------------------------
+// v117 · Ascensos del día para Discord (Gestión de empleados → 📣 Discord).
+// Lee del historial (emp_historial, tipo "rango") los ascensos de un día y
+// arma el mensaje con la mención del empleado, su nombre y los roles de
+// Discord del rango anterior y del nuevo. Cierra con una frase al azar.
+// ---------------------------------------------------------------------------
+const ASC_FRASES = [
+  "Más rango, más responsabilidad: que se note en cada reparación. 🔧",
+  "Las llaves pesan más arriba, pero sabemos que podéis con ellas. 🛠️",
+  "El taller crece con gente como vosotros. ¡A por más! 🦅",
+  "Motor afinado y a toda máquina: ¡enhorabuena por el ascenso! 🏁",
+  "Cada coche que sale perfecto lleva vuestra firma. ¡Seguid así! 🚗",
+  "Grasa en las manos y el rango en el pecho. ¡Os lo habéis ganado! 💪",
+  "De la llave inglesa al siguiente nivel: el esfuerzo tiene premio. 🔩",
+  "Turbo activado: el Aguila sube con vosotros. 🔥",
+  "Buen trabajo, mejor equipo. ¡Felicidades y a seguir apretando tuercas! ⚙️",
+  "Aquí nadie regala nada: cada ascenso se gana en el elevador. 🏆",
+  "Pistones a tope y sin frenar: ¡enhorabuena a los ascendidos! 🏎️",
+  "El orgullo del taller sois vosotros. ¡Que siga rugiendo el motor! 🦅",
+  "Diagnóstico claro: talento, constancia y compromiso. ¡Felicidades! 🩺🔧",
+  "Nuevo rango, mismo hambre: a dejar el listón del taller bien alto. 📈",
+  "Del box al siguiente escalón: Aguila Motors está orgulloso de vosotros. 🛞",
+];
+const ascFraseAzar = (prev = "") => {
+  const pool = ASC_FRASES.filter((f) => f !== prev);
+  return pool[Math.floor(Math.random() * pool.length)] || ASC_FRASES[0];
+};
+// Nombre visible (o interno) de un rango → nombre interno ("Aprendiz" → "Chalán").
+function rankFromText(t) {
+  const k = normalizeKeySimple(t);
+  if (!k || k === "sin rango") return "";
+  const r = RANKS.find((x) => normalizeKeySimple(x.label) === k || normalizeKeySimple(rankLabel(x.label)) === k || normalizeKeySimple(DEFAULT_RANK_NAMES[x.label] || "") === k);
+  return r ? r.label : null;
+}
+// "⬆️ Ascendido de Aprendiz a Mecánico" → { up, from, to } (rangos internos).
+function parseRankLog(texto) {
+  const m = String(texto || "").match(/(Ascendido|Bajado) de (.+)$/);
+  if (!m) return null;
+  const parts = m[2].split(" a ");
+  for (let i = 1; i < parts.length; i++) {
+    const from = rankFromText(parts.slice(0, i).join(" a "));
+    const to = rankFromText(parts.slice(i).join(" a "));
+    if (from !== null && to !== null) return { up: m[1] === "Ascendido", from, to };
+  }
+  return null;
+}
+// Ascensos de un día (AAAA-MM-DD, hora del equipo). Si alguien sube dos veces
+// el mismo día se junta en uno (de su primer rango al último).
+async function ascensosDelDia(dayIso, people) {
+  const [y, mo, d] = dayIso.split("-").map(Number);
+  const a = new Date(y, mo - 1, d).toISOString();
+  const b = new Date(y, mo - 1, d + 1).toISOString();
+  const rows = await cvCloud.req(`/rest/v1/emp_historial?select=employee_id,at,texto&tipo=eq.rango&at=gte.${encodeURIComponent(a)}&at=lt.${encodeURIComponent(b)}&order=at.asc`, { auth: true });
+  const by = new Map();
+  for (const r of rows || []) {
+    const p = parseRankLog(r.texto);
+    if (!p) continue;
+    const cur = by.get(String(r.employee_id));
+    if (cur) cur.to = p.to;
+    else by.set(String(r.employee_id), { id: String(r.employee_id), from: p.from, to: p.to, at: r.at });
+  }
+  const out = [];
+  for (const it of by.values()) {
+    if (rankOrder(it.to) <= rankOrder(it.from)) continue;
+    const e = people.find((x) => String(x.id) === it.id);
+    if (!e) continue;
+    out.push({ ...it, name: fullName(e), discord: String(e.discord || "").replace(/\D/g, "") });
+  }
+  return out.sort((p, q) => rankOrder(q.to) - rankOrder(p.to) || p.name.localeCompare(q.name, "es"));
+}
+function ascDiscordText(items, dayIso, frase) {
+  if (!items.length) return "";
+  const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r) || "sin rango"}**`);
+  const who = (it) => (it.discord ? `<@${it.discord}> · **${it.name}**` : `**${it.name}**`);
+  const [y, mo, d] = dayIso.split("-").map(Number);
+  const dia = new Date(y, mo - 1, d).toLocaleDateString("es-ES", { weekday: "long" });
+  const fecha = `${dia.charAt(0).toUpperCase()}${dia.slice(1)} ${empDate(dayIso)}`;
+  const lines = items.map((it) => `⬆️ ${who(it)}\n${role(it.from)} ➜ ${role(it.to)}`);
+  return `# 📈 ASCENSOS · AGUILA MOTORS\n-# 📅 ${fecha} · Aguila Motors 🦅\n\n${lines.join("\n\n")}\n\n${frase}\n-# — Jefatura · Aguila Motors`;
+}
+
 async function loadRankRules() {
   try {
     const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.rank_rules");
@@ -4855,8 +4936,17 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (empCloudOn()) empCloudRequireSession();
       await updateEmployee(e.id, { rank: to }, adminPass);
       setStatus(`✔ ${fullName(e)} ahora es ${rankLabel(to)}.`, true);
+      dc.day = "";
       await refresh();
       await (onChanged?.());
+      if (up && hasAccess()) {
+        const go = btn("📣 Ascensos para Discord", "ghost emp-dc-go", "Abrir el mensaje de los ascensos de hoy");
+        go.addEventListener("click", () => {
+          byId("emp-dc-day").value = empToday();
+          setTab("discord");
+        });
+        status.append(" ", go);
+      }
     } catch (err) {
       b.disabled = false;
       alert(`No se pudo cambiar el rango: ${err.message || err}`);
@@ -5025,8 +5115,84 @@ function setupEmployeesAdminModal({ onChanged }) {
     }
     if (tab === "strikes") renderStrikesTab();
     if (tab === "ranks") renderRanksTab();
+    const dcTab = byId("emp-tab-discord");
+    if (dcTab) dcTab.hidden = !(hasAccess() && empCloudOn());
+    if (tab === "discord" && dcTab?.hidden) return setTab("list");
+    if (tab === "discord") renderDiscordTab();
     renderFired();
   }
+
+  // 📣 Ascensos para Discord (v117): los ascensos de un día, listos para pegar.
+  const dc = { day: "", items: [], off: new Set(), frase: ascFraseAzar(), loading: false, err: "" };
+  const dcText = () => ascDiscordText(dc.items.filter((it) => !dc.off.has(it.id)), dc.day, dc.frase);
+  function renderDiscordPreview() {
+    const t = dcText();
+    byId("emp-dc-prev").textContent = t || "No hay ascensos marcados para ese día.";
+    byId("emp-dc-copy").disabled = !t;
+  }
+  async function renderDiscordTab(force = false) {
+    const inp = byId("emp-dc-day");
+    if (!inp) return;
+    if (!inp.value) inp.value = empToday();
+    inp.max = empToday();
+    const list = byId("emp-dc-list");
+    const info = byId("emp-dc-info");
+    if (dc.day !== inp.value || force) {
+      dc.day = inp.value;
+      dc.loading = true;
+      dc.err = "";
+      list.innerHTML = "";
+      list.appendChild(mk("p", "muted emp-empty", "Buscando ascensos…"));
+      try {
+        dc.items = await ascensosDelDia(dc.day, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]);
+      } catch (err) {
+        dc.items = [];
+        dc.err = err.message || String(err);
+      }
+      dc.off.clear();
+      dc.loading = false;
+    }
+    list.innerHTML = "";
+    const n = dc.items.length;
+    info.textContent = dc.err ? "" : n ? `${n} ${n === 1 ? "ascenso" : "ascensos"} el ${empDate(dc.day)}` : "";
+    if (dc.err) list.appendChild(mk("p", "muted emp-empty", `No se pudo leer el historial: ${dc.err}`));
+    else if (!n) list.appendChild(mk("p", "muted emp-empty", `No hubo ascensos el ${empDate(dc.day)}.`));
+    for (const it of dc.items) {
+      const row = mk("label", "emp-dc-row");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !dc.off.has(it.id);
+      cb.addEventListener("change", () => {
+        if (cb.checked) dc.off.delete(it.id);
+        else dc.off.add(it.id);
+        renderDiscordPreview();
+      });
+      const who = mk("span", "emp-dc-who", it.name);
+      const path = mk("span", "emp-dc-path");
+      path.append(mk("span", `pg-badge ${empRankCls(it.from)}`, rankLabel(it.from) || "sin rango"), mk("span", "emp-dc-arrow", "➜"), mk("span", `pg-badge ${empRankCls(it.to)}`, rankLabel(it.to)));
+      row.append(cb, who, path);
+      if (!it.discord) row.appendChild(mk("span", "muted emp-small", "sin Discord: saldrá solo el nombre"));
+      list.appendChild(row);
+    }
+    renderDiscordPreview();
+  }
+  byId("emp-dc-day")?.addEventListener("change", () => renderDiscordTab());
+  byId("emp-dc-today")?.addEventListener("click", () => {
+    byId("emp-dc-day").value = empToday();
+    renderDiscordTab(true);
+  });
+  byId("emp-dc-frase")?.addEventListener("click", () => {
+    dc.frase = ascFraseAzar(dc.frase);
+    renderDiscordPreview();
+  });
+  byId("emp-dc-copy")?.addEventListener("click", async () => {
+    const t = dcText();
+    if (!t) return;
+    const ok = await copyText(t);
+    if (!ok) openCopyFallback(t);
+    else setStatus("✔ Mensaje copiado. Pégalo en el canal de ascensos de Discord.", true);
+    dc.frase = ascFraseAzar(dc.frase);
+  });
 
   function renderFired() {
     const box = byId("emp-fired");

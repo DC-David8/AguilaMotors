@@ -2347,3 +2347,19 @@ details.pg-warn-box:not([open]) > summary::after { transform: rotate(-90deg); }
    generarlo (autoajuste de texto), y el PNG salia con letras enormes y cortado. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .rp, .rp * { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; }
+
+/* v117 · Ascensos para Discord */
+.emp-dc { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.emp-dc-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.emp-dc-bar label { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; }
+.emp-dc-bar input[type="date"] { width: auto; }
+.emp-dc-list { display: flex; flex-direction: column; gap: 6px; }
+.emp-dc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); cursor: pointer; }
+.emp-dc-row input { width: auto; margin: 0; accent-color: var(--accent, #e06e14); }
+.emp-dc-who { font-weight: 700; min-width: 150px; }
+.emp-dc-path { display: inline-flex; align-items: center; gap: 6px; }
+.emp-dc-arrow { opacity: .7; }
+.emp-dc-prev-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.emp-dc-prev-head button { padding: 5px 10px; font-size: 12.5px; }
+.emp-dc-prev { margin: 0; padding: 12px 14px; border-radius: 10px; background: #1e1f22; border: 1px solid rgba(255,255,255,.08); color: #dbdee1; font: 13px/1.5 ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto; }
+.emp-dc-go { padding: 3px 10px; font-size: 12px; margin-left: 6px; }
