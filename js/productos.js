@@ -575,12 +575,37 @@ function descDiscordText(desc, bajas, sun, cierre) {
 }
 // v120 · Un solo mensaje con ascensos, descensos y bajas (secciones que
 // salen solo si tienen a alguien).
-function movDiscordText(up, desc, bajas, sun, cierre) {
-  if (!up.length && !desc.length && !bajas.length) return "";
+// v126 · Empleado de la Semana: va después de los ascensos, sin cifras, con
+// la mención de la persona, el rol de Empleado de la Semana y una frase al azar.
+const EOW_FRASES = [
+  "Gracias por tirar del taller como nadie esta semana: cada coche que sale perfecto lleva tu firma. ¡A por la siguiente! 🦅",
+  "Tu esfuerzo se nota en cada reparación. El Aguila vuela más alto gracias a ti. ¡Enhorabuena y gracias! 🏆",
+  "Constancia, calidad y compromiso: eres el motor de la semana. Gracias por dar ejemplo en el box. ⚙️",
+  "Las llaves no se mueven solas: gracias por tu entrega. ¡Que no pare la racha! 🔧",
+  "Has puesto el listón muy alto. Gracias por tu trabajo y por hacer grande a Aguila Motors. 📈",
+  "Semana de diez: clientes contentos y coches impecables. ¡Gracias por tanto, crack! 🏁",
+  "Lo tuyo no es suerte, es trabajo duro. Gracias por dejarte la piel en el elevador. 💪",
+  "Turbo a tope toda la semana. Gracias por empujar al equipo hacia arriba. 🔥",
+  "Cada tuerca bien apretada cuenta, y tú no fallaste ni una. ¡Enhorabuena y gracias! 🔩",
+  "Eres el ejemplo de lo que significa ser del Aguila. Gracias por tu compromiso. 🦅",
+  "El taller ruge más fuerte contigo. Gracias por tu energía y tus ganas. 🏎️",
+  "Trabajo limpio, trato de diez y ganas de sobra. ¡Gracias por ser así! ⭐",
+  "Nadie sostuvo la llave inglesa como tú esta semana. Gracias por tanto esfuerzo. 🛠️",
+  "Te lo has ganado a pulso, turno a turno. Gracias por no bajar nunca el ritmo. ⏱️",
+  "Que este reconocimiento te dé gasolina para seguir igual. ¡Gracias, campeón! ⛽",
+  "Profesionalidad, constancia y buen rollo: la receta perfecta. Gracias por aportarla. 🧰",
+  "Cuando el taller aprieta, tú respondes. Gracias por estar siempre a la altura. 🚀",
+  "Tu trabajo habla por sí solo. Gracias por llevar el nombre del Aguila tan alto. 👑",
+  "Una semana para enmarcar. Gracias por tu dedicación y que sigan llegando muchas más. 🖼️",
+  "Pocos aprietan tanto como tú. Gracias por ser pieza clave de este equipo. 🧩",
+];
+function movDiscordText(up, desc, bajas, sun, cierre, eow = []) {
+  if (!up.length && !desc.length && !bajas.length && !eow.length) return "";
   const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r) || "sin rango"}**`);
   const who = (it) => (it.discord && it.mention !== false ? `<@${it.discord}>` : `**${it.name}**`);
   const parts = [];
   if (up.length) parts.push(`## 📈 Ascensos\n${up.map((it) => `⬆️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.motivo}`).join("\n")}`);
+  if (eow.length) parts.push(`## 🏆 Empleado de la Semana\n${eow.map((it) => `> 👑 ${who(it)} · ${EMPLOYEE_OF_WEEK_TAG}\n> *${it.frase}*`).join("\n\n")}`);
   if (desc.length) parts.push(`## 📉 Descensos\n${desc.map((it) => `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.frase}`).join("\n")}`);
   if (bajas.length) parts.push(`## 🚪 Bajas del taller\n${bajas.map((it) => `${bajaTipo(it.tipo).e} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} ${it.frase}`).join("\n")}`);
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";

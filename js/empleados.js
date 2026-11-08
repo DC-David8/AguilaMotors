@@ -953,7 +953,7 @@ function setupEmployeesAdminModal({ onChanged }) {
 
   // 📣 Para Discord (v117-v120): ascensos, descensos y bajas de una semana,
   // separados en pantalla pero en UN solo mensaje (un copiar, un pegar).
-  const dc = { sun: null, key: "", items: [], desc: [], bajas: [], off: new Set(), frase: ascFraseAzar(), cierre: pickOne(DESC_CIERRES), cierreB: pickOne(BAJAS_CIERRES), err: "" };
+  const dc = { sun: null, key: "", items: [], desc: [], bajas: [], eow: [], eowAuto: false, off: new Set(), frase: ascFraseAzar(), cierre: pickOne(DESC_CIERRES), cierreB: pickOne(BAJAS_CIERRES), err: "" };
   function dcGoBtn() {
     const go = btn("📣 Mensaje para Discord", "ghost emp-dc-go", "Abrir el mensaje de la semana");
     go.addEventListener("click", () => {
@@ -968,14 +968,38 @@ function setupEmployeesAdminModal({ onChanged }) {
     const up = dc.items.filter((it) => dcOn(it, "u"));
     const desc = dc.desc.filter((it) => dcOn(it, "d"));
     const bajas = dc.bajas.filter((it) => dcOn(it, "b"));
-    return movDiscordText(up, desc, bajas, dc.sun, up.length ? dc.frase : desc.length ? dc.cierre : dc.cierreB);
+    const eow = dc.eow.filter((it) => dcOn(it, "e"));
+    return movDiscordText(up, desc, bajas, dc.sun, up.length || eow.length ? dc.frase : desc.length ? dc.cierre : dc.cierreB, eow);
   };
   function renderDiscordPreview() {
     const t = dcText();
     byId("emp-dc-prev").textContent = t || "No hay nada marcado para esa semana.";
     byId("emp-dc-copy").disabled = !t;
   }
+  // Empleado de la Semana: el que se llevó el bono en la semana cerrada en Pagos.
+  const isoOfDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const eowItem = (e) => ({ id: String(e.id), name: fullName(e), discord: String(e.discord || e.discordPrev || "").replace(/\D/g, ""), frase: "" });
+  function dcLoadEow() {
+    const w = STRIKE_HIST.find((x) => String(x.semana) === isoOfDay(dc.sun));
+    const people = [...EMP_CLOUD.list, ...EMP_CLOUD.fired];
+    const wins = (w?.datos?.rows || []).filter((r) => Number(r.bonus) > 0);
+    dc.eowAuto = !!w;
+    dc.eowClosed = !!w;
+    dc.eow = wins
+      .map((r) => people.find((e) => (r.id != null && String(e.id) === String(r.id)) || normalizeKeySimple(fullName(e)) === normalizeKeySimple(r.name)))
+      .filter(Boolean)
+      .map(eowItem);
+  }
+  const dcFrasesEow = () => {
+    const used = new Set();
+    for (const it of dc.eow) {
+      const free = EOW_FRASES.filter((f) => !used.has(f) && f !== it.frase);
+      it.frase = pickOne(free.length ? free : EOW_FRASES);
+      used.add(it.frase);
+    }
+  };
   const dcFrases = (keepUp = false) => {
+    dcFrasesEow();
     if (!keepUp) {
       const mot = ascMotivosAzar(dc.items.length);
       dc.items.forEach((it, i) => (it.motivo = mot[i]));
@@ -1041,6 +1065,8 @@ function setupEmployeesAdminModal({ onChanged }) {
         dc.items = items;
         dc.desc = r.desc;
         dc.bajas = r.bajas;
+        if (!STRIKE_HIST.length) await loadStrikeHist();
+        dcLoadEow();
         dcFrases();
       } catch (err) {
         dc.items = [];
@@ -1060,12 +1086,41 @@ function setupEmployeesAdminModal({ onChanged }) {
     const pl = (n, a, b) => `${n} ${n === 1 ? a : b}`;
     info.textContent = `${pl(nu, "ascenso", "ascensos")}, ${pl(nd, "descenso", "descensos")} y ${pl(nb, "baja", "bajas")} · entre el ${ascDM(ascDay(dc.sun, 6))} y el ${ascDM(ascDay(dc.sun, 13))}`;
     if (!nu && !nd && !nb) list.appendChild(mk("p", "muted emp-empty", "No hay ascensos, descensos ni bajas para esta semana."));
+
     if (nu) list.appendChild(mk("div", "emp-dc-group", "📈 Ascensos"));
     for (const it of dc.items) {
       const row = mk("label", "emp-dc-row");
       row.append(dcCheck("u", it), mk("span", "emp-dc-who", it.name), dcPath(it.from, it.to), mk("span", "muted emp-small emp-dc-mot", it.motivo));
       if (!it.discord) row.appendChild(noDiscord());
       list.appendChild(row);
+    }
+    // 🏆 Empleado de la Semana (va después de los ascensos).
+    list.appendChild(mk("div", "emp-dc-group", "🏆 Empleado de la Semana"));
+    if (!dc.eowClosed) list.appendChild(mk("p", "muted emp-small emp-dc-note", "Esta semana aún no está cerrada en Pagos: elige tú quién es, o ciérrala para que salga solo."));
+    for (const it of dc.eow) {
+      const row = mk("div", "emp-dc-row");
+      const quitar = btn("✕", "ghost emp-dc-x", "Quitar");
+      quitar.addEventListener("click", () => {
+        dc.eow = dc.eow.filter((x) => x !== it);
+        renderDiscordTab();
+      });
+      row.append(dcCheck("e", it), mk("span", "emp-dc-who", `👑 ${it.name}`), mk("span", "muted emp-small emp-dc-mot", it.frase));
+      if (!it.discord) row.appendChild(noDiscord());
+      if (!dc.eowClosed || dc.eow.length > 1) row.insertBefore(quitar, row.children[2]);
+      list.appendChild(row);
+    }
+    if (!dc.eow.length || !dc.eowClosed) {
+      const add = dcSelect([["", dc.eow.length ? "➕ Añadir otro (empate)…" : "Elegir Empleado de la Semana…"], ...EMP_CLOUD.list.filter((e) => !dc.eow.some((x) => x.id === String(e.id))).sort(byRankThenName).map((e) => [String(e.id), `${fullName(e)} (${rankLabel(e.rank)})`])], "", (v) => {
+        const e = EMP_CLOUD.list.find((x) => String(x.id) === v);
+        if (!e) return;
+        const it = eowItem(e);
+        it.frase = pickOne(EOW_FRASES.filter((f) => !dc.eow.some((x) => x.frase === f)));
+        dc.eow.push(it);
+        renderDiscordTab();
+      });
+      const wrap = mk("div", "emp-dc-row");
+      wrap.append(add);
+      list.appendChild(wrap);
     }
     if (nd) list.appendChild(mk("div", "emp-dc-group", "📉 Descensos"));
     for (const it of dc.desc) {
