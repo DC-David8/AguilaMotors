@@ -231,6 +231,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 119 · 8 de noviembre de 2026
+
+- **Despedir:** en vez de escribir el motivo, se elige el **tipo de baja** (👋 Baja voluntaria, 💤 Inactividad, ⚠️ 3 strikes, 🚫 Expulsión, 🕊️ CK del personaje, 📋 Otro) y se puede añadir una nota interna. Se guarda en el mismo campo de motivo («Inactividad: nota»), sin cambios en Supabase. Con 3/3 strikes sale marcado solo.
+- **Gestión de empleados → 📣 Para Discord → 📉 Descensos y bajas:** un solo mensaje semanal con los descensos (mención, rol anterior y nuevo, y el motivo: mínimo de facturación, baja actividad o sanción, a elegir en cada fila) y las bajas del taller (mención y rango que tenía, con frase al azar según el tipo: agradecimiento en las voluntarias, condolencias en los CK). Los despidos antiguos se clasifican por su texto y el tipo se puede cambiar en la fila. Si alguien ya no está en el servidor de Discord se le quita «Mencionar» y sale su nombre. Las notas internas nunca salen en el mensaje. Cierra con una frase al azar y la etiqueta de Jefatura. Tras bajar o despedir a alguien aparece un botón que lleva al mensaje.
+
 ### Versión 118 · 8 de noviembre de 2026
 
 - **Precios de tuning actualizados** con la tabla nueva del servidor:

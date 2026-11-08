@@ -817,6 +817,198 @@ function ascDiscordText(items, sun, frase) {
   return `# 📈 ASCENSOS DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${lines.join("\n")}\n\n${frase}\n-# — ${jef} · Aguila Motors`;
 }
 
+// ---------------------------------------------------------------------------
+// v119 · Descensos y bajas de la semana (mismo mensaje). El tipo de baja se
+// elige al despedir y se guarda al principio del motivo ("Inactividad: …"),
+// así no hace falta tocar la base. Los despidos antiguos se clasifican por
+// su texto. Las notas del motivo nunca salen en el mensaje.
+// ---------------------------------------------------------------------------
+const BAJA_TIPOS = [
+  { k: "voluntaria", e: "👋", label: "Baja voluntaria", hint: "Se va del taller por decisión propia" },
+  { k: "inactividad", e: "💤", label: "Inactividad", hint: "Deja de aparecer por el taller" },
+  { k: "strikes", e: "⚠️", label: "3 strikes", hint: "No llegó al mínimo de facturación" },
+  { k: "expulsion", e: "🚫", label: "Expulsión", hint: "Conducta, normas o sanción" },
+  { k: "ck", e: "🕊️", label: "CK del personaje", hint: "El personaje fallece" },
+  { k: "otro", e: "📋", label: "Otro", hint: "Cualquier otro motivo" },
+];
+const BAJA_FRASES = {
+  voluntaria: [
+    "deja el taller por decisión propia. ¡Gracias por cada reparación y mucha suerte en tu camino! 🤝",
+    "cuelga el mono del Aguila. ¡Gracias por tu esfuerzo, las puertas del taller quedan abiertas! 🦅",
+    "se despide del taller. ¡Gracias por todo lo aportado y suerte en lo que venga! 🍀",
+    "nos deja por voluntad propia. ¡Gracias por tu trabajo en el box, compañero! 🔧",
+    "pone rumbo a nuevos caminos. ¡Gracias por formar parte de Aguila Motors! 🛣️",
+    "guarda la caja de herramientas y se despide. ¡Gracias por tu dedicación y hasta pronto! 🧰",
+    "entrega las llaves del taller. ¡Gracias por cada turno y por dejar el listón tan alto! 🏁",
+  ],
+  inactividad: [
+    "causa baja por inactividad.",
+    "causa baja por falta de actividad en el taller.",
+    "causa baja por inactividad prolongada.",
+  ],
+  strikes: [
+    "sale del taller tras acumular 3 strikes sin llegar al mínimo de facturación.",
+    "queda fuera del taller al sumar 3 strikes seguidos.",
+  ],
+  expulsion: [
+    "queda expulsado de Aguila Motors por incumplir las normas del taller.",
+    "queda fuera del taller por conducta inapropiada.",
+  ],
+  ck: [
+    "nos ha dejado para siempre. Descansa en paz, compañero; tu llave inglesa seguirá colgada en el taller. 🕯️",
+    "ha fallecido. Todo Aguila Motors acompaña a su familia y amigos en este momento tan duro. 🕯️",
+    "se ha ido. Hoy el motor del taller suena más bajo. Descanse en paz. 🖤",
+    "ya no está con nosotros. Gracias por cada reparación; siempre serás parte del Aguila. 🖤",
+    "ha partido. El box queda en silencio en su memoria. Nuestro más sentido pésame. 🕯️",
+  ],
+  otro: ["deja de formar parte del taller."],
+};
+const DESC_MOTIVOS = [
+  { k: "minimo", label: "No llegó al mínimo", f: ["por no alcanzar el mínimo de facturación de su rango.", "al quedarse por debajo del mínimo de facturación de la semana."] },
+  { k: "actividad", label: "Baja actividad", f: ["por su baja actividad en el taller.", "por falta de presencia en los turnos del taller."] },
+  { k: "sancion", label: "Sanción", f: ["como sanción por incumplir las normas del taller.", "por una sanción interna de la Jefatura."] },
+];
+const DESC_CIERRES = [
+  "Cada semana es una nueva oportunidad para volver a subir. 💪",
+  "El elevador sube y baja: lo importante es volver a apretar tuercas. 🔧",
+  "Aquí cada rango se recupera con trabajo. ¡A por ello! 🛠️",
+  "Un mal turno no define a un mecánico. ¡A volver a subir! 🦅",
+  "La llave inglesa sigue en vuestras manos: el rango se vuelve a ganar. ⚙️",
+];
+const BAJAS_CIERRES = [
+  "Gracias a todos por vuestro trabajo en el taller. 🦅",
+  "El Aguila sigue en marcha. ¡A seguir apretando tuercas! 🔧",
+];
+const pickOne = (arr, prev = "") => {
+  const pool = arr.filter((x) => x !== prev);
+  return pool[Math.floor(Math.random() * pool.length)] || arr[0];
+};
+const bajaTipo = (k) => BAJA_TIPOS.find((t) => t.k === k) || BAJA_TIPOS[BAJA_TIPOS.length - 1];
+// Motivo guardado → { tipo, nota }.
+function parseBaja(motivo) {
+  const m = String(motivo || "").trim();
+  for (const t of BAJA_TIPOS) {
+    if (normalizeKeySimple(m.slice(0, t.label.length)) === normalizeKeySimple(t.label)) return { tipo: t.k, nota: m.slice(t.label.length).replace(/^\s*[:·-]\s*/, "") };
+  }
+  const k = normalizeKeySimple(m);
+  const tipo = /\bck\b|fallec|muri|muert/.test(k) ? "ck"
+    : /strike/.test(k) ? "strikes"
+    : /inactiv|no aparece|no viene|desaparec|ausen/.test(k) ? "inactividad"
+    : /volunt|renunc|dimit|se va|se fue|deja el taller|por su cuenta|decision propia/.test(k) ? "voluntaria"
+    : /expuls|conduct|sancion|norma|robo|toxic|falta de respeto|insult/.test(k) ? "expulsion"
+    : "otro";
+  return { tipo, nota: m };
+}
+const bajaMotivoText = (tipo, nota) => `${bajaTipo(tipo).label}${nota ? `: ${nota}` : ""}`;
+// Descensos (dados al cerrar la semana) y bajas (despidos) de la semana `sun`.
+async function descensosSemana(sun, people, fired) {
+  const a = ascDay(sun, 6), b = ascDay(sun, 14);
+  const rows = await cvCloud.req(`/rest/v1/emp_historial?select=employee_id,at,texto&tipo=eq.rango&at=gte.${encodeURIComponent(a.toISOString())}&at=lt.${encodeURIComponent(b.toISOString())}&order=at.asc`, { auth: true });
+  const inWeek = (iso) => { const t = new Date(iso); return t >= a && t < b; };
+  const bajas = fired
+    .filter((f) => f.firedAt && inWeek(f.firedAt))
+    .map((f) => ({ id: String(f.id), name: fullName(f), rank: f.rank, discord: String(f.discordPrev || f.discord || "").replace(/\D/g, ""), ...parseBaja(f.firedReason) }))
+    .sort((p, q) => BAJA_TIPOS.findIndex((t) => t.k === p.tipo) - BAJA_TIPOS.findIndex((t) => t.k === q.tipo) || p.name.localeCompare(q.name, "es"));
+  const gone = new Set(bajas.map((x) => x.id));
+  const by = new Map();
+  for (const r of rows || []) {
+    const p = parseRankLog(r.texto);
+    if (!p) continue;
+    const cur = by.get(String(r.employee_id));
+    if (cur) cur.to = p.to;
+    else by.set(String(r.employee_id), { id: String(r.employee_id), from: p.from, to: p.to });
+  }
+  const desc = [];
+  for (const it of by.values()) {
+    if (gone.has(it.id) || rankOrder(it.to) >= rankOrder(it.from)) continue;
+    const e = people.find((x) => String(x.id) === it.id);
+    if (!e) continue;
+    desc.push({ ...it, name: fullName(e), discord: String(e.discord || "").replace(/\D/g, ""), motivo: "minimo" });
+  }
+  desc.sort((p, q) => rankOrder(q.from) - rankOrder(p.from) || p.name.localeCompare(q.name, "es"));
+  return { desc, bajas };
+}
+function descDiscordText(desc, bajas, sun, cierre) {
+  if (!desc.length && !bajas.length) return "";
+  const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r) || "sin rango"}**`);
+  const who = (it) => (it.discord && it.mention !== false ? `<@${it.discord}>` : `**${it.name}**`);
+  const title = desc.length && bajas.length ? "📉 DESCENSOS Y BAJAS DE LA SEMANA" : desc.length ? "📉 DESCENSOS DE LA SEMANA" : "🚪 BAJAS DE LA SEMANA";
+  const parts = [];
+  if (desc.length) parts.push(desc.map((it) => `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.frase}`).join("\n"));
+  if (bajas.length) parts.push(bajas.map((it) => `${bajaTipo(it.tipo).e} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} ${it.frase}`).join("\n"));
+  const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
+  return `# ${title}\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · Aguila Motors`;
+}
+
+// Ventana para despedir: tipo de baja + nota opcional. Devuelve el motivo
+// listo para guardar ("Inactividad: no aparece desde el 20/10") o null.
+function askBaja(label, suggest = "") {
+  return new Promise((resolve) => {
+    const dlg = document.createElement("dialog");
+    dlg.className = "baja-dlg";
+    const form = document.createElement("form");
+    form.method = "dialog";
+    form.className = "modal-card";
+    const h = document.createElement("h3");
+    h.textContent = `🚪 Despedir a ${label}`;
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Queda en el registro de despedidos y pierde el acceso a la página. Se puede readmitir. ¿Por qué se va?";
+    const grid = document.createElement("div");
+    grid.className = "baja-tipos";
+    BAJA_TIPOS.forEach((t) => {
+      const l = document.createElement("label");
+      l.className = "baja-tipo";
+      const r = document.createElement("input");
+      r.type = "radio";
+      r.name = "baja";
+      r.value = t.k;
+      if (t.k === suggest) r.checked = true;
+      const txt = document.createElement("span");
+      txt.innerHTML = `<b>${t.e} ${t.label}</b><small>${t.hint}</small>`;
+      l.append(r, txt);
+      grid.append(l);
+    });
+    const nl = document.createElement("label");
+    nl.className = "baja-nota";
+    nl.textContent = "Nota (opcional, no sale en Discord)";
+    const nota = document.createElement("input");
+    nota.type = "text";
+    nota.maxLength = 160;
+    nota.placeholder = "Ej. no aparece desde el 20/10";
+    nl.append(nota);
+    const acts = document.createElement("div");
+    acts.className = "emp-acts";
+    const ok = document.createElement("button");
+    ok.type = "submit";
+    ok.textContent = "Despedir";
+    const no = document.createElement("button");
+    no.type = "button";
+    no.className = "ghost";
+    no.textContent = "Cancelar";
+    acts.append(ok, no);
+    form.append(h, p, grid, nl, acts);
+    dlg.append(form);
+    let result = null;
+    form.addEventListener("submit", (ev) => {
+      const sel = form.querySelector('input[name="baja"]:checked');
+      if (!sel) {
+        ev.preventDefault();
+        alert("Elige el tipo de baja.");
+        return;
+      }
+      result = bajaMotivoText(sel.value, nota.value.trim());
+    });
+    no.addEventListener("click", () => dlg.close());
+    dlg.addEventListener("close", () => {
+      dlg.remove();
+      resolve(result);
+    });
+    (document.querySelector("dialog[open]") || document.body).appendChild(dlg);
+    dlg.showModal();
+  });
+}
+
 async function loadRankRules() {
   try {
     const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.rank_rules");
@@ -4976,14 +5168,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       dc.key = "";
       await refresh();
       await (onChanged?.());
-      if (up && hasAccess()) {
-        const go = btn("📣 Ascensos para Discord", "ghost emp-dc-go", "Abrir el mensaje de los ascensos de la semana");
-        go.addEventListener("click", () => {
-          dc.sun = ascDefaultWeek();
-          setTab("discord");
-        });
-        status.append(" ", go);
-      }
+      if (hasAccess()) status.append(" ", dcGoBtn(up ? "up" : "down"));
     } catch (err) {
       b.disabled = false;
       alert(`No se pudo cambiar el rango: ${err.message || err}`);
@@ -4994,10 +5179,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     const label = fullName(e);
     if (isAguilaRank(e) || isSelf(e)) return alert("No puedes despedirte a ti mismo ni al Jefe Aguila: perderías el acceso a la página.");
     const n = hasAccess() ? strikesBefore(e.id, label) : 0;
-    const reason = prompt(
-      `Despedir a ${label}${e.rank ? ` (${rankLabel(e.rank)})` : ""}.\n\nQueda en el registro de despedidos y pierde el acceso a la página. Se puede readmitir.\n\nMotivo del despido:`,
-      n >= STRIKE_MAX ? `${n} strikes seguidos sin llegar al mínimo` : ""
-    );
+    const reason = await askBaja(`${label}${e.rank ? ` (${rankLabel(e.rank)})` : ""}`, n >= STRIKE_MAX ? "strikes" : "");
     if (reason === null) return;
     try {
       if (empCloudOn()) await empCloudFire(e, reason.trim());
@@ -5009,8 +5191,10 @@ function setupEmployeesAdminModal({ onChanged }) {
       }
       fichaId = null;
       setStatus(`🚪 ${label} pasa a Despedidos.`, true);
+      dc.key = "";
       await refresh();
       await (onChanged?.());
+      if (hasAccess() && empCloudOn()) status.append(" ", dcGoBtn("down"));
     } catch (err) {
       alert(`No se pudo despedir: ${empFireError(err)}`);
     }
@@ -5159,65 +5343,174 @@ function setupEmployeesAdminModal({ onChanged }) {
     renderFired();
   }
 
-  // 📣 Ascensos para Discord (v117): los ascensos de una semana, listos para pegar.
-  const dc = { sun: null, key: "", items: [], off: new Set(), frase: ascFraseAzar(), err: "" };
-  const dcText = () => ascDiscordText(dc.items.filter((it) => !dc.off.has(it.id)), dc.sun, dc.frase);
+  // 📣 Para Discord (v117/v119): ascensos, o descensos y bajas, de una semana.
+  const dc = { mode: "up", sun: null, key: "", items: [], desc: [], bajas: [], off: new Set(), frase: ascFraseAzar(), cierre: pickOne(DESC_CIERRES), cierreB: pickOne(BAJAS_CIERRES), err: "" };
+  function dcGoBtn(mode) {
+    const go = btn(mode === "up" ? "📣 Ascensos para Discord" : "📣 Descensos y bajas para Discord", "ghost emp-dc-go", "Abrir el mensaje de la semana");
+    go.addEventListener("click", () => {
+      dc.mode = mode;
+      dc.sun = ascDefaultWeek();
+      dc.key = "";
+      setTab("discord");
+    });
+    return go;
+  }
+  const dcOn = (it, pre) => !dc.off.has(`${pre}:${it.id}`);
+  const dcCierre = () => (dc.desc.some((x) => dcOn(x, "d")) ? dc.cierre : dc.cierreB);
+  const dcText = () =>
+    dc.mode === "up"
+      ? ascDiscordText(dc.items.filter((it) => dcOn(it, "u")), dc.sun, dc.frase)
+      : descDiscordText(dc.desc.filter((it) => dcOn(it, "d")), dc.bajas.filter((it) => dcOn(it, "b")), dc.sun, dcCierre());
   function renderDiscordPreview() {
     const t = dcText();
-    byId("emp-dc-prev").textContent = t || "No hay ascensos marcados para esa semana.";
+    byId("emp-dc-prev").textContent = t || (dc.mode === "up" ? "No hay ascensos marcados para esa semana." : "No hay descensos ni bajas marcados para esa semana.");
     byId("emp-dc-copy").disabled = !t;
+  }
+  const dcFrasesDown = () => {
+    for (const it of dc.desc) it.frase = pickOne((DESC_MOTIVOS.find((m) => m.k === it.motivo) || DESC_MOTIVOS[0]).f, it.frase);
+    const used = new Set();
+    for (const it of dc.bajas) {
+      const pool = BAJA_FRASES[it.tipo] || BAJA_FRASES.otro;
+      const free = pool.filter((f) => !used.has(f) && f !== it.frase);
+      it.frase = pickOne(free.length ? free : pool);
+      used.add(it.frase);
+    }
+  };
+  function dcCheck(pre, it) {
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = dcOn(it, pre);
+    cb.addEventListener("change", () => {
+      if (cb.checked) dc.off.delete(`${pre}:${it.id}`);
+      else dc.off.add(`${pre}:${it.id}`);
+      renderDiscordPreview();
+    });
+    return cb;
+  }
+  const dcBadge = (r) => mk("span", `pg-badge ${empRankCls(r)}`, rankLabel(r) || "sin rango");
+  function dcPath(from, to) {
+    const path = mk("span", "emp-dc-path");
+    path.append(dcBadge(from), mk("span", "emp-dc-arrow", "➜"), dcBadge(to));
+    return path;
+  }
+  function dcSelect(opts, val, onChange) {
+    const sel = document.createElement("select");
+    sel.className = "emp-dc-sel";
+    for (const [v, t] of opts) {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = t;
+      sel.append(o);
+    }
+    sel.value = val;
+    sel.addEventListener("change", () => onChange(sel.value));
+    return sel;
   }
   async function renderDiscordTab(force = false) {
     const list = byId("emp-dc-list");
     if (!list) return;
+    modal.querySelectorAll("[data-dc-mode]").forEach((b) => b.classList.toggle("is-on", b.dataset.dcMode === dc.mode));
     if (!dc.sun) dc.sun = ascDefaultWeek();
     const max = ascDefaultWeek();
     if (dc.sun > max) dc.sun = max;
-    const wk = `Semana del ${ascDM(dc.sun)} al ${ascDM(ascDay(dc.sun, 6))}`;
-    byId("emp-dc-week").textContent = wk;
+    byId("emp-dc-week").textContent = `Semana del ${ascDM(dc.sun)} al ${ascDM(ascDay(dc.sun, 6))}`;
     byId("emp-dc-next").disabled = +dc.sun >= +max;
+    byId("emp-dc-frase").title = dc.mode === "up" ? "Cambiar las felicitaciones y la frase final" : "Cambiar las frases de cada uno y la del final";
     const info = byId("emp-dc-info");
-    const key = String(+dc.sun);
+    const key = `${dc.mode}:${+dc.sun}`;
     if (dc.key !== key || force) {
       dc.key = key;
       dc.err = "";
       list.innerHTML = "";
-      list.appendChild(mk("p", "muted emp-empty", "Buscando ascensos…"));
+      list.appendChild(mk("p", "muted emp-empty", "Buscando en el historial…"));
       try {
-        const items = await ascensosSemana(dc.sun, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]);
-        if (dc.key !== key) return;
-        const mot = ascMotivosAzar(items.length);
-        items.forEach((it, i) => (it.motivo = mot[i]));
-        dc.items = items;
+        if (dc.mode === "up") {
+          const items = await ascensosSemana(dc.sun, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]);
+          if (dc.key !== key) return;
+          const mot = ascMotivosAzar(items.length);
+          items.forEach((it, i) => (it.motivo = mot[i]));
+          dc.items = items;
+        } else {
+          const r = await descensosSemana(dc.sun, EMP_CLOUD.list, EMP_CLOUD.fired);
+          if (dc.key !== key) return;
+          dc.desc = r.desc;
+          dc.bajas = r.bajas;
+          dcFrasesDown();
+        }
       } catch (err) {
         dc.items = [];
+        dc.desc = [];
+        dc.bajas = [];
         dc.err = err.message || String(err);
       }
       dc.off.clear();
     }
     list.innerHTML = "";
-    const n = dc.items.length;
-    info.textContent = dc.err ? "" : `${n ? `${n} ${n === 1 ? "ascenso" : "ascensos"}` : "Sin ascensos"} dados entre el ${ascDM(ascDay(dc.sun, 6))} y el ${ascDM(ascDay(dc.sun, 13))}`;
-    if (dc.err) list.appendChild(mk("p", "muted emp-empty", `No se pudo leer el historial: ${dc.err}`));
-    else if (!n) list.appendChild(mk("p", "muted emp-empty", "No hay ascensos para esta semana."));
-    for (const it of dc.items) {
-      const row = mk("label", "emp-dc-row");
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = !dc.off.has(it.id);
-      cb.addEventListener("change", () => {
-        if (cb.checked) dc.off.delete(it.id);
-        else dc.off.add(it.id);
-        renderDiscordPreview();
-      });
-      const path = mk("span", "emp-dc-path");
-      path.append(mk("span", `pg-badge ${empRankCls(it.from)}`, rankLabel(it.from) || "sin rango"), mk("span", "emp-dc-arrow", "➜"), mk("span", `pg-badge ${empRankCls(it.to)}`, rankLabel(it.to)));
-      row.append(cb, mk("span", "emp-dc-who", it.name), path, mk("span", "muted emp-small emp-dc-mot", it.motivo));
-      if (!it.discord) row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
-      list.appendChild(row);
+    const range = `entre el ${ascDM(ascDay(dc.sun, 6))} y el ${ascDM(ascDay(dc.sun, 13))}`;
+    if (dc.err) {
+      info.textContent = "";
+      list.appendChild(mk("p", "muted emp-empty", `No se pudo leer el historial: ${dc.err}`));
+    } else if (dc.mode === "up") {
+      const n = dc.items.length;
+      info.textContent = `${n ? `${n} ${n === 1 ? "ascenso" : "ascensos"}` : "Sin ascensos"} dados ${range}`;
+      if (!n) list.appendChild(mk("p", "muted emp-empty", "No hay ascensos para esta semana."));
+      for (const it of dc.items) {
+        const row = mk("label", "emp-dc-row");
+        row.append(dcCheck("u", it), mk("span", "emp-dc-who", it.name), dcPath(it.from, it.to), mk("span", "muted emp-small emp-dc-mot", it.motivo));
+        if (!it.discord) row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
+        list.appendChild(row);
+      }
+    } else {
+      const nd = dc.desc.length, nb = dc.bajas.length;
+      info.textContent = `${nd} ${nd === 1 ? "descenso" : "descensos"} y ${nb} ${nb === 1 ? "baja" : "bajas"} ${range}`;
+      if (!nd && !nb) list.appendChild(mk("p", "muted emp-empty", "No hay descensos ni bajas para esta semana."));
+      if (nd) list.appendChild(mk("div", "emp-dc-group", "⬇️ Descensos"));
+      for (const it of dc.desc) {
+        const row = mk("div", "emp-dc-row");
+        const sel = dcSelect(DESC_MOTIVOS.map((m) => [m.k, m.label]), it.motivo, (v) => {
+          it.motivo = v;
+          it.frase = pickOne(DESC_MOTIVOS.find((m) => m.k === v).f);
+          renderDiscordTab();
+        });
+        row.append(dcCheck("d", it), mk("span", "emp-dc-who", it.name), dcPath(it.from, it.to), sel, mk("span", "muted emp-small emp-dc-mot", it.frase));
+        if (!it.discord) row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
+        list.appendChild(row);
+      }
+      if (nb) list.appendChild(mk("div", "emp-dc-group", "🚪 Bajas del taller"));
+      for (const it of dc.bajas) {
+        const row = mk("div", "emp-dc-row");
+        const sel = dcSelect(BAJA_TIPOS.map((t) => [t.k, `${t.e} ${t.label}`]), it.tipo, (v) => {
+          it.tipo = v;
+          it.frase = pickOne(BAJA_FRASES[v] || BAJA_FRASES.otro);
+          renderDiscordTab();
+        });
+        row.append(dcCheck("b", it), mk("span", "emp-dc-who", it.name), dcBadge(it.rank), sel);
+        if (it.discord) {
+          const ml = mk("span", "emp-dc-ment");
+          const m = document.createElement("input");
+          m.type = "checkbox";
+          m.checked = it.mention !== false;
+          m.title = "Si ya no está en el servidor de Discord, quítalo y saldrá su nombre";
+          m.addEventListener("change", () => {
+            it.mention = m.checked;
+            renderDiscordPreview();
+          });
+          ml.append(m, " Mencionar");
+          ml.addEventListener("click", (ev) => { if (ev.target !== m) m.click(); });
+          row.append(ml);
+        } else row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
+        row.append(mk("span", "muted emp-small emp-dc-mot", it.frase + (it.nota ? `  · Nota interna: ${it.nota}` : "")));
+        list.appendChild(row);
+      }
     }
     renderDiscordPreview();
   }
+  modal.querySelectorAll("[data-dc-mode]").forEach((b) =>
+    b.addEventListener("click", () => {
+      dc.mode = b.dataset.dcMode;
+      renderDiscordTab();
+    })
+  );
   const dcMove = (n) => {
     dc.sun = ascDay(dc.sun || ascDefaultWeek(), 7 * n);
     renderDiscordTab();
@@ -5225,9 +5518,15 @@ function setupEmployeesAdminModal({ onChanged }) {
   byId("emp-dc-prev-w")?.addEventListener("click", () => dcMove(-1));
   byId("emp-dc-next")?.addEventListener("click", () => dcMove(1));
   byId("emp-dc-frase")?.addEventListener("click", () => {
-    dc.frase = ascFraseAzar(dc.frase);
-    const mot = ascMotivosAzar(dc.items.length);
-    dc.items.forEach((it, i) => (it.motivo = mot[i]));
+    if (dc.mode === "up") {
+      dc.frase = ascFraseAzar(dc.frase);
+      const mot = ascMotivosAzar(dc.items.length);
+      dc.items.forEach((it, i) => (it.motivo = mot[i]));
+    } else {
+      dc.cierre = pickOne(DESC_CIERRES, dc.cierre);
+      dc.cierreB = pickOne(BAJAS_CIERRES, dc.cierreB);
+      dcFrasesDown();
+    }
     renderDiscordTab();
   });
   byId("emp-dc-copy")?.addEventListener("click", async () => {
@@ -5235,7 +5534,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     if (!t) return;
     const ok = await copyText(t);
     if (!ok) openCopyFallback(t);
-    else setStatus("✔ Mensaje copiado. Pégalo en el canal de ascensos de Discord.", true);
+    else setStatus(`✔ Mensaje copiado. Pégalo en el canal de ${dc.mode === "up" ? "ascensos" : "descensos"} de Discord.`, true);
   });
 
   function renderFired() {
