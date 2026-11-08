@@ -357,6 +357,20 @@ const ASC_MOTIVOS = [
   "por su esfuerzo diario en el elevador. 💪",
   "por ponerle turbo a la facturación del taller. 📈",
   "por su compromiso y buen hacer con las herramientas. 🧰",
+  "por demostrar semana tras semana de qué pasta está hecho. 🦅",
+  "por su dedicación incansable en el taller. ⏱️",
+  "por convertir cada encargo en un trabajo de primera. 🥇",
+  "por su ética de trabajo y su constancia en el box. 🔧",
+  "por superar con creces lo que se esperaba de su rango. 🚀",
+  "por su trato impecable con los clientes. 🤝",
+  "por no bajar el ritmo ni en los turnos más duros. 💪",
+  "por su compromiso con el nombre de Aguila Motors. 🏆",
+  "por afinar cada motor como si fuera el suyo. ⚙️",
+  "por ganarse el ascenso a base de horas de elevador. 🛞",
+  "por su talento con las llaves y su actitud en el equipo. 🛠️",
+  "por ser de los primeros en llegar y de los últimos en irse. 🌙",
+  "por su evolución imparable dentro del taller. 📈",
+  "por dar siempre un extra en cada reparación. ✨",
 ];
 const ASC_FRASES = [
   "Más rango, más responsabilidad: que se note en cada reparación. 🔧",
@@ -374,6 +388,16 @@ const ASC_FRASES = [
   "Diagnóstico claro: talento, constancia y compromiso. ¡Felicidades! 🔧",
   "Nuevo rango, mismo hambre: a dejar el listón del taller bien alto. 📈",
   "Del box al siguiente escalón: Aguila Motors está orgulloso de vosotros. 🏁",
+  "Nuevo rango, nuevas metas: el taller confía en vosotros. ¡A por ellas! 🎯",
+  "El esfuerzo siempre encuentra su recompensa en este taller. ¡Enhorabuena! 🏆",
+  "Seguid apretando tuercas, que el Aguila no deja de crecer. 🦅",
+  "Hoy subís un escalón; mañana, a por el siguiente. ¡Felicidades! 🪜",
+  "Con mecánicos así, el motor del taller nunca se para. ⚙️",
+  "Os lo habéis currado: disfrutad del ascenso y a seguir sumando. 💪",
+  "Que este rango sea solo el principio. ¡Enhorabuena, equipo! 🚀",
+  "El trabajo bien hecho no pasa desapercibido en Aguila Motors. ⭐",
+  "Más arriba, más ejemplo: que se note el nuevo rango en el box. 🔧",
+  "Gasolina en el depósito y ganas de más: ¡felicidades a los ascendidos! ⛽",
 ];
 const ascFraseAzar = (prev = "") => {
   const pool = ASC_FRASES.filter((f) => f !== prev);
