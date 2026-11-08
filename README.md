@@ -231,6 +231,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 120 · 8 de noviembre de 2026
+
+- **📣 Para Discord: un solo mensaje.** Ascensos, descensos y bajas de la semana salen juntos en «🦅 MOVIMIENTOS DE LA SEMANA», cada uno en su apartado (📈 Ascensos, 📉 Descensos, 🚪 Bajas del taller), con un solo botón de copiar. Los apartados vacíos no salen. En pantalla siguen separados, con sus casillas y desplegables.
+
 ### Versión 119 · 8 de noviembre de 2026
 
 - **Despedir:** en vez de escribir el motivo, se elige el **tipo de baja** (👋 Baja voluntaria, 💤 Inactividad, ⚠️ 3 strikes, 🚫 Expulsión, 🕊️ CK del personaje, 📋 Otro) y se puede añadir una nota interna. Se guarda en el mismo campo de motivo («Inactividad: nota»), sin cambios en Supabase. Con 3/3 strikes sale marcado solo.

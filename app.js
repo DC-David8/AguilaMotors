@@ -939,6 +939,19 @@ function descDiscordText(desc, bajas, sun, cierre) {
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
   return `# ${title}\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · Aguila Motors`;
 }
+// v120 · Un solo mensaje con ascensos, descensos y bajas (secciones que
+// salen solo si tienen a alguien).
+function movDiscordText(up, desc, bajas, sun, cierre) {
+  if (!up.length && !desc.length && !bajas.length) return "";
+  const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r) || "sin rango"}**`);
+  const who = (it) => (it.discord && it.mention !== false ? `<@${it.discord}>` : `**${it.name}**`);
+  const parts = [];
+  if (up.length) parts.push(`## 📈 Ascensos\n${up.map((it) => `⬆️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.motivo}`).join("\n")}`);
+  if (desc.length) parts.push(`## 📉 Descensos\n${desc.map((it) => `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.frase}`).join("\n")}`);
+  if (bajas.length) parts.push(`## 🚪 Bajas del taller\n${bajas.map((it) => `${bajaTipo(it.tipo).e} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} ${it.frase}`).join("\n")}`);
+  const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
+  return `# 🦅 MOVIMIENTOS DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · Aguila Motors`;
+}
 
 // Ventana para despedir: tipo de baja + nota opcional. Devuelve el motivo
 // listo para guardar ("Inactividad: no aparece desde el 20/10") o null.
@@ -5168,7 +5181,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       dc.key = "";
       await refresh();
       await (onChanged?.());
-      if (hasAccess()) status.append(" ", dcGoBtn(up ? "up" : "down"));
+      if (hasAccess()) status.append(" ", dcGoBtn());
     } catch (err) {
       b.disabled = false;
       alert(`No se pudo cambiar el rango: ${err.message || err}`);
@@ -5194,7 +5207,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       dc.key = "";
       await refresh();
       await (onChanged?.());
-      if (hasAccess() && empCloudOn()) status.append(" ", dcGoBtn("down"));
+      if (hasAccess() && empCloudOn()) status.append(" ", dcGoBtn());
     } catch (err) {
       alert(`No se pudo despedir: ${empFireError(err)}`);
     }
@@ -5343,12 +5356,12 @@ function setupEmployeesAdminModal({ onChanged }) {
     renderFired();
   }
 
-  // 📣 Para Discord (v117/v119): ascensos, o descensos y bajas, de una semana.
-  const dc = { mode: "up", sun: null, key: "", items: [], desc: [], bajas: [], off: new Set(), frase: ascFraseAzar(), cierre: pickOne(DESC_CIERRES), cierreB: pickOne(BAJAS_CIERRES), err: "" };
-  function dcGoBtn(mode) {
-    const go = btn(mode === "up" ? "📣 Ascensos para Discord" : "📣 Descensos y bajas para Discord", "ghost emp-dc-go", "Abrir el mensaje de la semana");
+  // 📣 Para Discord (v117-v120): ascensos, descensos y bajas de una semana,
+  // separados en pantalla pero en UN solo mensaje (un copiar, un pegar).
+  const dc = { sun: null, key: "", items: [], desc: [], bajas: [], off: new Set(), frase: ascFraseAzar(), cierre: pickOne(DESC_CIERRES), cierreB: pickOne(BAJAS_CIERRES), err: "" };
+  function dcGoBtn() {
+    const go = btn("📣 Mensaje para Discord", "ghost emp-dc-go", "Abrir el mensaje de la semana");
     go.addEventListener("click", () => {
-      dc.mode = mode;
       dc.sun = ascDefaultWeek();
       dc.key = "";
       setTab("discord");
@@ -5356,17 +5369,22 @@ function setupEmployeesAdminModal({ onChanged }) {
     return go;
   }
   const dcOn = (it, pre) => !dc.off.has(`${pre}:${it.id}`);
-  const dcCierre = () => (dc.desc.some((x) => dcOn(x, "d")) ? dc.cierre : dc.cierreB);
-  const dcText = () =>
-    dc.mode === "up"
-      ? ascDiscordText(dc.items.filter((it) => dcOn(it, "u")), dc.sun, dc.frase)
-      : descDiscordText(dc.desc.filter((it) => dcOn(it, "d")), dc.bajas.filter((it) => dcOn(it, "b")), dc.sun, dcCierre());
+  const dcText = () => {
+    const up = dc.items.filter((it) => dcOn(it, "u"));
+    const desc = dc.desc.filter((it) => dcOn(it, "d"));
+    const bajas = dc.bajas.filter((it) => dcOn(it, "b"));
+    return movDiscordText(up, desc, bajas, dc.sun, up.length ? dc.frase : desc.length ? dc.cierre : dc.cierreB);
+  };
   function renderDiscordPreview() {
     const t = dcText();
-    byId("emp-dc-prev").textContent = t || (dc.mode === "up" ? "No hay ascensos marcados para esa semana." : "No hay descensos ni bajas marcados para esa semana.");
+    byId("emp-dc-prev").textContent = t || "No hay nada marcado para esa semana.";
     byId("emp-dc-copy").disabled = !t;
   }
-  const dcFrasesDown = () => {
+  const dcFrases = (keepUp = false) => {
+    if (!keepUp) {
+      const mot = ascMotivosAzar(dc.items.length);
+      dc.items.forEach((it, i) => (it.motivo = mot[i]));
+    }
     for (const it of dc.desc) it.frase = pickOne((DESC_MOTIVOS.find((m) => m.k === it.motivo) || DESC_MOTIVOS[0]).f, it.frase);
     const used = new Set();
     for (const it of dc.bajas) {
@@ -5406,37 +5424,29 @@ function setupEmployeesAdminModal({ onChanged }) {
     sel.addEventListener("change", () => onChange(sel.value));
     return sel;
   }
+  const noDiscord = () => mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre");
   async function renderDiscordTab(force = false) {
     const list = byId("emp-dc-list");
     if (!list) return;
-    modal.querySelectorAll("[data-dc-mode]").forEach((b) => b.classList.toggle("is-on", b.dataset.dcMode === dc.mode));
     if (!dc.sun) dc.sun = ascDefaultWeek();
     const max = ascDefaultWeek();
     if (dc.sun > max) dc.sun = max;
     byId("emp-dc-week").textContent = `Semana del ${ascDM(dc.sun)} al ${ascDM(ascDay(dc.sun, 6))}`;
     byId("emp-dc-next").disabled = +dc.sun >= +max;
-    byId("emp-dc-frase").title = dc.mode === "up" ? "Cambiar las felicitaciones y la frase final" : "Cambiar las frases de cada uno y la del final";
     const info = byId("emp-dc-info");
-    const key = `${dc.mode}:${+dc.sun}`;
+    const key = String(+dc.sun);
     if (dc.key !== key || force) {
       dc.key = key;
       dc.err = "";
       list.innerHTML = "";
       list.appendChild(mk("p", "muted emp-empty", "Buscando en el historial…"));
       try {
-        if (dc.mode === "up") {
-          const items = await ascensosSemana(dc.sun, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]);
-          if (dc.key !== key) return;
-          const mot = ascMotivosAzar(items.length);
-          items.forEach((it, i) => (it.motivo = mot[i]));
-          dc.items = items;
-        } else {
-          const r = await descensosSemana(dc.sun, EMP_CLOUD.list, EMP_CLOUD.fired);
-          if (dc.key !== key) return;
-          dc.desc = r.desc;
-          dc.bajas = r.bajas;
-          dcFrasesDown();
-        }
+        const [items, r] = await Promise.all([ascensosSemana(dc.sun, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]), descensosSemana(dc.sun, EMP_CLOUD.list, EMP_CLOUD.fired)]);
+        if (dc.key !== key) return;
+        dc.items = items;
+        dc.desc = r.desc;
+        dc.bajas = r.bajas;
+        dcFrases();
       } catch (err) {
         dc.items = [];
         dc.desc = [];
@@ -5446,71 +5456,62 @@ function setupEmployeesAdminModal({ onChanged }) {
       dc.off.clear();
     }
     list.innerHTML = "";
-    const range = `entre el ${ascDM(ascDay(dc.sun, 6))} y el ${ascDM(ascDay(dc.sun, 13))}`;
     if (dc.err) {
       info.textContent = "";
       list.appendChild(mk("p", "muted emp-empty", `No se pudo leer el historial: ${dc.err}`));
-    } else if (dc.mode === "up") {
-      const n = dc.items.length;
-      info.textContent = `${n ? `${n} ${n === 1 ? "ascenso" : "ascensos"}` : "Sin ascensos"} dados ${range}`;
-      if (!n) list.appendChild(mk("p", "muted emp-empty", "No hay ascensos para esta semana."));
-      for (const it of dc.items) {
-        const row = mk("label", "emp-dc-row");
-        row.append(dcCheck("u", it), mk("span", "emp-dc-who", it.name), dcPath(it.from, it.to), mk("span", "muted emp-small emp-dc-mot", it.motivo));
-        if (!it.discord) row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
-        list.appendChild(row);
-      }
-    } else {
-      const nd = dc.desc.length, nb = dc.bajas.length;
-      info.textContent = `${nd} ${nd === 1 ? "descenso" : "descensos"} y ${nb} ${nb === 1 ? "baja" : "bajas"} ${range}`;
-      if (!nd && !nb) list.appendChild(mk("p", "muted emp-empty", "No hay descensos ni bajas para esta semana."));
-      if (nd) list.appendChild(mk("div", "emp-dc-group", "⬇️ Descensos"));
-      for (const it of dc.desc) {
-        const row = mk("div", "emp-dc-row");
-        const sel = dcSelect(DESC_MOTIVOS.map((m) => [m.k, m.label]), it.motivo, (v) => {
-          it.motivo = v;
-          it.frase = pickOne(DESC_MOTIVOS.find((m) => m.k === v).f);
-          renderDiscordTab();
+      return renderDiscordPreview();
+    }
+    const nu = dc.items.length, nd = dc.desc.length, nb = dc.bajas.length;
+    const pl = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+    info.textContent = `${pl(nu, "ascenso", "ascensos")}, ${pl(nd, "descenso", "descensos")} y ${pl(nb, "baja", "bajas")} · entre el ${ascDM(ascDay(dc.sun, 6))} y el ${ascDM(ascDay(dc.sun, 13))}`;
+    if (!nu && !nd && !nb) list.appendChild(mk("p", "muted emp-empty", "No hay ascensos, descensos ni bajas para esta semana."));
+    if (nu) list.appendChild(mk("div", "emp-dc-group", "📈 Ascensos"));
+    for (const it of dc.items) {
+      const row = mk("label", "emp-dc-row");
+      row.append(dcCheck("u", it), mk("span", "emp-dc-who", it.name), dcPath(it.from, it.to), mk("span", "muted emp-small emp-dc-mot", it.motivo));
+      if (!it.discord) row.appendChild(noDiscord());
+      list.appendChild(row);
+    }
+    if (nd) list.appendChild(mk("div", "emp-dc-group", "📉 Descensos"));
+    for (const it of dc.desc) {
+      const row = mk("div", "emp-dc-row");
+      const sel = dcSelect(DESC_MOTIVOS.map((m) => [m.k, m.label]), it.motivo, (v) => {
+        it.motivo = v;
+        it.frase = pickOne(DESC_MOTIVOS.find((m) => m.k === v).f);
+        renderDiscordTab();
+      });
+      row.append(dcCheck("d", it), mk("span", "emp-dc-who", it.name), dcPath(it.from, it.to), sel, mk("span", "muted emp-small emp-dc-mot", it.frase));
+      if (!it.discord) row.appendChild(noDiscord());
+      list.appendChild(row);
+    }
+    if (nb) list.appendChild(mk("div", "emp-dc-group", "🚪 Bajas del taller"));
+    for (const it of dc.bajas) {
+      const row = mk("div", "emp-dc-row");
+      const sel = dcSelect(BAJA_TIPOS.map((t) => [t.k, `${t.e} ${t.label}`]), it.tipo, (v) => {
+        it.tipo = v;
+        it.frase = pickOne(BAJA_FRASES[v] || BAJA_FRASES.otro);
+        renderDiscordTab();
+      });
+      row.append(dcCheck("b", it), mk("span", "emp-dc-who", it.name), dcBadge(it.rank), sel);
+      if (it.discord) {
+        const ml = mk("span", "emp-dc-ment");
+        const m = document.createElement("input");
+        m.type = "checkbox";
+        m.checked = it.mention !== false;
+        m.title = "Si ya no está en el servidor de Discord, quítalo y saldrá su nombre";
+        m.addEventListener("change", () => {
+          it.mention = m.checked;
+          renderDiscordPreview();
         });
-        row.append(dcCheck("d", it), mk("span", "emp-dc-who", it.name), dcPath(it.from, it.to), sel, mk("span", "muted emp-small emp-dc-mot", it.frase));
-        if (!it.discord) row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
-        list.appendChild(row);
-      }
-      if (nb) list.appendChild(mk("div", "emp-dc-group", "🚪 Bajas del taller"));
-      for (const it of dc.bajas) {
-        const row = mk("div", "emp-dc-row");
-        const sel = dcSelect(BAJA_TIPOS.map((t) => [t.k, `${t.e} ${t.label}`]), it.tipo, (v) => {
-          it.tipo = v;
-          it.frase = pickOne(BAJA_FRASES[v] || BAJA_FRASES.otro);
-          renderDiscordTab();
-        });
-        row.append(dcCheck("b", it), mk("span", "emp-dc-who", it.name), dcBadge(it.rank), sel);
-        if (it.discord) {
-          const ml = mk("span", "emp-dc-ment");
-          const m = document.createElement("input");
-          m.type = "checkbox";
-          m.checked = it.mention !== false;
-          m.title = "Si ya no está en el servidor de Discord, quítalo y saldrá su nombre";
-          m.addEventListener("change", () => {
-            it.mention = m.checked;
-            renderDiscordPreview();
-          });
-          ml.append(m, " Mencionar");
-          ml.addEventListener("click", (ev) => { if (ev.target !== m) m.click(); });
-          row.append(ml);
-        } else row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
-        row.append(mk("span", "muted emp-small emp-dc-mot", it.frase + (it.nota ? `  · Nota interna: ${it.nota}` : "")));
-        list.appendChild(row);
-      }
+        ml.append(m, " Mencionar");
+        ml.addEventListener("click", (ev) => { if (ev.target !== m) m.click(); });
+        row.append(ml);
+      } else row.appendChild(noDiscord());
+      row.append(mk("span", "muted emp-small emp-dc-mot", it.frase + (it.nota ? `  · Nota interna: ${it.nota}` : "")));
+      list.appendChild(row);
     }
     renderDiscordPreview();
   }
-  modal.querySelectorAll("[data-dc-mode]").forEach((b) =>
-    b.addEventListener("click", () => {
-      dc.mode = b.dataset.dcMode;
-      renderDiscordTab();
-    })
-  );
   const dcMove = (n) => {
     dc.sun = ascDay(dc.sun || ascDefaultWeek(), 7 * n);
     renderDiscordTab();
@@ -5518,15 +5519,10 @@ function setupEmployeesAdminModal({ onChanged }) {
   byId("emp-dc-prev-w")?.addEventListener("click", () => dcMove(-1));
   byId("emp-dc-next")?.addEventListener("click", () => dcMove(1));
   byId("emp-dc-frase")?.addEventListener("click", () => {
-    if (dc.mode === "up") {
-      dc.frase = ascFraseAzar(dc.frase);
-      const mot = ascMotivosAzar(dc.items.length);
-      dc.items.forEach((it, i) => (it.motivo = mot[i]));
-    } else {
-      dc.cierre = pickOne(DESC_CIERRES, dc.cierre);
-      dc.cierreB = pickOne(BAJAS_CIERRES, dc.cierreB);
-      dcFrasesDown();
-    }
+    dc.frase = ascFraseAzar(dc.frase);
+    dc.cierre = pickOne(DESC_CIERRES, dc.cierre);
+    dc.cierreB = pickOne(BAJAS_CIERRES, dc.cierreB);
+    dcFrases();
     renderDiscordTab();
   });
   byId("emp-dc-copy")?.addEventListener("click", async () => {
@@ -5534,7 +5530,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     if (!t) return;
     const ok = await copyText(t);
     if (!ok) openCopyFallback(t);
-    else setStatus(`✔ Mensaje copiado. Pégalo en el canal de ${dc.mode === "up" ? "ascensos" : "descensos"} de Discord.`, true);
+    else setStatus("✔ Mensaje copiado. Pégalo en el canal de Discord.", true);
   });
 
   function renderFired() {
