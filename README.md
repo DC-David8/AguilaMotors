@@ -233,7 +233,7 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ### Versión 117 · 8 de noviembre de 2026
 
-- **Gestión de empleados → 📣 Ascensos para Discord** (solo Jefes): junta los ascensos de un día (hoy por defecto) leyendo el historial y arma el mensaje para el canal de ascensos, con la mención de cada empleado, su nombre y los roles de Discord del rango anterior y del nuevo. Cada ascenso tiene su casilla para quitarlo del mensaje. Cierra con una frase de felicitación al azar sobre el taller (🎲 *Otra frase* la cambia). Si alguien sube dos veces el mismo día sale una sola línea, de su primer rango al último. Al subir a alguien desde su ficha aparece un botón que lleva directo al mensaje.
+- **Gestión de empleados → 📣 Ascensos para Discord** (solo Jefes): arma el mensaje de **ascensos de la semana** (domingo a sábado; por defecto la última cerrada, con ◀ ▶ para cambiar) a partir del historial: busca los ascensos dados desde el sábado de cierre hasta el sábado siguiente. Cada línea menciona al empleado, el rol de Discord del rango anterior y del nuevo, y una felicitación al azar distinta para cada uno. Al final, una frase del taller al azar y la etiqueta del rol **Jefatura** (su ID lo guarda el Jefe Aguila en la misma pestaña; se guarda en línea, `app_settings` «dc_jefatura»). 🎲 *Otras frases* las cambia todas. Cada ascenso tiene su casilla para quitarlo. Si alguien sube dos veces sale una sola línea, de su primer rango al último. Al subir a alguien desde su ficha aparece un botón que lleva directo al mensaje.
 
 ### Versión 116 · 4 de noviembre de 2026
 

@@ -2363,3 +2363,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .emp-dc-prev-head button { padding: 5px 10px; font-size: 12.5px; }
 .emp-dc-prev { margin: 0; padding: 12px 14px; border-radius: 10px; background: #1e1f22; border: 1px solid rgba(255,255,255,.08); color: #dbdee1; font: 13px/1.5 ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto; }
 .emp-dc-go { padding: 3px 10px; font-size: 12px; margin-left: 6px; }
+.emp-dc-bar #emp-dc-week { font-size: 14px; min-width: 190px; text-align: center; }
+.emp-dc-bar button { padding: 5px 10px; }
+.emp-dc-mot { flex-basis: 100%; padding-left: 26px; font-style: italic; }
+.emp-dc-jef { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,.1); }
+.emp-dc-jef label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.emp-dc-jef input { width: 230px; }
+.emp-dc-jef[hidden] { display: none; }

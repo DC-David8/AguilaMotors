@@ -700,11 +700,30 @@ const UP_REASONS = [
 const DOWN_REASON = "por no alcanzar el mínimo de facturación de su rango.";
 
 // ---------------------------------------------------------------------------
-// v117 · Ascensos del día para Discord (Gestión de empleados → 📣 Discord).
-// Lee del historial (emp_historial, tipo "rango") los ascensos de un día y
-// arma el mensaje con la mención del empleado, su nombre y los roles de
-// Discord del rango anterior y del nuevo. Cierra con una frase al azar.
+// v117 · Ascensos de la semana para Discord (Gestión de empleados → 📣).
+// Lee del historial (emp_historial, tipo "rango") los ascensos hechos al
+// cerrar una semana y arma el mensaje con la mención de cada empleado, los
+// roles de Discord del rango anterior y del nuevo y una felicitación al azar
+// para cada uno. Cierra con una frase del taller y la etiqueta de Jefatura.
 // ---------------------------------------------------------------------------
+const ASC_MOTIVOS = [
+  "por su excelente labor y compromiso con el taller. 🏆",
+  "por su gran rendimiento esta semana. 🔧",
+  "por su constancia y dedicación. 💪",
+  "por estar a la altura y dar siempre el máximo. 🔥",
+  "por dejar cada vehículo como recién salido de fábrica. 🚗",
+  "por no soltar la llave inglesa ni un solo turno. 🛠️",
+  "por su trabajo impecable bajo el capó. ⚙️",
+  "por ser de los que más facturan y mejor atienden. 💰",
+  "por su seriedad y profesionalidad con cada cliente. 🤝",
+  "por tirar del taller cuando más falta hacía. 🦅",
+  "por su precisión en cada reparación. 🔩",
+  "por ir siempre a toda máquina. 🏎️",
+  "por ser un ejemplo para sus compañeros de box. ⭐",
+  "por su esfuerzo diario en el elevador. 💪",
+  "por ponerle turbo a la facturación del taller. 📈",
+  "por su compromiso y buen hacer con las herramientas. 🧰",
+];
 const ASC_FRASES = [
   "Más rango, más responsabilidad: que se note en cada reparación. 🔧",
   "Las llaves pesan más arriba, pero sabemos que podéis con ellas. 🛠️",
@@ -718,14 +737,40 @@ const ASC_FRASES = [
   "Aquí nadie regala nada: cada ascenso se gana en el elevador. 🏆",
   "Pistones a tope y sin frenar: ¡enhorabuena a los ascendidos! 🏎️",
   "El orgullo del taller sois vosotros. ¡Que siga rugiendo el motor! 🦅",
-  "Diagnóstico claro: talento, constancia y compromiso. ¡Felicidades! 🩺🔧",
+  "Diagnóstico claro: talento, constancia y compromiso. ¡Felicidades! 🔧",
   "Nuevo rango, mismo hambre: a dejar el listón del taller bien alto. 📈",
-  "Del box al siguiente escalón: Aguila Motors está orgulloso de vosotros. 🛞",
+  "Del box al siguiente escalón: Aguila Motors está orgulloso de vosotros. 🏁",
 ];
 const ascFraseAzar = (prev = "") => {
   const pool = ASC_FRASES.filter((f) => f !== prev);
   return pool[Math.floor(Math.random() * pool.length)] || ASC_FRASES[0];
 };
+// Una felicitación distinta para cada uno (sin repetir mientras haya).
+function ascMotivosAzar(n) {
+  const out = [];
+  let bag = [];
+  for (let i = 0; i < n; i++) {
+    if (!bag.length) bag = [...ASC_MOTIVOS].sort(() => Math.random() - 0.5);
+    out.push(bag.pop());
+  }
+  return out;
+}
+// Rol de Discord de la Jefatura (se etiqueta al final). El Jefe Aguila lo
+// pega en la pestaña y se guarda en línea (app_settings "dc_jefatura").
+let DC_JEFATURA_ID = "";
+async function dcJefaturaLoad() {
+  try {
+    const rows = await cvCloud.req("/rest/v1/app_settings?select=value&key=eq.dc_jefatura");
+    DC_JEFATURA_ID = String(rows?.[0]?.value || "").replace(/\D/g, "");
+  } catch {
+    // sin conexión: se queda el que hubiera
+  }
+}
+async function dcJefaturaSave(id) {
+  const v = String(id || "").replace(/\D/g, "");
+  await cvCloud.upsert("app_settings", [{ key: "dc_jefatura", value: v }], "key");
+  DC_JEFATURA_ID = v;
+}
 // Nombre visible (o interno) de un rango → nombre interno ("Aprendiz" → "Chalán").
 function rankFromText(t) {
   const k = normalizeKeySimple(t);
@@ -745,12 +790,19 @@ function parseRankLog(texto) {
   }
   return null;
 }
-// Ascensos de un día (AAAA-MM-DD, hora del equipo). Si alguien sube dos veces
-// el mismo día se junta en uno (de su primer rango al último).
-async function ascensosDelDia(dayIso, people) {
-  const [y, mo, d] = dayIso.split("-").map(Number);
-  const a = new Date(y, mo - 1, d).toISOString();
-  const b = new Date(y, mo - 1, d + 1).toISOString();
+// Semanas de domingo a sábado (las mismas de Pagos y los strikes).
+const ascDay = (d, add = 0) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + add);
+const ascSunday = (d) => ascDay(d, -d.getDay());
+const ascDM = (d) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+// Semana que se anuncia por defecto: la última cerrada (los ascensos se dan
+// al cerrarla). Hoy domingo 08/11 → semana del 01/11 al 07/11.
+const ascDefaultWeek = () => ascSunday(ascDay(new Date(), -7));
+// Ascensos de la semana que empieza el domingo `sun`: los dados desde su
+// sábado de cierre hasta el sábado siguiente. Si alguien sube dos veces se
+// junta en uno (de su primer rango al último).
+async function ascensosSemana(sun, people) {
+  const a = ascDay(sun, 6).toISOString();
+  const b = ascDay(sun, 14).toISOString();
   const rows = await cvCloud.req(`/rest/v1/emp_historial?select=employee_id,at,texto&tipo=eq.rango&at=gte.${encodeURIComponent(a)}&at=lt.${encodeURIComponent(b)}&order=at.asc`, { auth: true });
   const by = new Map();
   for (const r of rows || []) {
@@ -769,15 +821,13 @@ async function ascensosDelDia(dayIso, people) {
   }
   return out.sort((p, q) => rankOrder(q.to) - rankOrder(p.to) || p.name.localeCompare(q.name, "es"));
 }
-function ascDiscordText(items, dayIso, frase) {
+function ascDiscordText(items, sun, frase) {
   if (!items.length) return "";
   const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r) || "sin rango"}**`);
-  const who = (it) => (it.discord ? `<@${it.discord}> · **${it.name}**` : `**${it.name}**`);
-  const [y, mo, d] = dayIso.split("-").map(Number);
-  const dia = new Date(y, mo - 1, d).toLocaleDateString("es-ES", { weekday: "long" });
-  const fecha = `${dia.charAt(0).toUpperCase()}${dia.slice(1)} ${empDate(dayIso)}`;
-  const lines = items.map((it) => `⬆️ ${who(it)}\n${role(it.from)} ➜ ${role(it.to)}`);
-  return `# 📈 ASCENSOS · AGUILA MOTORS\n-# 📅 ${fecha} · Aguila Motors 🦅\n\n${lines.join("\n\n")}\n\n${frase}\n-# — Jefatura · Aguila Motors`;
+  const who = (it) => (it.discord ? `<@${it.discord}>` : `**${it.name}**`);
+  const lines = items.map((it) => `⬆️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.motivo}`);
+  const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
+  return `# 📈 ASCENSOS DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${lines.join("\n")}\n\n${frase}\n-# — ${jef} · Aguila Motors`;
 }
 
 async function loadRankRules() {
@@ -4936,13 +4986,13 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (empCloudOn()) empCloudRequireSession();
       await updateEmployee(e.id, { rank: to }, adminPass);
       setStatus(`✔ ${fullName(e)} ahora es ${rankLabel(to)}.`, true);
-      dc.day = "";
+      dc.key = "";
       await refresh();
       await (onChanged?.());
       if (up && hasAccess()) {
-        const go = btn("📣 Ascensos para Discord", "ghost emp-dc-go", "Abrir el mensaje de los ascensos de hoy");
+        const go = btn("📣 Ascensos para Discord", "ghost emp-dc-go", "Abrir el mensaje de los ascensos de la semana");
         go.addEventListener("click", () => {
-          byId("emp-dc-day").value = empToday();
+          dc.sun = ascDefaultWeek();
           setTab("discord");
         });
         status.append(" ", go);
@@ -5122,41 +5172,51 @@ function setupEmployeesAdminModal({ onChanged }) {
     renderFired();
   }
 
-  // 📣 Ascensos para Discord (v117): los ascensos de un día, listos para pegar.
-  const dc = { day: "", items: [], off: new Set(), frase: ascFraseAzar(), loading: false, err: "" };
-  const dcText = () => ascDiscordText(dc.items.filter((it) => !dc.off.has(it.id)), dc.day, dc.frase);
+  // 📣 Ascensos para Discord (v117): los ascensos de una semana, listos para pegar.
+  const dc = { sun: null, key: "", items: [], off: new Set(), frase: ascFraseAzar(), err: "" };
+  const dcText = () => ascDiscordText(dc.items.filter((it) => !dc.off.has(it.id)), dc.sun, dc.frase);
   function renderDiscordPreview() {
     const t = dcText();
-    byId("emp-dc-prev").textContent = t || "No hay ascensos marcados para ese día.";
+    byId("emp-dc-prev").textContent = t || "No hay ascensos marcados para esa semana.";
     byId("emp-dc-copy").disabled = !t;
+    const j = byId("emp-dc-jef");
+    if (j && document.activeElement !== j) j.value = DC_JEFATURA_ID;
+    byId("emp-dc-jef-box").hidden = !AUTH.aguila;
+    byId("emp-dc-jef-warn").hidden = !!DC_JEFATURA_ID;
   }
   async function renderDiscordTab(force = false) {
-    const inp = byId("emp-dc-day");
-    if (!inp) return;
-    if (!inp.value) inp.value = empToday();
-    inp.max = empToday();
     const list = byId("emp-dc-list");
+    if (!list) return;
+    if (!dc.sun) dc.sun = ascDefaultWeek();
+    const max = ascDefaultWeek();
+    if (dc.sun > max) dc.sun = max;
+    const wk = `Semana del ${ascDM(dc.sun)} al ${ascDM(ascDay(dc.sun, 6))}`;
+    byId("emp-dc-week").textContent = wk;
+    byId("emp-dc-next").disabled = +dc.sun >= +max;
     const info = byId("emp-dc-info");
-    if (dc.day !== inp.value || force) {
-      dc.day = inp.value;
-      dc.loading = true;
+    const key = String(+dc.sun);
+    if (dc.key !== key || force) {
+      dc.key = key;
       dc.err = "";
       list.innerHTML = "";
       list.appendChild(mk("p", "muted emp-empty", "Buscando ascensos…"));
       try {
-        dc.items = await ascensosDelDia(dc.day, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]);
+        const [items] = await Promise.all([ascensosSemana(dc.sun, [...EMP_CLOUD.list, ...EMP_CLOUD.fired]), dcJefaturaLoad()]);
+        if (dc.key !== key) return;
+        const mot = ascMotivosAzar(items.length);
+        items.forEach((it, i) => (it.motivo = mot[i]));
+        dc.items = items;
       } catch (err) {
         dc.items = [];
         dc.err = err.message || String(err);
       }
       dc.off.clear();
-      dc.loading = false;
     }
     list.innerHTML = "";
     const n = dc.items.length;
-    info.textContent = dc.err ? "" : n ? `${n} ${n === 1 ? "ascenso" : "ascensos"} el ${empDate(dc.day)}` : "";
+    info.textContent = dc.err ? "" : `${n ? `${n} ${n === 1 ? "ascenso" : "ascensos"}` : "Sin ascensos"} dados entre el ${ascDM(ascDay(dc.sun, 6))} y el ${ascDM(ascDay(dc.sun, 13))}`;
     if (dc.err) list.appendChild(mk("p", "muted emp-empty", `No se pudo leer el historial: ${dc.err}`));
-    else if (!n) list.appendChild(mk("p", "muted emp-empty", `No hubo ascensos el ${empDate(dc.day)}.`));
+    else if (!n) list.appendChild(mk("p", "muted emp-empty", "No hay ascensos para esta semana."));
     for (const it of dc.items) {
       const row = mk("label", "emp-dc-row");
       const cb = document.createElement("input");
@@ -5167,23 +5227,36 @@ function setupEmployeesAdminModal({ onChanged }) {
         else dc.off.add(it.id);
         renderDiscordPreview();
       });
-      const who = mk("span", "emp-dc-who", it.name);
       const path = mk("span", "emp-dc-path");
       path.append(mk("span", `pg-badge ${empRankCls(it.from)}`, rankLabel(it.from) || "sin rango"), mk("span", "emp-dc-arrow", "➜"), mk("span", `pg-badge ${empRankCls(it.to)}`, rankLabel(it.to)));
-      row.append(cb, who, path);
-      if (!it.discord) row.appendChild(mk("span", "muted emp-small", "sin Discord: saldrá solo el nombre"));
+      row.append(cb, mk("span", "emp-dc-who", it.name), path, mk("span", "muted emp-small emp-dc-mot", it.motivo));
+      if (!it.discord) row.appendChild(mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre"));
       list.appendChild(row);
     }
     renderDiscordPreview();
   }
-  byId("emp-dc-day")?.addEventListener("change", () => renderDiscordTab());
-  byId("emp-dc-today")?.addEventListener("click", () => {
-    byId("emp-dc-day").value = empToday();
-    renderDiscordTab(true);
-  });
+  const dcMove = (n) => {
+    dc.sun = ascDay(dc.sun || ascDefaultWeek(), 7 * n);
+    renderDiscordTab();
+  };
+  byId("emp-dc-prev-w")?.addEventListener("click", () => dcMove(-1));
+  byId("emp-dc-next")?.addEventListener("click", () => dcMove(1));
   byId("emp-dc-frase")?.addEventListener("click", () => {
     dc.frase = ascFraseAzar(dc.frase);
-    renderDiscordPreview();
+    const mot = ascMotivosAzar(dc.items.length);
+    dc.items.forEach((it, i) => (it.motivo = mot[i]));
+    renderDiscordTab();
+  });
+  byId("emp-dc-jef-save")?.addEventListener("click", async () => {
+    const v = byId("emp-dc-jef").value.replace(/\D/g, "");
+    if (v && v.length < 15) return alert("Eso no parece un ID de rol de Discord (son 17-20 números).");
+    try {
+      await dcJefaturaSave(v);
+      setStatus(v ? "✔ Rol de Jefatura guardado: se etiquetará al final del mensaje." : "Rol de Jefatura quitado.", true);
+      renderDiscordPreview();
+    } catch (err) {
+      alert(`No se pudo guardar: ${err.message || err}`);
+    }
   });
   byId("emp-dc-copy")?.addEventListener("click", async () => {
     const t = dcText();
@@ -5191,7 +5264,6 @@ function setupEmployeesAdminModal({ onChanged }) {
     const ok = await copyText(t);
     if (!ok) openCopyFallback(t);
     else setStatus("✔ Mensaje copiado. Pégalo en el canal de ascensos de Discord.", true);
-    dc.frase = ascFraseAzar(dc.frase);
   });
 
   function renderFired() {
