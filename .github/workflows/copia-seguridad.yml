@@ -1,0 +1,59 @@
+# Aguila Motors · Copia de seguridad semanal de Supabase.
+# Cada domingo (y cuando se lance a mano desde Actions) guarda una copia
+# CIFRADA de todas las tablas en la rama "copias" (no toca la web).
+# Se quedan las 12 últimas (unos 3 meses).
+# Secretos (Settings → Secrets and variables → Actions):
+#   SUPABASE_SERVICE_KEY  clave secreta de Supabase (service_role / secret)
+#   BACKUP_PASSWORD       contraseña para cifrar (guárdala: sin ella no se abre)
+name: Copia de seguridad
+
+on:
+  schedule:
+    - cron: "41 9 * * 0" # domingo 09:41 UTC (03:41 en Guatemala)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: copia-seguridad
+  cancel-in-progress: false
+
+jobs:
+  copia:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: web
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Preparar la rama de copias
+        run: |
+          git clone --quiet --no-checkout "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" copias
+          cd copias
+          git config user.name "Copia Aguila Motors"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin copias >/dev/null; then
+            git checkout --quiet copias
+          else
+            git checkout --quiet --orphan copias
+            git rm -rfq . 2>/dev/null || true
+            printf '# Copias de seguridad de Aguila Motors\n\nArchivos cifrados (AES-256). Solo se abren con la contraseña BACKUP_PASSWORD.\nPara abrir uno: `node .github/scripts/copia.mjs abrir <archivo.enc> salida.json`\n' > README.md
+          fi
+
+      - name: Hacer la copia
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+        run: |
+          F="copia_$(date -u +%Y-%m-%d).enc"
+          node web/.github/scripts/copia.mjs backup "copias/$F"
+          cd copias
+          ls -1 copia_*.enc | sort | head -n -12 | xargs -r git rm -q --
+          git add -A
+          git commit -qm "Copia de seguridad $(date -u +%Y-%m-%d)" || echo "Sin cambios"
+          git push -q origin copias
