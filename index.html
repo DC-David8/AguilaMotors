@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=123" />
+  <link rel="stylesheet" href="styles.css?v=124" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=123" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=124" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -81,6 +81,7 @@
       <button class="tab" data-tab-target="tab-conta"><svg class="tab-ic ic-pagos" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M15.2 9.3c0-1.4-1.4-2.3-3.2-2.3s-3.2.9-3.2 2.3c0 3.2 6.4 1.6 6.4 4.8 0 1.4-1.4 2.4-3.2 2.4s-3.2-1-3.2-2.4M12 5v14"/></svg>Pagos</button>
       <button class="tab" data-tab-target="tab-sorteo"><svg class="tab-ic ic-sorteo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.8 2.8M15.9 15.9l2.8 2.8M18.7 5.3l-2.8 2.8M8.1 15.9l-2.8 2.8"/><circle cx="16.3" cy="8.9" r="1.1" class="tab-ic-ball"/></svg>Sorteo</button>
       <button class="tab" data-tab-target="tab-inf" hidden><svg class="tab-ic ic-inf" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l8 3v6c0 5-3.4 8.8-8 10-4.6-1.2-8-5-8-10v-6z"/><path d="M8.5 12l2.4 2.4 4.6-4.8"/></svg>Informes</button>
+      <button class="tab" data-tab-target="tab-jefe" hidden><svg class="tab-ic ic-jefe" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><rect x="5" y="12" width="3.2" height="6.5" rx=".8"/><rect x="10.4" y="7.5" width="3.2" height="11" rx=".8"/><rect x="15.8" y="4" width="3.2" height="14.5" rx=".8"/></svg>Panel</button>
     </nav>
 
     <section id="tab-caja" class="tab-panel is-active">
@@ -284,6 +285,40 @@
           </section>
 
         </section>
+      </div>
+    </section>
+
+    <section id="tab-jefe" class="tab-panel">
+      <div class="jp-head">
+        <h2>📊 Panel del Jefe</h2>
+        <span class="jp-pill">SOLO JEFE AGUILA</span>
+        <span class="muted jp-status" id="jp-status"></span>
+        <div class="jp-week">
+          <button type="button" class="ghost" id="jp-prev" title="Semana anterior">◀</button>
+          <b id="jp-week"></b>
+          <button type="button" class="ghost" id="jp-next" title="Semana siguiente">▶</button>
+          <button type="button" class="ghost" id="jp-refresh" title="Traer lo último del canal de facturas">🔄</button>
+        </div>
+      </div>
+      <div class="jp-grid jp-k4">
+        <div class="jp-card jp-kpi" id="jp-k1"></div>
+        <div class="jp-card jp-kpi" id="jp-k2"></div>
+        <div class="jp-card jp-kpi" id="jp-k3"></div>
+        <div class="jp-card jp-kpi" id="jp-k4"></div>
+      </div>
+      <div class="jp-grid jp-r2">
+        <div class="jp-card">
+          <h3>Últimas 8 semanas</h3>
+          <div class="jp-legend"><span><i style="background:#f97d02"></i>Facturado</span><span><i style="background:#6b5440"></i>Nóminas</span><span><i style="background:#8adbb5"></i>Para el taller</span></div>
+          <div id="jp-chart"></div>
+          <p class="muted jp-small" id="jp-chart-note" hidden>* Semana sin cerrar en Pagos: estimada con las facturas del canal (sin kits).</p>
+        </div>
+        <div class="jp-card"><h3>⚠️ Avisos</h3><div id="jp-alerts"></div></div>
+      </div>
+      <div class="jp-grid jp-r3">
+        <div class="jp-card"><h3>🏆 Ranking de la semana</h3><div id="jp-rank"></div></div>
+        <div class="jp-card"><h3>🚗 Compraventa · almacén</h3><div id="jp-cv"></div></div>
+        <div class="jp-card"><h3>⭐ Mejores clientes</h3><div id="jp-clients"></div><h3 class="jp-h3b">👥 Plantilla</h3><div id="jp-plant"></div></div>
       </div>
     </section>
 
@@ -683,7 +718,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 123 - Aguila Motors</footer>
+    <footer class="app-version">Versión 124 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -1012,9 +1047,10 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=123"></script>
-  <script src="app.js?v=123"></script>
-    <script src="informes/qrcode.js?v=123"></script>
-    <script src="informes.js?v=123"></script>
+  <script src="catalogo/vehiculos.js?v=124"></script>
+  <script src="app.js?v=124"></script>
+    <script src="informes/qrcode.js?v=124"></script>
+    <script src="informes.js?v=124"></script>
+    <script src="panel.js?v=124"></script>
 </body>
 </html>

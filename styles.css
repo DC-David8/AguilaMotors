@@ -2403,3 +2403,54 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .emp-inact-grid { display: flex; gap: 12px; flex-wrap: wrap; }
 .emp-inact-f { display: flex; align-items: center; gap: 6px; }
 .emp-inact-f input { width: 64px; }
+
+/* v124 · Panel del Jefe */
+#tab-jefe { padding-bottom: 24px; }
+#tab-jefe.is-loading .jp-grid { opacity: .55; transition: opacity .2s; }
+.jp-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
+.jp-head h2 { margin: 0; }
+.jp-pill { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(249,125,2,.15); color: var(--accent-2); border: 1px solid rgba(249,125,2,.35); font-weight: 700; }
+.jp-status { font-size: 12.5px; }
+.jp-week { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.jp-week b { min-width: 190px; text-align: center; }
+.jp-week button { padding: 6px 11px; }
+.jp-grid { display: grid; gap: 14px; }
+.jp-k4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.jp-r2 { grid-template-columns: 1.55fr 1fr; margin-top: 14px; }
+.jp-r3 { grid-template-columns: 1.15fr 1fr 1fr; margin-top: 14px; }
+.jp-card { background: linear-gradient(180deg, #17130f, #120f0c); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; min-width: 0; }
+.jp-card h3 { margin: 0 0 10px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-2); }
+.jp-h3b { margin-top: 16px !important; }
+.jp-kpi .jp-l { font-size: 12.5px; color: var(--muted); }
+.jp-kpi .jp-v { font-size: 27px; font-weight: 800; margin: 4px 0 2px; overflow-wrap: anywhere; }
+.jp-d { font-size: 12.5px; font-weight: 700; }
+.jp-kpi .jp-s { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+#tab-jefe .up { color: var(--ok); }
+#tab-jefe .down { color: #ff6b6b; }
+.jp-legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 4px; flex-wrap: wrap; }
+.jp-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.jp-small { font-size: 11.5px; margin: 6px 0 0; }
+.jp-empty { font-size: 13px; margin: 4px 0; }
+.jp-alert { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); margin-bottom: 7px; font-size: 13px; }
+.jp-alert b { display: block; }
+.jp-alert small { color: var(--muted); }
+.jp-ai { font-size: 17px; line-height: 1.1; }
+.jp-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.jp-row-l { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.jp-row-l small { font-size: 11.5px; }
+.jp-rk-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.jp-pos { color: var(--muted); }
+.jp-num { text-align: right; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jp-num small { font-size: 11px; font-weight: 700; }
+.jp-bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.06); overflow: hidden; }
+.jp-bar span { display: block; height: 100%; background: linear-gradient(90deg, #f97d02, #ffb35c); }
+.jp-more { margin-top: 8px; padding: 5px 12px; font-size: 12.5px; }
+.jp-cv-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 6px; }
+.jp-cv-sum div { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; }
+.jp-cv-sum b { font-size: 16px; }
+.jp-cv-sum small { font-size: 11px; }
+.jp-old { color: #ff9a4a !important; }
+.jp-mv { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+@media (max-width: 1100px) { .jp-k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .jp-r3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 820px) { .jp-r2, .jp-r3 { grid-template-columns: 1fr; } .jp-week { margin-left: 0; width: 100%; justify-content: space-between; } .jp-week b { min-width: 0; } }
+@media (max-width: 480px) { .jp-k4 { grid-template-columns: 1fr; } }

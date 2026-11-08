@@ -231,6 +231,16 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 124 · 8 de noviembre de 2026
+
+- **📊 Panel del Jefe** (pestaña nueva, solo el Jefe Aguila; código en `panel.js`, el primer módulo separado de `app.js`). Se llena solo, por semana de pago (domingo a sábado, hora de España; ◀ ▶ para cambiar y 🔄 para traer lo último del canal):
+  - **Cifras de la semana:** facturado (facturas y ticket medio), nóminas (con el bono), lo que queda para el taller e informes emitidos (por agencia, con su tarifa), cada una frente a la semana anterior.
+  - **Últimas 8 semanas:** facturado, nóminas y lo que queda para el taller. Las semanas cerradas en Pagos usan lo guardado (con kits); las que no, se estiman con las facturas del canal (sin kits) y salen marcadas con *.
+  - **Avisos:** para despido (3/3), a punto del tercer strike (lo que le falta esta semana), inactividad en naranja o rojo, listos para subir y sin IBAN.
+  - **Ranking de la semana:** los 5 primeros (o todos), con su rango, la subida o bajada frente a la semana anterior y el aviso 💤.
+  - **Compraventa · almacén:** coches listados, invertido, ganancia estimada y los que más tiempo llevan (con a cuánto venderlos), más compras y ventas de la semana.
+  - **Mejores clientes** de la semana y resumen de **plantilla** (ascensos, descensos, altas y bajas).
+
 ### Versión 123 · 8 de noviembre de 2026
 
 - **💤 Aviso de inactividad** (solo Jefes): con las facturas que el bot copia del canal de Discord (`discord_log`, últimos 30 días) se sabe la última factura de cada empleado. En el listado sale una etiqueta «💤 N d» en amarillo (aviso), naranja (alerta) o rojo (grave); en la ficha, la fecha y hora de su última factura. Nuevo filtro **Sin facturar** (ordenado de más a menos días). A los recién entrados se les cuenta desde su fecha de ingreso.
