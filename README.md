@@ -50,7 +50,7 @@ El datáfono solo acepta **40 caracteres** de concepto. Debajo del total del tic
 | Nitro, Bot nitro, Neon RGB, Compra | Instalación de Nitro, Botella de Nitro, Instalación de Neones RGB, Compraventa |
 | `2x` delante | Cantidad (si es más de 1) |
 
-Los productos agregados desde Gestión de Productos usan su nombre completo. Las abreviaturas se cambian en `app.js` → `PIECE_SHORT`, `GAMA_SHORT` y `SERVICE_SHORT`.
+Los productos agregados desde Gestión de Productos usan su nombre completo. Las abreviaturas se cambian en `js/productos.js` → `PIECE_SHORT`, `GAMA_SHORT` y `SERVICE_SHORT`.
 
 ## Comisiones por rango
 
@@ -64,11 +64,11 @@ Los productos agregados desde Gestión de Productos usan su nombre completo. Las
 | Gerente | Jefe | 50 % |
 | Jefe Aguila | Jefe Aguila | 100 % |
 
-Los nombres que se ven salen de `DEFAULT_RANK_NAMES` en `app.js` (y el Jefe Aguila puede cambiarlos en Gestión → Nombres de los rangos). Por dentro, en la base de datos y en las reglas de permisos, cada rango conserva su **nombre interno**.
+Los nombres que se ven salen de `DEFAULT_RANK_NAMES` en `js/productos.js` (y el Jefe Aguila puede cambiarlos en Gestión → Nombres de los rangos). Por dentro, en la base de datos y en las reglas de permisos, cada rango conserva su **nombre interno**.
 
 Se aplican igual a las facturas y a las ventas de kits. El rango de cada empleado se cambia en **Gestión de empleados**. Para que se reconozca a un empleado, su nombre y apellido tienen que ser iguales a los que salen en Discord como *Cobrador* o *Vendedor*.
 
-Los porcentajes se cambian en `app.js` → `RANKS`.
+Los porcentajes se cambian en `js/productos.js` → `RANKS`.
 
 ### Etiquetar a cada empleado en Discord
 
@@ -115,7 +115,7 @@ Sale en naranja cuando es la mitad o más. No aparece en el texto que se copia a
 
 En **Totales empleados**, quien más cobra lleva la etiqueta del rol de Discord *Empleado de la semana* (`<@&ID>`) al copiar, tanto en **Copiar seleccionado** como en **Copiar todo**. Al pegarlo en Discord se ve el rol con su color. Si hay empate, la llevan todos los empatados. El texto solo menciona el rol: asignarlo se sigue haciendo en Discord.
 
-El rol se cambia en `app.js` → `EMPLOYEE_OF_WEEK_ROLE_ID` (ID del rol: con el modo desarrollador de Discord, clic derecho sobre el rol → *Copiar ID del rol*).
+El rol se cambia en `js/empleados-datos.js` → `EMPLOYEE_OF_WEEK_ROLE_ID` (ID del rol: con el modo desarrollador de Discord, clic derecho sobre el rol → *Copiar ID del rol*).
 
 ## Sorteo
 
@@ -147,7 +147,7 @@ Está guardado completo, tal como funcionaba en la versión 20, en la rama **`id
 
 ## Acceso con contraseña
 
-**Módulo de Pagos**, **Gestión de Productos** y **Gestión de empleados** piden la misma contraseña de acceso. En el código **no está escrita**: solo se guarda su huella SHA-256 (`app.js` → `ACCESS_PASSWORD_SHA256`), igual que la del encargado. Quien abra el código ve una cadena de letras y números de la que no se puede sacar la contraseña.
+**Módulo de Pagos**, **Gestión de Productos** y **Gestión de empleados** piden la misma contraseña de acceso. En el código **no está escrita**: solo se guarda su huella SHA-256 (`ACCESS_PASSWORD_SHA256`), igual que la del encargado. Quien abra el código ve una cadena de letras y números de la que no se puede sacar la contraseña.
 
 **Cambiarla:** calcula la huella de la nueva (en una terminal: `echo -n "NuevaContraseña" | sha256sum`) y sustitúyela en `ACCESS_PASSWORD_SHA256`.
 
@@ -172,7 +172,7 @@ El encargado publica los empleados (con rango, Discord e IBAN) y los productos p
 
 En una PC nueva, después de entrar en modo encargado, **Cargar los publicados en esta PC** copia lo publicado para seguir editando desde ahí.
 
-**Contraseña del encargado:** en el código solo está su huella SHA-256 (`app.js` → `EDITOR_PASSWORD_SHA256`). Para cambiarla, calcula la huella de la nueva (`echo -n "NuevaContraseña" | sha256sum`) y sustitúyela.
+**Contraseña del encargado:** en el código solo está su huella SHA-256 (`js/datos-compartidos.js` → `EDITOR_PASSWORD_SHA256`). Para cambiarla, calcula la huella de la nueva (`echo -n "NuevaContraseña" | sha256sum`) y sustitúyela.
 
 > El repositorio es público: los nombres de los empleados, sus IDs de Discord y sus IBAN de `datos.js` los puede ver cualquiera que lo busque.
 
@@ -202,13 +202,33 @@ En Safari, abre la web → botón **Compartir** → **Añadir a pantalla de inic
 
 ## Programa de escritorio
 
-La misma página funciona dentro del programa de escritorio (pywebview, `.exe`), en la carpeta `Empleados_Badulaque/Pagina_badu`. Para actualizarlo, copia `index.html`, `app.js` y `styles.css` encima de los anteriores **sin borrar la carpeta**. En el programa, los empleados los guarda el propio `.exe`.
+La misma página funciona dentro del programa de escritorio (pywebview, `.exe`), en la carpeta `Empleados_Badulaque/Pagina_badu`. Para actualizarlo, copia `index.html`, `styles.css` y la carpeta `js/` encima de los anteriores **sin borrar la carpeta**. En el programa, los empleados los guarda el propio `.exe`.
 
 ## Estructura
 
 ```
 ├── index.html               Página: pestañas de Caja y Pagos, y ventanas
-├── app.js                   Catálogo, ticket, lectura de Discord y comisiones
+├── js/                      Código, en módulos que se cargan en orden (main.js el último):
+│   ├── base.js              Utilidades, ventana de copiar y pestañas
+│   ├── productos.js         Gamas, tuning, servicios, rangos, precios y mensajes de Discord
+│   ├── empleados-datos.js   Discord, IBAN y «no cobra» guardados en el PC
+│   ├── datos-compartidos.js datos.js publicado y contraseña del encargado
+│   ├── caja.js              Caja, ticket y Gestión de Productos
+│   ├── facturas.js          Lectura de facturas del datáfono y kits
+│   ├── pagos.js             Pagos, ranking, cierre de semana y ascensos
+│   ├── empleados.js         Gestión de empleados
+│   ├── sorteo.js            Sorteo
+│   ├── movil.js             Vista móvil
+│   ├── nube.js              Supabase y empleados en línea
+│   ├── inactividad.js       Aviso de inactividad
+│   ├── sesion.js            Sesión y permisos
+│   ├── compraventa.js       Compraventa y almacén
+│   ├── discord-log.js       Facturas desde el canal (discord_log)
+│   ├── kits.js              Copiador de kits
+│   ├── catalogo.js          Catálogo de vehículos
+│   ├── informes.js          Informes de inspección
+│   ├── panel.js             Panel del Jefe
+│   └── main.js              Arranque
 ├── styles.css               Tema negro y naranja
 ├── aguila_motors_logo.png   Logo del taller
 ├── favicon.ico              Icono de la pestaña
@@ -221,19 +241,23 @@ No necesita servidor ni dependencias: es HTML, CSS y JavaScript puros.
 
 ## Personalizar
 
-- **Precios del tuning**: `app.js` → `TUNING_PRICES` (una fila por gama, en el orden de `TUNING_PIECES`).
-- **Servicios, camaleónica, nitro, neones y compraventa**: `app.js` → `SERVICE_PRODUCTS`.
-- **Pestañas de la Caja**: `app.js` → `PRODUCT_CATEGORIES`.
+- **Precios del tuning**: `js/productos.js` → `TUNING_PRICES` (una fila por gama, en el orden de `TUNING_PIECES`).
+- **Servicios, camaleónica, nitro, neones y compraventa**: `js/productos.js` → `SERVICE_PRODUCTS`.
+- **Pestañas de la Caja**: `js/productos.js` → `PRODUCT_CATEGORIES`.
 - **Precio por kit** en Pagos: se cambia en la propia página (por defecto $800).
 - **Logo**: reemplaza `aguila_motors_logo.png` manteniendo el nombre. Los iconos y pantallas de arranque de `icons/` se generan a partir de él, así que si cambia el logo hay que generarlos de nuevo.
 
-Al publicar un cambio, sube el número de versión en `index.html`: el pie de página (formato «Versión N - Aguila Motors») y el `?v=` de `styles.css`, `app.js` y el icono. Así los navegadores cargan la versión nueva sin Ctrl+F5.
+Al publicar un cambio, sube el número de versión en `index.html`: el pie de página (formato «Versión N - Aguila Motors») y el `?v=` de `styles.css`, de cada `js/*.js` y el icono. Así los navegadores cargan la versión nueva sin Ctrl+F5.
 
 ## Bitácora de cambios
 
+### Versión 125 · 8 de noviembre de 2026
+
+- **Código dividido en módulos** (carpeta `js/`): el antiguo `app.js` (9.700 líneas) pasa a 17 archivos por secciones (Caja, Pagos, Empleados, Compraventa, Sesión, etc.), más `informes.js`, `panel.js` y `main.js` (el arranque, que se carga el último). No cambia nada de lo que se ve. Para el programa de escritorio hay que copiar también la carpeta `js/`.
+
 ### Versión 124 · 8 de noviembre de 2026
 
-- **📊 Panel del Jefe** (pestaña nueva, solo el Jefe Aguila; código en `panel.js`, el primer módulo separado de `app.js`). Se llena solo, por semana de pago (domingo a sábado, hora de España; ◀ ▶ para cambiar y 🔄 para traer lo último del canal):
+- **📊 Panel del Jefe** (pestaña nueva, solo el Jefe Aguila; código en `js/panel.js`). Se llena solo, por semana de pago (domingo a sábado, hora de España; ◀ ▶ para cambiar y 🔄 para traer lo último del canal):
   - **Cifras de la semana:** facturado (facturas y ticket medio), nóminas (con el bono), lo que queda para el taller e informes emitidos (por agencia, con su tarifa), cada una frente a la semana anterior.
   - **Últimas 8 semanas:** facturado, nóminas y lo que queda para el taller. Las semanas cerradas en Pagos usan lo guardado (con kits); las que no, se estiman con las facturas del canal (sin kits) y salen marcadas con *.
   - **Avisos:** para despido (3/3), a punto del tercer strike (lo que le falta esta semana), inactividad en naranja o rojo, listos para subir y sin IBAN.
@@ -279,7 +303,7 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ### Versión 117 · 8 de noviembre de 2026
 
-- **Gestión de empleados → 📣 Ascensos para Discord** (solo Jefes): arma el mensaje de **ascensos de la semana** (domingo a sábado; por defecto la última cerrada, con ◀ ▶ para cambiar) a partir del historial: busca los ascensos dados desde el sábado de cierre hasta el sábado siguiente. Cada línea menciona al empleado, el rol de Discord del rango anterior y del nuevo, y una felicitación al azar distinta para cada uno. Al final, una frase del taller al azar y la etiqueta del rol **Jefatura** (`DC_JEFATURA_ID` en `app.js`). 🎲 *Otras frases* las cambia todas. Cada ascenso tiene su casilla para quitarlo. Si alguien sube dos veces sale una sola línea, de su primer rango al último. Al subir a alguien desde su ficha aparece un botón que lleva directo al mensaje.
+- **Gestión de empleados → 📣 Ascensos para Discord** (solo Jefes): arma el mensaje de **ascensos de la semana** (domingo a sábado; por defecto la última cerrada, con ◀ ▶ para cambiar) a partir del historial: busca los ascensos dados desde el sábado de cierre hasta el sábado siguiente. Cada línea menciona al empleado, el rol de Discord del rango anterior y del nuevo, y una felicitación al azar distinta para cada uno. Al final, una frase del taller al azar y la etiqueta del rol **Jefatura** (`DC_JEFATURA_ID` en `js/productos.js`). 🎲 *Otras frases* las cambia todas. Cada ascenso tiene su casilla para quitarlo. Si alguien sube dos veces sale una sola línea, de su primer rango al último. Al subir a alguien desde su ficha aparece un botón que lleva directo al mensaje.
 
 ### Versión 116 · 4 de noviembre de 2026
 
