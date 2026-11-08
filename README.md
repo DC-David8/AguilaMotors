@@ -231,6 +231,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 123 · 8 de noviembre de 2026
+
+- **💤 Aviso de inactividad** (solo Jefes): con las facturas que el bot copia del canal de Discord (`discord_log`, últimos 30 días) se sabe la última factura de cada empleado. En el listado sale una etiqueta «💤 N d» en amarillo (aviso), naranja (alerta) o rojo (grave); en la ficha, la fecha y hora de su última factura. Nuevo filtro **Sin facturar** (ordenado de más a menos días). A los recién entrados se les cuenta desde su fecha de ingreso.
+- Los días de cada color (3, 5 y 7 por defecto) los cambia el Jefe Aguila en **Gestión de empleados → Rangos** (se guardan en línea, `app_settings` «inact_dias»).
+- Al despedir a alguien en rojo, en la ventana ya sale marcado **💤 Inactividad**.
+
 ### Versión 122 · 8 de noviembre de 2026
 
 - **Precios y productos en línea** (SQL `14_precios.sql`): los cambios de «Gestión de Productos» (precio, imagen, ocultar y productos agregados) se guardan en Supabase (tabla `productos`) y los ve al momento todo el mundo: web, móvil y programa de escritorio. Solo el **Jefe Aguila** puede cambiarlos (lo impide la base); el botón solo le sale a él. La Caja recarga los precios al volver a la pestaña y cada 5 minutos.
