@@ -231,6 +231,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 122 · 8 de noviembre de 2026
+
+- **Precios y productos en línea** (SQL `14_precios.sql`): los cambios de «Gestión de Productos» (precio, imagen, ocultar y productos agregados) se guardan en Supabase (tabla `productos`) y los ve al momento todo el mundo: web, móvil y programa de escritorio. Solo el **Jefe Aguila** puede cambiarlos (lo impide la base); el botón solo le sale a él. La Caja recarga los precios al volver a la pestaña y cada 5 minutos.
+- Al abrir Gestión de Productos, si el PC tiene cambios guardados solo en local, ofrece subirlos a la base (los que ya están en la base no se tocan).
+- La base apunta sola cada cambio de precio en `productos_historial` (producto, antes, después, quién y cuándo).
+- Sin la tabla o sin conexión, la Caja sigue funcionando como antes con los precios del código y los ajustes de ese PC.
+
 ### Versión 121 · 8 de noviembre de 2026
 
 - **📣 Para Discord:** el título del mensaje pasa a «🦅 MOVIMIENTOS DE PERSONAL DE LA SEMANA».

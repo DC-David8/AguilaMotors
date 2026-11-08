@@ -1419,7 +1419,84 @@ function saveProductOverridesLocal(map) {
   localStorage.setItem(PRODUCT_OVERRIDES_STORAGE_KEY, JSON.stringify(map || {}));
 }
 
-function addCustomProduct(payload, password) {
+// ---------------------------------------------------------------------------
+// v122 · Precios en línea (tabla productos, SQL 14). Los ve todo el mundo (la
+// Caja no pide sesión) y solo el Jefe Aguila los cambia (lo impide la base).
+// Sin la tabla, o sin conexión, sigue como antes: ajustes guardados en este PC.
+//   tipo "ajuste": cambio sobre un producto fijo (id = nombre normalizado):
+//                  precio y/o imagen nuevos, u oculto.
+//   tipo "nuevo":  producto agregado desde la app.
+// ---------------------------------------------------------------------------
+const PROD_CLOUD = { ok: false, overrides: {}, custom: [], at: 0 };
+async function prodCloudLoad() {
+  try {
+    const rows = await cvCloud.req("/rest/v1/productos?select=id,tipo,nombre,precio,imagen,categoria,oculto&order=nombre.asc");
+    const overrides = {};
+    const custom = [];
+    for (const r of rows || []) {
+      if (r.tipo === "nuevo") {
+        custom.push({ id: String(r.id), name: String(r.nombre || ""), price: Number(r.precio) || 0, image: String(r.imagen || ""), category: String(r.categoria || "otros") });
+      } else {
+        const ov = {};
+        if (r.precio != null) ov.price = Number(r.precio);
+        if (r.imagen) ov.image = String(r.imagen);
+        if (r.oculto) ov.hidden = true;
+        overrides[String(r.id)] = ov;
+      }
+    }
+    Object.assign(PROD_CLOUD, { ok: true, overrides, custom: custom.filter((p) => p.name), at: Date.now() });
+  } catch {
+    // tabla aun sin crear o sin conexion: se queda lo que hubiera
+  }
+  return PROD_CLOUD.ok;
+}
+function prodCloudCan() {
+  if (!PROD_CLOUD.ok) return false;
+  if (!AUTH.aguila) throw new Error("Solo el Jefe Aguila puede cambiar precios y productos.");
+  return true;
+}
+const prodBy = () => AUTH.name || "";
+async function prodCloudUpsert(row) {
+  await cvCloud.req("/rest/v1/productos?on_conflict=id", {
+    method: "POST",
+    auth: true,
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: [{ ...row, updated_at: new Date().toISOString(), updated_by: prodBy() }],
+  });
+}
+// Sube a la base los ajustes guardados solo en este PC (una vez).
+function prodLocalPending() {
+  const ov = loadProductOverridesLocal();
+  const ovKeys = Object.keys(ov).filter((k) => !PROD_CLOUD.overrides[k] && (ov[k]?.price != null || ov[k]?.image || ov[k]?.hidden));
+  const cloudNames = new Set(PROD_CLOUD.custom.map((p) => normalizeKeySimple(p.name)));
+  const custom = loadCustomProductsLocal().filter((p) => !cloudNames.has(normalizeKeySimple(p.name)));
+  return { ov, ovKeys, custom };
+}
+async function prodUploadLocal() {
+  const { ov, ovKeys, custom } = prodLocalPending();
+  const byKey = new Map(PRODUCTS.map((p) => [normalizeKeySimple(p.name), p.name]));
+  const rows = [
+    ...ovKeys.filter((k) => byKey.has(k)).map((k) => ({ id: k, tipo: "ajuste", nombre: byKey.get(k), precio: ov[k].price ?? null, imagen: ov[k].image || null, oculto: !!ov[k].hidden })),
+    ...custom.map((p) => ({ id: `n-${p.id}`, tipo: "nuevo", nombre: p.name, precio: p.price, imagen: p.image, categoria: p.category, oculto: false })),
+  ];
+  if (!rows.length) return 0;
+  const at = new Date().toISOString();
+  await cvCloud.req("/rest/v1/productos?on_conflict=id", {
+    method: "POST",
+    auth: true,
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: rows.map((r) => ({ ...r, updated_at: at, updated_by: prodBy() })),
+  });
+  await prodCloudLoad();
+  return rows.length;
+}
+
+async function addCustomProduct(payload, password) {
+  if (prodCloudCan()) {
+    await prodCloudUpsert({ id: `n-${safeRandomId()}`, tipo: "nuevo", nombre: payload.name, precio: payload.price, imagen: payload.image || null, categoria: payload.category || "otros", oculto: false });
+    await prodCloudLoad();
+    return true;
+  }
   if (!isAccessPassword(password)) {
     throw new Error("Contrasena incorrecta");
   }
@@ -1429,7 +1506,15 @@ function addCustomProduct(payload, password) {
   return true;
 }
 
-function updateCustomProduct(id, payload, password) {
+async function updateCustomProduct(id, payload, password) {
+  if (prodCloudCan()) {
+    const cur = PROD_CLOUD.custom.find((p) => String(p.id) === String(id));
+    if (!cur) throw new Error("Producto no encontrado");
+    const next = { ...cur, ...payload };
+    await prodCloudUpsert({ id: cur.id, tipo: "nuevo", nombre: next.name, precio: next.price, imagen: next.image || null, categoria: next.category || "otros", oculto: false });
+    await prodCloudLoad();
+    return true;
+  }
   if (!isAccessPassword(password)) {
     throw new Error("Contrasena incorrecta");
   }
@@ -1441,7 +1526,12 @@ function updateCustomProduct(id, payload, password) {
   return true;
 }
 
-function deleteCustomProduct(id, password) {
+async function deleteCustomProduct(id, password) {
+  if (prodCloudCan()) {
+    await cvCloud.req(`/rest/v1/productos?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", auth: true });
+    await prodCloudLoad();
+    return true;
+  }
   if (!isAccessPassword(password)) {
     throw new Error("Contrasena incorrecta");
   }
@@ -1450,19 +1540,26 @@ function deleteCustomProduct(id, password) {
   return true;
 }
 
-function setFixedProductOverride(originalName, patch, password) {
+async function setFixedProductOverride(originalName, patch, password) {
+  const key = normalizeKeySimple(originalName);
+  if (prodCloudCan()) {
+    const cur = PROD_CLOUD.overrides[key] || {};
+    const next = { ...cur, ...patch };
+    await prodCloudUpsert({ id: key, tipo: "ajuste", nombre: originalName, precio: next.price ?? null, imagen: next.image || null, oculto: !!next.hidden });
+    await prodCloudLoad();
+    return true;
+  }
   if (!isAccessPassword(password)) {
     throw new Error("Contrasena incorrecta");
   }
-  const key = normalizeKeySimple(originalName);
   const overrides = loadProductOverridesLocal();
   overrides[key] = { ...(overrides[key] || {}), ...patch };
   saveProductOverridesLocal(overrides);
   return true;
 }
 
-function setFixedProductHidden(originalName, hidden, password) {
-  setFixedProductOverride(originalName, { hidden: !!hidden }, password);
+async function setFixedProductHidden(originalName, hidden, password) {
+  return setFixedProductOverride(originalName, { hidden: !!hidden }, password);
 }
 
 // Todos los productos disponibles en la Caja: los fijos visibles (con sus
@@ -2001,10 +2098,12 @@ async function loadSharedData() {
 }
 
 function customProductsSource() {
+  if (PROD_CLOUD.ok) return PROD_CLOUD.custom;
   return isSharedReadOnly() ? SHARED_DATA.customProducts : loadCustomProductsLocal();
 }
 
 function productOverridesSource() {
+  if (PROD_CLOUD.ok) return PROD_CLOUD.overrides;
   return isSharedReadOnly() ? SHARED_DATA.productOverrides : loadProductOverridesLocal();
 }
 
@@ -2982,8 +3081,14 @@ function setupProductsAdminModal(onProductsChanged) {
         const restoreBtn = document.createElement("button");
         restoreBtn.type = "button";
         restoreBtn.textContent = "Restaurar";
-        restoreBtn.addEventListener("click", () => {
-          setFixedProductHidden(row.name, false, accessPassword());
+        restoreBtn.addEventListener("click", async () => {
+          restoreBtn.disabled = true;
+          try {
+            await setFixedProductHidden(row.name, false, accessPassword());
+          } catch (e) {
+            restoreBtn.disabled = false;
+            return alert(`No se pudo restaurar: ${e?.message || e}`);
+          }
           renderAdminTable();
           onProductsChanged?.();
         });
@@ -2999,13 +3104,15 @@ function setupProductsAdminModal(onProductsChanged) {
         delBtn.className = "danger";
         delBtn.style.marginLeft = "6px";
         delBtn.textContent = row.source === "fixed" ? "Ocultar" : "Quitar";
-        delBtn.addEventListener("click", () => {
+        delBtn.addEventListener("click", async () => {
           const action = row.source === "fixed" ? "ocultar" : "quitar";
           if (!window.confirm(`¿Seguro que quieres ${action} "${row.name}"?`)) return;
+          delBtn.disabled = true;
           try {
-            if (row.source === "fixed") setFixedProductHidden(row.name, true, accessPassword());
-            else deleteCustomProduct(row.id, accessPassword());
+            if (row.source === "fixed") await setFixedProductHidden(row.name, true, accessPassword());
+            else await deleteCustomProduct(row.id, accessPassword());
           } catch (e) {
+            delBtn.disabled = false;
             alert(String(e?.message || e));
             return;
           }
@@ -3048,15 +3155,44 @@ function setupProductsAdminModal(onProductsChanged) {
 
   cancelEditBtn?.addEventListener("click", () => exitEditMode());
 
-  btnOpen.addEventListener("click", async () => {
-    if (isSharedReadOnly()) {
-      alert("Los productos los gestiona el encargado. Aquí se ven los publicados y no se pueden cambiar.");
-      return;
+  // Otro PC o el Jefe cambia un precio: al volver a la pestaña se recargan.
+  const refreshCloud = async () => {
+    if (Date.now() - PROD_CLOUD.at < 30000) return;
+    if (await prodCloudLoad()) {
+      onProductsChanged?.();
+      if (dlg.open) renderAdminTable();
     }
-    const ok = await showAccessModal({
-      sectionLabel: "Gestión de Productos",
-    });
-    if (!ok) return;
+  };
+  document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && refreshCloud());
+  window.addEventListener("focus", refreshCloud);
+  setInterval(refreshCloud, 5 * 60000);
+
+  btnOpen.addEventListener("click", async () => {
+    if (PROD_CLOUD.ok) {
+      if (!AUTH.aguila) return alert("Los precios y productos solo los cambia el Jefe Aguila.");
+      await prodCloudLoad();
+      onProductsChanged?.();
+      const pend = prodLocalPending();
+      const n = pend.ovKeys.length + pend.custom.length;
+      if (n && confirm(`Este PC tiene ${n} ${n === 1 ? "cambio guardado" : "cambios guardados"} solo aquí (precios, imágenes, ocultos o productos agregados).\n\n¿Subirlos a la base para que todos los vean? Los que ya estén en la base no se tocan.`)) {
+        try {
+          const up = await prodUploadLocal();
+          onProductsChanged?.();
+          alert(`✔ ${up} ${up === 1 ? "cambio subido" : "cambios subidos"}.`);
+        } catch (e) {
+          alert(`No se pudo subir: ${e?.message || e}`);
+        }
+      }
+    } else {
+      if (isSharedReadOnly()) {
+        alert("Los productos los gestiona el encargado. Aquí se ven los publicados y no se pueden cambiar.");
+        return;
+      }
+      const ok = await showAccessModal({
+        sectionLabel: "Gestión de Productos",
+      });
+      if (!ok) return;
+    }
     exitEditMode();
     switchSubtab("prod-tab-add");
     renderAdminTable();
@@ -3064,7 +3200,7 @@ function setupProductsAdminModal(onProductsChanged) {
     setTimeout(() => nameEl?.focus(), 50);
   });
 
-  saveBtn?.addEventListener("click", () => {
+  saveBtn?.addEventListener("click", async () => {
     const name = String(nameEl?.value || "").trim();
     const price = Number(priceEl?.value);
     const category = String(categoryEl?.value || "otros");
@@ -3082,21 +3218,24 @@ function setupProductsAdminModal(onProductsChanged) {
       return;
     }
 
+    saveBtn.disabled = true;
     try {
       if (!editingTarget) {
         const image = pendingImageDataUrl || generatePlaceholderIcon(name);
-        addCustomProduct({ name, price, image, category }, accessPassword());
+        await addCustomProduct({ name, price, image, category }, accessPassword());
       } else if (editingTarget.source === "custom") {
         const image = pendingImageDataUrl || currentEditingImage;
-        updateCustomProduct(editingTarget.id, { name, price, image, category }, accessPassword());
+        await updateCustomProduct(editingTarget.id, { name, price, image, category }, accessPassword());
       } else {
         const patch = { price };
         if (pendingImageDataUrl) patch.image = pendingImageDataUrl;
-        setFixedProductOverride(editingTarget.originalName, patch, accessPassword());
+        await setFixedProductOverride(editingTarget.originalName, patch, accessPassword());
       }
     } catch (e) {
       if (errorEl) errorEl.textContent = String(e?.message || e);
       return;
+    } finally {
+      saveBtn.disabled = false;
     }
 
     const wasEditing = !!editingTarget;
@@ -6265,6 +6404,7 @@ Promise.allSettled([
   loadSharedData().catch(() => {
     SHARED_DATA = null;
   }),
+  Promise.resolve().then(() => prodCloudLoad()),
   Promise.resolve()
     .then(() => authInit())
     .then(() => Promise.all([hasAccess() ? empCloudLoad() : null, canSeeStock() ? loadRankNames() : null, hasAccess() ? loadRankRules() : null, hasAccess() ? loadStrikeHist() : null, canSeeCv() ? loadCvMargins() : null, canSeeCv() ? loadCvAlias() : null, loadCatalogCloud()])),
@@ -7345,7 +7485,7 @@ function setupAuthUI() {
   const active = document.querySelector("nav.tabs .tab.is-active");
   if (active?.hidden) document.querySelector('nav.tabs .tab[data-tab-target="tab-caja"]')?.click();
   const prodBtn = byId("btn-add-product");
-  if (prodBtn) prodBtn.hidden = !hasAccess();
+  if (prodBtn) prodBtn.hidden = PROD_CLOUD.ok ? !AUTH.aguila : !hasAccess();
 
   if (AUTH.error) {
     setTimeout(() => alert(`No se pudo entrar con Discord: ${AUTH.error}`), 300);
