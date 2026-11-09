@@ -2470,3 +2470,13 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .ticket-emp[hidden], .emp-price-btn[hidden] { display: none; }
 .product-btn small.emp-pill { background: linear-gradient(180deg, #2f7bf5, #1f5fd0) !important; color: #fff !important; display: inline-flex; flex-direction: column; align-items: flex-start; line-height: 1.1; white-space: nowrap; }
 .product-btn small.emp-pill s { font-size: .78em; opacity: .7; font-weight: 400; }
+
+/* v130 · Readmitir con personaje nuevo (CK) */
+.readmit-ck { display: flex; gap: 8px; align-items: flex-start; padding: 9px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); font-size: 13px; margin: 10px 0; cursor: pointer; }
+.readmit-ck:has(input:checked) { border-color: var(--accent, #e06e14); background: rgba(224,110,20,.12); }
+.readmit-ck input { width: auto; margin: 2px 0 0; accent-color: var(--accent, #e06e14); }
+.readmit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.readmit-f { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; }
+.readmit-note { font-size: 12px; margin: 10px 0 4px; }
+.readmit-err { color: #ff6b6b; font-size: 12.5px; min-height: 1em; margin: 4px 0 8px; }
+@media (max-width: 520px) { .readmit-grid { grid-template-columns: 1fr; } }

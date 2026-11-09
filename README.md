@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 130 · 8 de noviembre de 2026
+
+- **Readmitir con personaje nuevo (CK)**: «Readmitir» abre una ventana para cambiar nombre, apellido, IBAN y rango. Si la baja fue un CK sale marcada la casilla «Vuelve con un personaje nuevo»: los campos salen vacíos para poner los datos nuevos y la antigüedad (fecha de ingreso) empieza ese día. Recupera su Discord como antes. El historial apunta el cambio («personaje nuevo: X (antes Y)»).
+
 ### Versión 129 · 8 de noviembre de 2026
 
 - **👷 Precio de empleado en la Caja** (solo lo ve y lo activa el Jefe Aguila, junto al título del Ticket). Aplica los precios del estudio de descuentos: tuning (piezas y Full Tuning) 50 %, neones RGB 50 %, servicios de taller y grúa 50 %, camaleónica 40 %, instalación de nitro 35.000 → 25.000 y botella 2.000 → 1.500; tienda, informes y compraventa sin descuento. Es un porcentaje sobre el precio vigente redondeado a 50 (`EMP_PRICE_FACTOR` y `empPrice` en `js/productos.js`), así que se ajusta solo si cambia un precio. Con el interruptor activo, los productos muestran el precio normal tachado y el de empleado en azul, el ticket se recalcula y el concepto empieza por **EMP**.

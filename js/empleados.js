@@ -1286,9 +1286,11 @@ function setupEmployeesAdminModal({ onChanged }) {
         back.title = "Solo el Jefe Aguila puede readmitir ese rango";
       }
       back.addEventListener("click", async () => {
-        if (!confirm(`¿Readmitir a ${fullName(f)}${f.rank ? ` como ${rankLabel(f.rank)}` : ""}?${f.discordPrev ? " Recupera también su Discord (y su acceso)." : ""}`)) return;
+        const ch = await askReadmit(f);
+        if (!ch) return;
+        if (isTopRank(ch.rank) && !AUTH.aguila) return alert("Solo el Jefe Aguila puede dar ese rango.");
         try {
-          await empCloudReadmit(f);
+          await empCloudReadmit(f, ch);
           await refresh();
           await (onChanged?.());
         } catch (err) {

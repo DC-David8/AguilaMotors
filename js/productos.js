@@ -687,6 +687,104 @@ function strikesDiscordText(items, sun, cierre) {
   return dcAguila(`# ⚠️ STRIKES DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${lines.join("\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
 }
 
+// v130 · Ventana para readmitir. Tras un CK la persona vuelve con otro
+// personaje: nombre, apellido e IBAN nuevos, y su antigüedad empieza de cero.
+// Devuelve { name, surname, iban, rank, newChar } o null si se cancela.
+function askReadmit(f) {
+  return new Promise((resolve) => {
+    const ck = parseBaja(f.firedReason).tipo === "ck";
+    const dlg = document.createElement("dialog");
+    dlg.className = "baja-dlg";
+    const form = document.createElement("form");
+    form.method = "dialog";
+    form.className = "modal-card readmit-form";
+    const el = (tag, cls, text) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    const field = (label, input) => {
+      const l = el("label", "readmit-f");
+      l.append(el("span", "", label), input);
+      return l;
+    };
+    const inp = (value, ph = "") => {
+      const i = document.createElement("input");
+      i.type = "text";
+      i.value = value || "";
+      i.placeholder = ph;
+      return i;
+    };
+    form.append(el("h3", "", `↩️ Readmitir a ${fullName(f)}`));
+    const nc = document.createElement("input");
+    nc.type = "checkbox";
+    nc.checked = ck;
+    const ncl = el("label", "readmit-ck");
+    ncl.append(nc, el("span", "", "🕊️ Vuelve con un personaje nuevo (CK): nombre, apellido e IBAN nuevos, y su antigüedad empieza hoy"));
+    form.append(ncl);
+    const name = inp(ck ? "" : f.name, f.name);
+    const surname = inp(ck ? "" : f.surname, f.surname);
+    const iban = inp(ck ? "" : f.iban, f.iban || "Ej. J123456");
+    iban.maxLength = 7;
+    const rank = document.createElement("select");
+    rank.appendChild(new Option("Sin rango", ""));
+    for (const r of RANKS.slice().reverse()) {
+      if (isTopRank(r.label) && !AUTH.aguila) continue;
+      rank.appendChild(new Option(rankLabel(r.label), r.label));
+    }
+    rank.value = [...rank.options].some((o) => o.value === f.rank) ? f.rank : "";
+    const grid = el("div", "readmit-grid");
+    grid.append(field("Nombre", name), field("Apellido", surname), field("IBAN", iban), field("Rango", rank));
+    form.append(grid);
+    const note = el("p", "muted readmit-note", f.discordPrev ? "Recupera su Discord y su acceso a la página." : "No tenía Discord guardado: añádelo luego en su ficha.");
+    form.append(note);
+    const err = el("p", "readmit-err", "");
+    const acts = el("div", "emp-acts");
+    const ok = el("button", "", "Readmitir");
+    ok.type = "submit";
+    const no = el("button", "ghost", "Cancelar");
+    no.type = "button";
+    acts.append(ok, no);
+    form.append(err, acts);
+    dlg.append(form);
+    const sync = () => {
+      for (const [i, old] of [[name, f.name], [surname, f.surname], [iban, f.iban]]) {
+        if (!nc.checked && !i.value) i.value = old || "";
+        i.placeholder = nc.checked ? (i === iban ? "IBAN del personaje nuevo" : "Del personaje nuevo") : old || "";
+      }
+    };
+    sync();
+    nc.addEventListener("change", () => {
+      if (nc.checked) for (const i of [name, surname, iban]) i.value = "";
+      sync();
+      name.focus();
+    });
+    let result = null;
+    form.addEventListener("submit", (ev) => {
+      const v = { name: name.value.trim().replace(/\s+/g, " "), surname: surname.value.trim().replace(/\s+/g, " "), iban: parseIban(iban.value), rank: rank.value, newChar: nc.checked };
+      const bad = (t) => {
+        ev.preventDefault();
+        err.textContent = t;
+      };
+      if (!v.name || !v.surname) return bad("Pon nombre y apellido.");
+      if (v.iban === null) return bad("El IBAN no es válido: una letra y 6 números (ej. J123456), o déjalo vacío.");
+      const k = normalizeKeySimple(`${v.name} ${v.surname}`);
+      if (EMP_CLOUD.list.some((e) => String(e.id) !== String(f.id) && normalizeKeySimple(fullName(e)) === k)) return bad("Ya hay un empleado con ese nombre.");
+      if (v.newChar && k === normalizeKeySimple(fullName(f))) return bad("Es un personaje nuevo: cambia el nombre, o quita la casilla de CK.");
+      result = v;
+    });
+    no.addEventListener("click", () => dlg.close());
+    dlg.addEventListener("close", () => {
+      dlg.remove();
+      resolve(result);
+    });
+    (document.querySelector("dialog[open]") || document.body).appendChild(dlg);
+    dlg.showModal();
+    setTimeout(() => (ck ? name : ok).focus(), 50);
+  });
+}
+
 // Ventana para despedir: tipo de baja + nota opcional. Devuelve el motivo
 // listo para guardar ("Inactividad: no aparece desde el 20/10") o null.
 function askBaja(label, suggest = "") {

@@ -155,18 +155,22 @@ async function empCloudFire(e, reason) {
   empLog(e.id, "despido", `🚪 Despedido${reason ? `: ${reason}` : ""}`);
 }
 
-async function empCloudReadmit(f) {
+// v130: con cambios (personaje nuevo tras un CK, otro IBAN u otro rango).
+async function empCloudReadmit(f, ch = null) {
   empCloudRequireSession();
+  const next = ch ? { ...f, name: ch.name, surname: ch.surname, iban: ch.iban ?? f.iban, rank: ch.rank } : f;
   await cvCloud.upsert("employees", [{
-    ...empCloudRow(f),
-    ...(EMP_CLOUD.hasDates ? { contratado_at: empToday() } : {}), // nuevo contrato; el ingreso no cambia
+    ...empCloudRow(next),
+    // nuevo contrato; el ingreso solo se reinicia si es un personaje nuevo
+    ...(EMP_CLOUD.hasDates ? { contratado_at: empToday(), ...(ch?.newChar ? { alta_at: empToday() } : {}) } : {}),
     discord: f.discordPrev || "",
     discord_previo: null,
     despedido_at: null,
     despedido_por: null,
     despedido_motivo: null,
   }], "id");
-  empLog(f.id, "alta", `↩️ Readmitido${f.rank ? ` como ${rankLabel(f.rank)}` : ""}`);
+  const renamed = normalizeKeySimple(fullName(next)) !== normalizeKeySimple(fullName(f));
+  empLog(f.id, "alta", `↩️ Readmitido${next.rank ? ` como ${rankLabel(next.rank)}` : ""}${ch?.newChar ? ` · personaje nuevo: ${fullName(next)} (antes ${fullName(f)})` : renamed ? ` · ahora ${fullName(next)} (antes ${fullName(f)})` : ""}`);
 }
 
 // Para Discord / IBAN / No cobra (se llaman sin esperar): guarda y avisa si falla.
