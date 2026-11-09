@@ -640,6 +640,35 @@ function movDiscordText(up, desc, bajas, sun, cierre, eow = []) {
   return dcAguila(`# 🦅 MOVIMIENTOS DE PERSONAL DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
 }
 
+// v128 · Strikes de la semana: mensaje aparte (se avisa por separado). Una
+// línea por persona con su strike y el motivo, y una frase de cierre al azar.
+const STRIKE_CIERRES = [
+  "Toca ponerse las pilas: aquí el que no factura, no se queda. ⚡",
+  "Aviso serio: o se aprieta el acelerador o se acaba el camino en el taller. 🚦",
+  "El mínimo no es una sugerencia. Pilas, o la puerta está abierta. 🚪",
+  "Semana nueva, oportunidad nueva. La próxima no hay excusas. ⏳",
+  "En el Aguila se viene a trabajar. Quien no rinda, deja su sitio a otro. 🦅",
+  "Tres strikes y fuera: no dejéis que se llene el marcador. ⚾",
+  "Las llaves no se mueven solas. A espabilar, que el taller no espera. 🔧",
+  "Esto es un toque de atención: o se nota el cambio, o hasta aquí. ⚠️",
+  "El box necesita gente comprometida. Pilas puestas desde ya. 🔋",
+  "Nadie regala el sitio en este taller: se gana cada semana. Arriba ese ritmo. 📈",
+  "Última llamada para los que van justos: a facturar o a la calle. 📣",
+  "Quien quiera seguir en el Aguila, que lo demuestre esta semana. 💪",
+  "El motor del taller no se para por nadie. O empujáis, o os bajáis. 🚗",
+  "Strikes que se acumulan, puestos que se pierden. A ponerse las pilas. 🧯",
+  "Aquí se premia el esfuerzo y se corrige la dejadez. Tomad nota. 📝",
+];
+function strikesDiscordText(items, sun, cierre) {
+  if (!items.length) return "";
+  const who = (it) => (it.discord && it.mention !== false ? `<@${it.discord}>` : `**${it.name}**`);
+  const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r) || "sin rango"}**`);
+  const cap = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
+  const lines = items.map((it) => `${it.n >= STRIKE_MAX ? "🚫" : "⚠️"} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} · **${strikeLabel(it.n)}** — ${cap(it.reason).replace(/\.$/, "")}.`);
+  const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
+  return dcAguila(`# ⚠️ STRIKES DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${lines.join("\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
+}
+
 // Ventana para despedir: tipo de baja + nota opcional. Devuelve el motivo
 // listo para guardar ("Inactividad: no aparece desde el 20/10") o null.
 function askBaja(label, suggest = "") {

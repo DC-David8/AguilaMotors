@@ -2458,3 +2458,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* v126 · Empleado de la Semana en el mensaje de Discord */
 .emp-dc-note { margin: 0; }
 .emp-dc-x { padding: 2px 8px; font-size: 12px; }
+
+/* v128 · Strikes de la semana (mensaje aparte) */
+.emp-dc-st { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,.12); }

@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 128 · 8 de noviembre de 2026
+
+- **📣 Para Discord → ⚠️ Strikes de la semana** (mensaje aparte, con su propio botón de copiar): los strikes de la semana cerrada en Pagos (incluidos los puestos o quitados a mano), con la mención de cada persona, su rango, el strike que lleva (1/3, 2/3 o 3/3 · despido) y el motivo. Cierra con una de 15 frases al azar para que se pongan las pilas (🎲 *Otra frase*) y la etiqueta de Jefatura. Cada strike tiene su casilla para quitarlo del mensaje.
+
 ### Versión 127 · 8 de noviembre de 2026
 
 - Los mensajes para Discord (movimientos de personal y los de ascensos/descensos de Pagos) usan el **emoji oficial del Aguila Motors** (`:aguilamotors:`, `DC_AGUILA_EMOJI` en `js/productos.js`) en lugar de 🦅: en el título, en la firma y en las frases que lo llevaban.

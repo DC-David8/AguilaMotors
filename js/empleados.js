@@ -953,7 +953,7 @@ function setupEmployeesAdminModal({ onChanged }) {
 
   // 📣 Para Discord (v117-v120): ascensos, descensos y bajas de una semana,
   // separados en pantalla pero en UN solo mensaje (un copiar, un pegar).
-  const dc = { sun: null, key: "", items: [], desc: [], bajas: [], eow: [], eowAuto: false, off: new Set(), frase: ascFraseAzar(), cierre: pickOne(DESC_CIERRES), cierreB: pickOne(BAJAS_CIERRES), err: "" };
+  const dc = { sun: null, key: "", items: [], desc: [], bajas: [], eow: [], eowAuto: false, strikes: [], stClosed: false, stCierre: pickOne(STRIKE_CIERRES), off: new Set(), frase: ascFraseAzar(), cierre: pickOne(DESC_CIERRES), cierreB: pickOne(BAJAS_CIERRES), err: "" };
   function dcGoBtn() {
     const go = btn("📣 Mensaje para Discord", "ghost emp-dc-go", "Abrir el mensaje de la semana");
     go.addEventListener("click", () => {
@@ -990,6 +990,65 @@ function setupEmployeesAdminModal({ onChanged }) {
       .filter(Boolean)
       .map(eowItem);
   }
+  // ⚠️ Strikes de la semana (mensaje aparte): los de la semana cerrada en Pagos,
+  // con los puestos o quitados a mano por el Jefe Aguila.
+  function dcLoadStrikes() {
+    const wk = isoOfDay(dc.sun);
+    const next = isoOfDay(ascDay(dc.sun, 7));
+    const w = STRIKE_HIST.find((x) => String(x.semana) === wk);
+    dc.stClosed = !!w;
+    const people = [...EMP_CLOUD.list, ...EMP_CLOUD.fired];
+    dc.strikes = (w?.datos?.rows || [])
+      .map((r) => {
+        if (r.noPay) return null;
+        const adj = strikeAdjFor(wk, r.id, r.name);
+        const on = adj ? !!adj.s : !!r.strike;
+        if (!on) return null;
+        const e = people.find((x) => (r.id != null && String(x.id) === String(r.id)) || normalizeKeySimple(fullName(x)) === normalizeKeySimple(r.name));
+        return {
+          id: String(r.id ?? r.name),
+          name: e ? fullName(e) : r.name,
+          rank: r.rank || e?.rank || "",
+          discord: String(e?.discord || e?.discordPrev || "").replace(/\D/g, ""),
+          n: Math.max(1, strikesBefore(r.id, r.name, next)),
+          reason: adj?.s ? adj.m || "puesto por la Jefatura" : r.strikeMotivo || strikeReason(Number(r.gross) || 0),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, "es"));
+  }
+  const dcStText = () => strikesDiscordText(dc.strikes.filter((it) => dcOn(it, "s")), dc.sun, dc.stCierre);
+  function renderStrikes() {
+    const list = byId("emp-dc-st-list");
+    if (!list) return;
+    list.innerHTML = "";
+    if (dc.err) return;
+    if (!dc.stClosed) list.appendChild(mk("p", "muted emp-empty", "Esta semana aún no está cerrada en Pagos: ciérrala para ver sus strikes."));
+    else if (!dc.strikes.length) list.appendChild(mk("p", "muted emp-empty", "✅ Nadie se llevó strike esta semana."));
+    for (const it of dc.strikes) {
+      const row = mk("div", "emp-dc-row");
+      row.append(dcCheck("s", it, renderStrikePreview), mk("span", "emp-dc-who", it.name), dcBadge(it.rank), mk("span", `pg-strike emp-st${it.n >= STRIKE_MAX ? " max" : ""}`, `${it.n >= STRIKE_MAX ? "🚫" : "⚠️"} ${it.n}/${STRIKE_MAX}`), mk("span", "muted emp-small emp-dc-mot", it.reason));
+      if (!it.discord) row.appendChild(noDiscord());
+      list.appendChild(row);
+    }
+    renderStrikePreview();
+  }
+  function renderStrikePreview() {
+    const t = dcStText();
+    byId("emp-dc-st-prev").textContent = t || "No hay strikes que avisar esta semana.";
+    byId("emp-dc-st-copy").disabled = !t;
+  }
+  byId("emp-dc-st-frase")?.addEventListener("click", () => {
+    dc.stCierre = pickOne(STRIKE_CIERRES, dc.stCierre);
+    renderStrikePreview();
+  });
+  byId("emp-dc-st-copy")?.addEventListener("click", async () => {
+    const t = dcStText();
+    if (!t) return;
+    const ok = await copyText(t);
+    if (!ok) openCopyFallback(t);
+    else setStatus("✔ Strikes copiados. Pégalos en el canal de Discord.", true);
+  });
   const dcFrasesEow = () => {
     const used = new Set();
     for (const it of dc.eow) {
@@ -1013,14 +1072,14 @@ function setupEmployeesAdminModal({ onChanged }) {
       used.add(it.frase);
     }
   };
-  function dcCheck(pre, it) {
+  function dcCheck(pre, it, after = renderDiscordPreview) {
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.checked = dcOn(it, pre);
     cb.addEventListener("change", () => {
       if (cb.checked) dc.off.delete(`${pre}:${it.id}`);
       else dc.off.add(`${pre}:${it.id}`);
-      renderDiscordPreview();
+      after();
     });
     return cb;
   }
@@ -1067,6 +1126,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         dc.bajas = r.bajas;
         if (!STRIKE_HIST.length) await loadStrikeHist();
         dcLoadEow();
+        dcLoadStrikes();
         dcFrases();
       } catch (err) {
         dc.items = [];
@@ -1080,6 +1140,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     if (dc.err) {
       info.textContent = "";
       list.appendChild(mk("p", "muted emp-empty", `No se pudo leer el historial: ${dc.err}`));
+      renderStrikes();
       return renderDiscordPreview();
     }
     const nu = dc.items.length, nd = dc.desc.length, nb = dc.bajas.length;
@@ -1161,6 +1222,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       list.appendChild(row);
     }
     renderDiscordPreview();
+    renderStrikes();
   }
   const dcMove = (n) => {
     dc.sun = ascDay(dc.sun || ascDefaultWeek(), 7 * n);
