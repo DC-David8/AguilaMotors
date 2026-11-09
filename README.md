@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 133 · 8 de noviembre de 2026
+
+- Los mensajes de **strikes de la semana** y de **pagas** etiquetan el **rol de Discord del strike** que corresponde (1.er, 2.º o 3.er strike, `STRIKE_ROLE_IDS` en `js/productos.js`) en lugar de escribir «Strike n/3»; el 3.º lleva además «despido».
+
 ### Versión 132 · 8 de noviembre de 2026
 
 - **Mensaje de pagas con formato** (Pagos → Copiar para Discord): título con el logo, semana que se paga y fecha de pago; una línea por empleado de mayor a menor paga con su mención, rango, paga en negrita e IBAN en un recuadro para copiar (💰 normal, ⚠️ con strike, ⏳ sin IBAN, 🏆 Empleado de la Semana); apartado del Empleado de la Semana con el bono; y resumen con cuántos cobran y el **total retirado de la caja**. Sin etiquetar a Mecánicos (canal solo de Jefatura).

@@ -685,7 +685,7 @@ function strikesDiscordText(items, sun, cierre) {
   const who = (it) => (it.discord && it.mention !== false ? `<@${it.discord}>` : `**${it.name}**`);
   const role = (r) => (RANK_ROLE_IDS[r] ? `<@&${RANK_ROLE_IDS[r]}>` : `**${rankLabel(r) || "sin rango"}**`);
   const cap = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
-  const lines = items.map((it) => `${it.n >= STRIKE_MAX ? "🚫" : "⚠️"} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} · **${strikeLabel(it.n)}** — ${cap(it.reason).replace(/\.$/, "")}.`);
+  const lines = items.map((it) => `${it.n >= STRIKE_MAX ? "🚫" : "⚠️"} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} · ${strikeTag(it.n)} — ${cap(it.reason).replace(/\.$/, "")}.`);
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
   return dcAguila(`# ⚠️ STRIKES DE LA SEMANA\n-# ${dcStaff()}Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${lines.join("\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
 }
@@ -1161,6 +1161,15 @@ function lastCountedStrikeWeek(id, name, beforeWeek = "") {
 
 function strikeLabel(n) {
   return n >= STRIKE_MAX ? `Strike ${n}/${STRIKE_MAX} · despido` : `Strike ${n}/${STRIKE_MAX}`;
+}
+
+// v133 · Roles de Discord de cada strike (1.º, 2.º y 3.º): en los mensajes
+// para Discord se etiqueta el que corresponde en vez de "Strike n/3".
+const STRIKE_ROLE_IDS = { 1: "1263156546519433331", 2: "1263156546519433330", 3: "1263156546519433329" };
+function strikeTag(n) {
+  const id = STRIKE_ROLE_IDS[Math.min(Math.max(1, n), STRIKE_MAX)];
+  if (!id) return `**${strikeLabel(n)}**`;
+  return n >= STRIKE_MAX ? `<@&${id}> · **despido**` : `<@&${id}>`;
 }
 
 // Motivo del strike: no facturar nada o no llegar al minimo de la semana.

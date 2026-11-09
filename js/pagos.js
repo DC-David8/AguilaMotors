@@ -1032,7 +1032,7 @@ function setupEmployeesModal(state, refreshPagos) {
       if (r.noPay) return `> ➖ ${who(r)}${rk(r)} — *${NO_PAY_TEXT}*`;
       const icon = !r.iban ? "⏳" : r.warn && !isAguila(r) ? "⚠️" : "💰";
       const iban = r.iban ? `\`${r.iban}\`` : "*IBAN pendiente*";
-      const extra = `${isEmployeeOfWeek(r) ? " 🏆" : ""}${r.warn && !isAguila(r) ? ` · *${strikeLabel(r.strikeN)}*` : ""}`;
+      const extra = `${isEmployeeOfWeek(r) ? " 🏆" : ""}${r.warn && !isAguila(r) ? ` · ${strikeTag(r.strikeN)}` : ""}`;
       return `> ${icon} ${who(r)}${rk(r)} — **${$(r.payout)}** · ${iban}${extra}`;
     });
     const eow = sorted.filter((r) => r.bonus && !r.noPay);
