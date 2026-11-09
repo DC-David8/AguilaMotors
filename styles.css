@@ -2461,3 +2461,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 /* v128 · Strikes de la semana (mensaje aparte) */
 .emp-dc-st { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,.12); }
+
+/* v129 · Precio de empleado (solo Jefe Aguila) */
+.ticket-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ticket-h h2 { margin: 0; }
+.emp-price-btn.is-on { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.ticket-emp { margin: 8px 0; padding: 7px 10px; border-radius: 10px; background: rgba(31,111,235,.14); border: 1px solid rgba(31,111,235,.45); color: #9cc3ff; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-align: center; }
+.ticket-emp[hidden], .emp-price-btn[hidden] { display: none; }
+.product-btn small.emp-pill { background: linear-gradient(180deg, #2f7bf5, #1f5fd0) !important; color: #fff !important; display: inline-flex; flex-direction: column; align-items: flex-start; line-height: 1.1; white-space: nowrap; }
+.product-btn small.emp-pill s { font-size: .78em; opacity: .7; font-weight: 400; }

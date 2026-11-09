@@ -12,7 +12,10 @@ function setupCaja() {
     history: [],
     selected: null,
     activeCategory: null,
+    emp: false, // 👷 precio de empleado (solo el Jefe Aguila)
   };
+  const priceOf = (p) => (state.emp && AUTH.aguila ? empPrice(p) : p?.price || 0);
+  const priceByName = (name) => priceOf(getAllProducts().find((p) => p.name === name));
 
   const productGrid = byId("product-grid");
   const catTabsEl = byId("cat-tabs");
@@ -39,7 +42,8 @@ function setupCaja() {
     return items;
   }
 
-  const fullConcept = (items) => items.map((it) => `x${it.qty} ${it.name}`).join(" ");
+  const empTag = () => (state.emp ? `${EMP_CONCEPT_TAG} ` : "");
+  const fullConcept = (items) => empTag() + items.map((it) => `x${it.qty} ${it.name}`).join(" ");
 
   // "2xRued+Turbo GA, Rep T": cada grupo (gama, taller, grua) se escribe una vez.
   function shortConcept(items) {
@@ -49,7 +53,7 @@ function setupCaja() {
       if (!groups.has(it.group)) groups.set(it.group, []);
       groups.get(it.group).push(part);
     }
-    return [...groups.entries()].map(([g, parts]) => parts.join("+") + (g ? ` ${g}` : "")).join(", ");
+    return empTag() + [...groups.entries()].map(([g, parts]) => parts.join("+") + (g ? ` ${g}` : "")).join(", ");
   }
 
   // Si ni abreviado cabe, se reparte en varios cobros que si caben.
@@ -421,7 +425,7 @@ function setupCaja() {
       button.innerHTML = `
         <img src="${getProductIcon(product)}" alt="${product.name}" />
         <strong>${product.name}${product.note ? `<span class="product-note">${product.note}</span>` : ""}</strong>
-        <small>${INF_DYN[product.name] ? (product.name.includes("70%") ? "70 %" : product.name.includes("100%") ? "+100 %" : "+50 %") : fmtMoney(product.price)}</small>
+        ${!INF_DYN[product.name] && priceOf(product) !== product.price ? `<small class="emp-pill" title="Precio normal ${fmtMoney(product.price)}"><s>${fmtMoney(product.price)}</s>${fmtMoney(priceOf(product))}</small>` : `<small>${INF_DYN[product.name] ? (product.name.includes("70%") ? "70 %" : product.name.includes("100%") ? "+100 %" : "+50 %") : fmtMoney(product.price)}</small>`}
         <span class="qty-badge"></span>
       `;
       button.addEventListener("click", () => {
@@ -431,11 +435,11 @@ function setupCaja() {
           if (product.name !== "Vehículo Adicional 70% (Informe)" && state.cart[product.name]) return showToast("ℹ Ese recargo ya está en el ticket");
           return addItemDelta(product.name, INF_DYN[product.name](base), +1);
         }
-        addItemDelta(product.name, product.price, +1);
+        addItemDelta(product.name, priceOf(product), +1);
       });
       button.addEventListener("contextmenu", (ev) => {
         ev.preventDefault();
-        addItemDelta(product.name, product.price, -1);
+        addItemDelta(product.name, priceOf(product), -1);
       });
       productGrid.appendChild(button);
     }
@@ -462,7 +466,7 @@ function setupCaja() {
     const [name, delta] = op;
     showToast(delta > 0 ? "↩ Deshecho: quitado" : "↩ Deshecho: vuelto a añadir", name);
     const item = state.cart[name];
-    const price = getAllProducts().find((p) => p.name === name)?.price || 0;
+    const price = priceByName(name);
     if (!item) {
       if (-delta > 0) state.cart[name] = { price, qty: -delta };
     } else {
@@ -479,7 +483,7 @@ function setupCaja() {
       return;
     }
     const name = state.selected;
-    const price = getAllProducts().find((p) => p.name === name)?.price || 0;
+    const price = priceByName(name);
     addItemDelta(name, price, -1);
     showToast("➖ Quitado", name, ` · ${fmtMoney(price)}`);
   });
@@ -514,6 +518,35 @@ function setupCaja() {
     if (!ok) openCopyFallback(plan.text);
     else showToast("📋 Concepto copiado", plan.text);
   });
+
+  // 👷 Precio de empleado: solo lo ve y lo activa el Jefe Aguila. Al cambiarlo
+  // se recalculan los precios del ticket (menos los recargos de informes).
+  const empBtn = byId("btn-emp-price");
+  const empBar = byId("ticket-emp");
+  function renderEmpMode() {
+    if (!AUTH.aguila) state.emp = false;
+    if (empBtn) {
+      empBtn.hidden = !AUTH.aguila;
+      empBtn.classList.toggle("is-on", state.emp);
+      empBtn.setAttribute("aria-pressed", String(state.emp));
+    }
+    if (empBar) empBar.hidden = !state.emp;
+    document.querySelector(".ticket-card")?.classList.toggle("emp-mode", state.emp);
+  }
+  empBtn?.addEventListener("click", () => {
+    if (!AUTH.aguila) return;
+    state.emp = !state.emp;
+    for (const [name, row] of Object.entries(state.cart)) {
+      if (INF_DYN[name]) continue;
+      const p = getAllProducts().find((x) => x.name === name);
+      if (p) row.price = priceOf(p);
+    }
+    renderEmpMode();
+    renderProductGrid();
+    renderTicket();
+    showToast(state.emp ? "👷 Precio de empleado activado" : "Precio normal", state.emp ? "El concepto lleva la marca EMP" : "");
+  });
+  renderEmpMode();
 
   setupProductsAdminModal(renderProductGrid);
 

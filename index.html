@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=128" />
+  <link rel="stylesheet" href="styles.css?v=129" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=128" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=129" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -107,7 +107,11 @@
         </section>
 
         <section class="card ticket-card">
-          <h2>Ticket</h2>
+          <div class="ticket-h">
+            <h2>Ticket</h2>
+            <button type="button" id="btn-emp-price" class="ghost small emp-price-btn" aria-pressed="false" title="Aplicar los precios de empleado (solo el Jefe Aguila)" hidden>👷 Precio empleado</button>
+          </div>
+          <div class="ticket-emp" id="ticket-emp" hidden>👷 PRECIOS DE EMPLEADO · el concepto lleva la marca EMP</div>
           <div class="receipt">
             <div class="receipt-head">
               <img src="aguila_motors_logo.png" alt="" />
@@ -718,7 +722,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 128 - Aguila Motors</footer>
+    <footer class="app-version">Versión 129 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -1060,28 +1064,28 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=128"></script>
+  <script src="catalogo/vehiculos.js?v=129"></script>
   <!-- Código de la página (v125: antes todo en app.js). El orden importa; main.js el último. -->
-  <script src="js/base.js?v=128"></script>
-  <script src="js/productos.js?v=128"></script>
-  <script src="js/empleados-datos.js?v=128"></script>
-  <script src="js/datos-compartidos.js?v=128"></script>
-  <script src="js/caja.js?v=128"></script>
-  <script src="js/facturas.js?v=128"></script>
-  <script src="js/pagos.js?v=128"></script>
-  <script src="js/empleados.js?v=128"></script>
-  <script src="js/sorteo.js?v=128"></script>
-  <script src="js/movil.js?v=128"></script>
-  <script src="js/nube.js?v=128"></script>
-  <script src="js/inactividad.js?v=128"></script>
-  <script src="js/sesion.js?v=128"></script>
-  <script src="js/compraventa.js?v=128"></script>
-  <script src="js/discord-log.js?v=128"></script>
-  <script src="js/kits.js?v=128"></script>
-  <script src="js/catalogo.js?v=128"></script>
-  <script src="informes/qrcode.js?v=128"></script>
-  <script src="js/informes.js?v=128"></script>
-  <script src="js/panel.js?v=128"></script>
-  <script src="js/main.js?v=128"></script>
+  <script src="js/base.js?v=129"></script>
+  <script src="js/productos.js?v=129"></script>
+  <script src="js/empleados-datos.js?v=129"></script>
+  <script src="js/datos-compartidos.js?v=129"></script>
+  <script src="js/caja.js?v=129"></script>
+  <script src="js/facturas.js?v=129"></script>
+  <script src="js/pagos.js?v=129"></script>
+  <script src="js/empleados.js?v=129"></script>
+  <script src="js/sorteo.js?v=129"></script>
+  <script src="js/movil.js?v=129"></script>
+  <script src="js/nube.js?v=129"></script>
+  <script src="js/inactividad.js?v=129"></script>
+  <script src="js/sesion.js?v=129"></script>
+  <script src="js/compraventa.js?v=129"></script>
+  <script src="js/discord-log.js?v=129"></script>
+  <script src="js/kits.js?v=129"></script>
+  <script src="js/catalogo.js?v=129"></script>
+  <script src="informes/qrcode.js?v=129"></script>
+  <script src="js/informes.js?v=129"></script>
+  <script src="js/panel.js?v=129"></script>
+  <script src="js/main.js?v=129"></script>
 </body>
 </html>

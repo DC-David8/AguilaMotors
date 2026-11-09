@@ -257,6 +257,24 @@ const SERVICE_PRODUCTS = [
   { name: "Mediación de Venta (Gama Camiones)", price: 7500, category: "compraventa" },
 ];
 
+// v129 · Precio de empleado (solo el Jefe Aguila lo activa en la Caja).
+// Porcentaje por tipo de servicio, sobre el precio vigente y redondeado a 50:
+// tuning (piezas y Full Tuning) 50 %, neones RGB 50 %, servicios de taller y
+// grúa 50 %, camaleónica 40 %, instalación de nitro 35.000 → 25.000 (5/7),
+// botella de nitro 25 %. Tienda, informes y compraventa: sin descuento.
+const EMP_PRICE_FACTOR = {
+  motos: 0.5, gama_baja: 0.5, gama_media: 0.5, gama_alta: 0.5, gama_vip: 0.5, camiones: 0.5, aereos: 0.5, full_tuning: 0.5,
+  neones: 0.5, servicios_taller: 0.5, servicios_grua: 0.5, camaleonica: 0.6,
+};
+function empPrice(p) {
+  if (!p || !(p.price > 0)) return p?.price || 0;
+  const r50 = (v) => Math.round(v / 50) * 50;
+  if (p.category === "nitro") return r50(p.price * (/instalaci/i.test(p.name) ? 5 / 7 : 0.75));
+  const f = EMP_PRICE_FACTOR[p.category];
+  return f ? r50(p.price * f) : p.price;
+}
+const EMP_CONCEPT_TAG = "EMP"; // marca en el concepto del datáfono: "EMP Turbo GA"
+
 const PRODUCTS = [
   ...buildTuningProducts(),
   ...SERVICE_PRODUCTS.map((p) => {

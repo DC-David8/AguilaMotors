@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 129 · 8 de noviembre de 2026
+
+- **👷 Precio de empleado en la Caja** (solo lo ve y lo activa el Jefe Aguila, junto al título del Ticket). Aplica los precios del estudio de descuentos: tuning (piezas y Full Tuning) 50 %, neones RGB 50 %, servicios de taller y grúa 50 %, camaleónica 40 %, instalación de nitro 35.000 → 25.000 y botella 2.000 → 1.500; tienda, informes y compraventa sin descuento. Es un porcentaje sobre el precio vigente redondeado a 50 (`EMP_PRICE_FACTOR` y `empPrice` en `js/productos.js`), así que se ajusta solo si cambia un precio. Con el interruptor activo, los productos muestran el precio normal tachado y el de empleado en azul, el ticket se recalcula y el concepto empieza por **EMP**.
+
 ### Versión 128 · 8 de noviembre de 2026
 
 - **📣 Para Discord → ⚠️ Strikes de la semana** (mensaje aparte, con su propio botón de copiar): los strikes de la semana cerrada en Pagos (incluidos los puestos o quitados a mano), con la mención de cada persona, su rango, el strike que lleva (1/3, 2/3 o 3/3 · despido) y el motivo. Cierra con una de 15 frases al azar para que se pongan las pilas (🎲 *Otra frase*) y la etiqueta de Jefatura. Cada strike tiene su casilla para quitarlo del mensaje.
