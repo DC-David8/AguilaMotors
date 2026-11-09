@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 127 · 8 de noviembre de 2026
+
+- Los mensajes para Discord (movimientos de personal y los de ascensos/descensos de Pagos) usan el **emoji oficial del Aguila Motors** (`:aguilamotors:`, `DC_AGUILA_EMOJI` en `js/productos.js`) en lugar de 🦅: en el título, en la firma y en las frases que lo llevaban.
+
 ### Versión 126 · 8 de noviembre de 2026
 
 - **📣 Para Discord → 🏆 Empleado de la Semana**: después de los ascensos, el mensaje reconoce al Empleado de la Semana (el que se llevó el bono en la semana cerrada en Pagos; si hay empate, todos) con su mención, la del rol de Empleado de la Semana y una frase de agradecimiento y motivación al azar (20 distintas, sin cifras). Si la semana aún no está cerrada en Pagos, se elige de una lista. 🎲 *Otras frases* también la cambia.

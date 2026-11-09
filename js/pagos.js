@@ -665,8 +665,8 @@ function setupContabilidad() {
     );
     const week = promo.week ? `${promo.week} · ` : "";
     return kind === "up"
-      ? `@silent\n# 📈 ASCENSOS DE LA SEMANA\n-# ${week}Aguila Motors 🦅\n\n${lines.join("\n")}\n\n-# ¡Enhorabuena y a seguir así! 🔥`
-      : `@silent\n# 📉 DESCENSOS DE LA SEMANA\n-# ${week}Aguila Motors 🦅\n\n${lines.join("\n")}\n\n-# Cada semana es una nueva oportunidad para volver a subir. 💪`;
+      ? dcAguila(`@silent\n# 📈 ASCENSOS DE LA SEMANA\n-# ${week}Aguila Motors 🦅\n\n${lines.join("\n")}\n\n-# ¡Enhorabuena y a seguir así! 🔥`)
+      : dcAguila(`@silent\n# 📉 DESCENSOS DE LA SEMANA\n-# ${week}Aguila Motors 🦅\n\n${lines.join("\n")}\n\n-# Cada semana es una nueva oportunidad para volver a subir. 💪`);
   }
 
   const promoStatus = (t) => {

@@ -416,6 +416,10 @@ function ascMotivosAzar(n) {
 // Rol de Discord de la Jefatura: se etiqueta siempre al final del mensaje.
 // Para cambiar de rol, cambia solo el número.
 const DC_JEFATURA_ID = "1430927770938114230";
+// Emoji oficial del Aguila Motors en el servidor de Discord (:aguilamotors:).
+// En los mensajes para Discord sustituye al 🦅.
+const DC_AGUILA_EMOJI = "<:aguilamotors:1553837572307030126>";
+const dcAguila = (t) => String(t || "").replace(/🦅/g, DC_AGUILA_EMOJI);
 // Nombre visible (o interno) de un rango → nombre interno ("Aprendiz" → "Chalán").
 function rankFromText(t) {
   const k = normalizeKeySimple(t);
@@ -472,7 +476,7 @@ function ascDiscordText(items, sun, frase) {
   const who = (it) => (it.discord ? `<@${it.discord}>` : `**${it.name}**`);
   const lines = items.map((it) => `⬆️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.motivo}`);
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
-  return `# 📈 ASCENSOS DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${lines.join("\n")}\n\n${frase}\n-# — ${jef} · Aguila Motors`;
+  return dcAguila(`# 📈 ASCENSOS DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${lines.join("\n")}\n\n${frase}\n-# — ${jef} · Aguila Motors`);
 }
 
 // ---------------------------------------------------------------------------
@@ -595,7 +599,7 @@ function descDiscordText(desc, bajas, sun, cierre) {
   if (desc.length) parts.push(desc.map((it) => `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.frase}`).join("\n"));
   if (bajas.length) parts.push(bajas.map((it) => `${bajaTipo(it.tipo).e} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} ${it.frase}`).join("\n"));
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
-  return `# ${title}\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · Aguila Motors`;
+  return dcAguila(`# ${title}\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors 🦅\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · Aguila Motors`);
 }
 // v120 · Un solo mensaje con ascensos, descensos y bajas (secciones que
 // salen solo si tienen a alguien).
@@ -633,7 +637,7 @@ function movDiscordText(up, desc, bajas, sun, cierre, eow = []) {
   if (desc.length) parts.push(`## 📉 Descensos\n${desc.map((it) => `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.frase}`).join("\n")}`);
   if (bajas.length) parts.push(`## 🚪 Bajas del taller\n${bajas.map((it) => `${bajaTipo(it.tipo).e} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} ${it.frase}`).join("\n")}`);
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
-  return `# 🦅 MOVIMIENTOS DE PERSONAL DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · Aguila Motors`;
+  return dcAguila(`# 🦅 MOVIMIENTOS DE PERSONAL DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
 }
 
 // Ventana para despedir: tipo de baja + nota opcional. Devuelve el motivo
