@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 131 · 8 de noviembre de 2026
+
+- Los mensajes de **movimientos de personal** y de **strikes de la semana** etiquetan al rol **@Mecánicos** (toda la plantilla; `DC_STAFF_ROLE_ID` en `js/productos.js`) en la línea de debajo del título.
+
 ### Versión 130 · 8 de noviembre de 2026
 
 - **Readmitir con personaje nuevo (CK)**: «Readmitir» abre una ventana para cambiar nombre, apellido, IBAN y rango. Si la baja fue un CK sale marcada la casilla «Vuelve con un personaje nuevo»: los campos salen vacíos para poner los datos nuevos y la antigüedad (fecha de ingreso) empieza ese día. Recupera su Discord como antes. El historial apunta el cambio («personaje nuevo: X (antes Y)»).

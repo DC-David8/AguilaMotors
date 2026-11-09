@@ -437,6 +437,9 @@ const DC_JEFATURA_ID = "1430927770938114230";
 // Emoji oficial del Aguila Motors en el servidor de Discord (:aguilamotors:).
 // En los mensajes para Discord sustituye al 🦅.
 const DC_AGUILA_EMOJI = "<:aguilamotors:1553837572307030126>";
+// Rol de toda la plantilla (Mecánicos): se etiqueta en los avisos para todos.
+const DC_STAFF_ROLE_ID = "1263156546519433335";
+const dcStaff = () => (DC_STAFF_ROLE_ID ? `📣 <@&${DC_STAFF_ROLE_ID}> · ` : "");
 const dcAguila = (t) => String(t || "").replace(/🦅/g, DC_AGUILA_EMOJI);
 // Nombre visible (o interno) de un rango → nombre interno ("Aprendiz" → "Chalán").
 function rankFromText(t) {
@@ -655,7 +658,7 @@ function movDiscordText(up, desc, bajas, sun, cierre, eow = []) {
   if (desc.length) parts.push(`## 📉 Descensos\n${desc.map((it) => `⬇️ ${who(it)} pasa de ${role(it.from)} a ${role(it.to)} ${it.frase}`).join("\n")}`);
   if (bajas.length) parts.push(`## 🚪 Bajas del taller\n${bajas.map((it) => `${bajaTipo(it.tipo).e} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} ${it.frase}`).join("\n")}`);
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
-  return dcAguila(`# 🦅 MOVIMIENTOS DE PERSONAL DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
+  return dcAguila(`# 🦅 MOVIMIENTOS DE PERSONAL DE LA SEMANA\n-# ${dcStaff()}Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${parts.join("\n\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
 }
 
 // v128 · Strikes de la semana: mensaje aparte (se avisa por separado). Una
@@ -684,7 +687,7 @@ function strikesDiscordText(items, sun, cierre) {
   const cap = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
   const lines = items.map((it) => `${it.n >= STRIKE_MAX ? "🚫" : "⚠️"} ${who(it)}${it.rank ? ` (${role(it.rank)})` : ""} · **${strikeLabel(it.n)}** — ${cap(it.reason).replace(/\.$/, "")}.`);
   const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
-  return dcAguila(`# ⚠️ STRIKES DE LA SEMANA\n-# Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${lines.join("\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
+  return dcAguila(`# ⚠️ STRIKES DE LA SEMANA\n-# ${dcStaff()}Semana del ${ascDM(sun)} al ${ascDM(ascDay(sun, 6))} · Aguila Motors\n\n${lines.join("\n")}\n\n${cierre}\n-# — ${jef} · 🦅 Aguila Motors`);
 }
 
 // v130 · Ventana para readmitir. Tras un CK la persona vuelve con otro
