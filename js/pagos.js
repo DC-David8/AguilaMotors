@@ -1015,24 +1015,37 @@ function setupEmployeesModal(state, refreshPagos) {
     return rows.reduce((acc, r) => acc + (r.noPay ? 0 : r.payout), 0);
   }
 
-  // Texto para el canal de pagas (el mismo de "Copiar todo").
+  // Texto para el canal de pagas (el mismo de "Copiar todo"). v132: con formato
+  // (título, semana, una línea por empleado de mayor a menor paga, Empleado de
+  // la Semana y total retirado de la caja). El canal solo lo ve la Jefatura.
   function discordPayText(rows = totalsRows) {
-    const lines = rows
-      .map((r) => {
-        let line = r.noPay
-          ? `* ${labelForCopy(r)}: ${NO_PAY_TEXT}`
-          : `* ${labelForCopy(r)}: ${fmtMoneyPlain(r.payout)} · ${ibanForCopy(r)}`;
-        if (isEmployeeOfWeek(r)) line += ` ${EMPLOYEE_OF_WEEK_TAG}`;
-        if (r.warn) line += ` ${strikeText(r.strikeN, r.gross, r.strikeWhy)}`;
-        if (r.bonus && !r.noPay) line += `\n  ↳ 🏆 Incluye bono de Empleado de la Semana: ${fmtMoneyPlain(r.bonus)}`;
-        return line;
-      })
-      .join("\n");
+    const dm = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "");
+    const from = byId("dlog-from")?.value || "";
+    const to = byId("dlog-to")?.value || "";
+    const today = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const who = (r) => (r.discord ? `<@${r.discord}>` : `**${r.name}**`);
+    const rk = (r) => (r.rank ? ` · ${rankLabel(r.rank)}` : "");
+    const $ = (n) => `$ ${Math.round(n || 0).toLocaleString("de-DE")}`;
+    const isAguila = (r) => normalizeKeySimple(r.rank) === normalizeKeySimple("Jefe Aguila");
+    const sorted = rows.filter((r) => !(isAguila(r) && !(r.payout > 0))).slice().sort((x, y) => (x.noPay ? 1 : 0) - (y.noPay ? 1 : 0) || (y.payout || 0) - (x.payout || 0) || x.name.localeCompare(y.name, "es"));
+    const lines = sorted.map((r) => {
+      if (r.noPay) return `> ➖ ${who(r)}${rk(r)} — *${NO_PAY_TEXT}*`;
+      const icon = !r.iban ? "⏳" : r.warn && !isAguila(r) ? "⚠️" : "💰";
+      const iban = r.iban ? `\`${r.iban}\`` : "*IBAN pendiente*";
+      const extra = `${isEmployeeOfWeek(r) ? " 🏆" : ""}${r.warn && !isAguila(r) ? ` · *${strikeLabel(r.strikeN)}*` : ""}`;
+      return `> ${icon} ${who(r)}${rk(r)} — **${$(r.payout)}** · ${iban}${extra}`;
+    });
+    const eow = sorted.filter((r) => r.bonus && !r.noPay);
     const paying = rows.filter((r) => !r.noPay && r.payout > 0).length;
-    const bonusN = rows.filter((r) => r.bonus && !r.noPay).length;
-    const bonusTxt = bonusN ? ` · incluye Bono por Empleado de la Semana de ${fmtBonus(WEEK_BONUS)}${bonusN > 1 ? ` (x${bonusN})` : ""}` : "";
-    const total = `**Total a retirar de la cuenta de la empresa: ${fmtMoney(bankTotalOf(rows))}** (${paying} ${paying === 1 ? "empleado" : "empleados"} a pagar${bonusTxt})`;
-    return `${lines}\n\n${total}`;
+    const parts = [
+      `# 🦅 PAGAS DE LA SEMANA\n-# ${from ? `Semana del ${dm(from)}${to ? ` al ${dm(to)}` : ""} · ` : ""}pagadas el ${today}`,
+      `## 💸 Nóminas\n${lines.join("\n")}`,
+    ];
+    if (eow.length) parts.push(`## 🏆 Empleado de la Semana\n${eow.map((r) => `> 👑 ${who(r)} · ${EMPLOYEE_OF_WEEK_TAG} — su paga incluye el **bono de ${$(r.bonus)}**`).join("\n")}`);
+    parts.push(`## 🏦 Resumen\n> 👥 **${paying}** ${paying === 1 ? "empleado cobra" : "empleados cobran"} esta semana\n> 💵 **Total retirado de la caja: ${$(bankTotalOf(rows))}**`);
+    const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
+    parts.push(`-# — ${jef} · 🦅 Aguila Motors`);
+    return dcAguila(parts.join("\n\n"));
   }
 
   // Boton del panel de Pagos: arma los totales sin abrir la ventana y copia.
