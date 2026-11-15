@@ -2529,3 +2529,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .pgs-side .pg-kpis { display: flex; flex-direction: column; gap: 8px; grid-template-columns: none; }
 @media (max-width: 1100px) { .pgs-wrap { grid-template-columns: 1fr; } .pgs-side { position: static; order: -1; } .pgs-side .pg-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .pgs-body { padding-left: 14px; } .pgs-sum { display: none; } .pgs-step.is-now .pgs-sum, .pgs-step.is-open .pgs-sum { display: block; white-space: normal; flex-basis: 100%; order: 5; } .pgs-head { flex-wrap: wrap; } .pgs-t { flex: 1; } .pgs-week { margin-left: 0; width: 100%; } }
+
+/* v138 · Gestión de empleados como sección (antes ventana) */
+#tab-emp .emp-panel { padding: 16px 18px 14px; }
+#tab-emp .emp-head { display: flex; align-items: center; }
+#tab-emp .emp-head h2 { margin: 0; font-size: 1.25rem; white-space: nowrap; }
+#tab-emp .emp-list, #tab-emp .emp-ficha { max-height: none; overflow: visible; }

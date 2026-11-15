@@ -149,8 +149,7 @@ function setupPagosPasos() {
   const openDiscord = (strikes) => {
     const m = byId("employees-admin-modal");
     if (!m) return;
-    m.showModal();
-    m.dispatchEvent(new Event("aguila-open"));
+    openEmployeesSection();
     m.dispatchEvent(new CustomEvent("aguila-open-discord", { detail: { week: last.week, strikes } }));
     setFlag(last.week, "anuncio");
   };

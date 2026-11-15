@@ -138,7 +138,7 @@ function setupMobileNav() {
 
   // Barra de secciones abajo (v98): las mismas pestanas que se ven en PC.
   const bnav = byId("m-bnav");
-  const SHORT = { "tab-cv": "Compraventa", "tab-conta": "Pagos", "tab-sorteo": "Sorteo", "tab-caja": "Caja", "tab-inf": "Informes", "tab-jefe": "Panel" };
+  const SHORT = { "tab-cv": "Compraventa", "tab-conta": "Pagos", "tab-sorteo": "Sorteo", "tab-caja": "Caja", "tab-inf": "Informes", "tab-jefe": "Panel", "tab-emp": "Empleados" };
   function buildBnav() {
     if (!bnav) return;
     const vis = [...document.querySelectorAll("nav.tabs .tab")].filter((t) => !t.hidden);

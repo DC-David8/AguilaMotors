@@ -298,7 +298,7 @@ function setupAuthUI() {
   const tabs = document.querySelectorAll("nav.tabs .tab");
   tabs.forEach((t) => {
     const target = t.dataset.tabTarget;
-    if (!target) return void (t.hidden = !hasAccess()); // acceso rápido a Empleados: solo Jefes
+    if (target === "tab-emp") return void (t.hidden = !hasAccess()); // Gestión de empleados: solo Jefes
     t.hidden = target === "tab-inf" || target === "tab-jefe" ? !AUTH.aguila : PROTECTED_TABS.includes(target) && !(target === "tab-cv" ? canSeeCv() : hasAccess());
   });
   const active = document.querySelector("nav.tabs .tab.is-active");

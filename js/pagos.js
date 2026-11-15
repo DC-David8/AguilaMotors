@@ -1085,13 +1085,12 @@ function setupEmployeesModal(state, refreshPagos) {
     }
   });
 
+  // v138: Gestión de empleados es una sección más; este botón solo la abre.
   function openAdminModal() {
-    adminModal.showModal();
-    adminModal.dispatchEvent(new Event("aguila-open"));
+    openEmployeesSection();
   }
 
   byId("conta-manage-employees").addEventListener("click", openAdminModal);
-  byId("nav-employees")?.addEventListener("click", openAdminModal); // acceso rápido desde el menú (v136)
 
   setupEmployeesAdminModal({
     onChanged: async () => {

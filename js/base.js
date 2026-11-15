@@ -344,9 +344,15 @@ function showAccessModalLegacy({ sectionLabel }) {
   });
 }
 
+// Abre la sección de Gestión de empleados (desde Pagos, avisos, etc.).
+function openEmployeesSection() {
+  const t = document.querySelector('nav.tabs .tab[data-tab-target="tab-emp"]');
+  if (!t || t.hidden) return;
+  if (!t.classList.contains("is-active")) t.click();
+  window.scrollTo({ top: 0 });
+}
+
 function setupTabs() {
-  // Solo las pestañas que abren una sección (las de acción, como Empleados,
-  // abren una ventana y se enganchan aparte).
   const tabs = document.querySelectorAll(".tab[data-tab-target]");
   const panels = document.querySelectorAll(".tab-panel");
   const unlocked = new Set();

@@ -1351,7 +1351,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       return;
     }
     // Inactividad: se lee en segundo plano y se repinta al llegar.
-    if (hasAccess() && empCloudOn()) inactLoad().then((ok) => ok && modal.open && renderAll());
+    if (hasAccess() && empCloudOn()) inactLoad().then((ok) => ok && byId("tab-emp")?.classList.contains("is-active") && renderAll());
   }
 
   byId("emp-admin-unlock").addEventListener("click", () => {
@@ -1435,12 +1435,17 @@ function setupEmployeesAdminModal({ onChanged }) {
 
   searchInput.addEventListener("input", renderList);
 
-  modal.addEventListener("close", () => {
-  });
-  modal.addEventListener("cancel", () => {
-  });
-
   modal.addEventListener("aguila-open", refresh);
+  // v138: es una sección: se recarga cada vez que se entra en ella.
+  const section = byId("tab-emp");
+  if (section) {
+    let wasOn = section.classList.contains("is-active");
+    new MutationObserver(() => {
+      const on = section.classList.contains("is-active");
+      if (on && !wasOn) refresh();
+      wasOn = on;
+    }).observe(section, { attributes: true, attributeFilter: ["class"] });
+  }
   // v137: abrir directamente en «Para Discord» con una semana (desde Pagos → Anunciar).
   modal.addEventListener("aguila-open-discord", (ev) => {
     const iso = ev.detail?.week || "";

@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 138 · 15 de noviembre de 2026
+
+- **Gestión de empleados es una sección más** (`#tab-emp`), como Caja o Pagos, en vez de una ventana encima de la sección en la que estabas. Se entra desde **Empleados** en el menú (solo Jefes); el botón de Pagos y el paso «Anunciar» llevan a ella. Se recarga cada vez que entras. Las ventanas pequeñas (despedir, readmitir) siguen siendo ventanas.
+
 ### Versión 137 · 15 de noviembre de 2026
 
 - **Pagos como cierre guiado** (`js/pagos-pasos.js`; los cálculos no cambian). La pestaña pasa a siete pasos de arriba abajo, cada uno con su estado (hecho, ahora, pendiente) y su resumen: **1 Facturas → 2 Kits → 3 Revisar → 4 Cerrar semana → 5 Pagas → 6 Ascensos y descensos → 7 Anunciar**. Una barra marca por qué paso se va; el que toca se abre solo y los hechos se pliegan. Cualquier paso se puede abrir cuando se quiera; Pagas y Anunciar avisan si la semana aún no está cerrada.

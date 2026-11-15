@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=137" />
+  <link rel="stylesheet" href="styles.css?v=138" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=137" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=138" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -79,7 +79,7 @@
       <button class="tab is-active" data-tab-target="tab-caja"><svg class="tab-ic ic-caja" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18v-6H3z"/><path d="M5 15V9h14v6"/><path d="M8 9V4h8v5"/><path d="M10 6.5h4"/><path d="M6.5 18h3M12 18h5.5"/></svg>Caja</button>
       <button class="tab" data-tab-target="tab-cv"><svg class="tab-ic ic-cv" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16v-3l2-5c.4-1 1.2-1.5 2.2-1.5h9.6c1 0 1.8.5 2.2 1.5l2 5v3"/><path d="M3 13h18M2.5 16h19"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/><path d="M9 4.5l3-2 3 2"/></svg>Compraventa</button>
       <button class="tab" data-tab-target="tab-conta"><svg class="tab-ic ic-pagos" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M15.2 9.3c0-1.4-1.4-2.3-3.2-2.3s-3.2.9-3.2 2.3c0 3.2 6.4 1.6 6.4 4.8 0 1.4-1.4 2.4-3.2 2.4s-3.2-1-3.2-2.4M12 5v14"/></svg>Pagos</button>
-      <button class="tab tab-action" id="nav-employees" data-open="employees" title="Gestión de empleados" hidden><svg class="tab-ic ic-emp" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.2c2.7.3 4.5 2.3 4.5 5.3"/></svg>Empleados</button>
+      <button class="tab" id="nav-employees" data-tab-target="tab-emp" title="Gestión de empleados" hidden><svg class="tab-ic ic-emp" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.2c2.7.3 4.5 2.3 4.5 5.3"/></svg>Empleados</button>
       <button class="tab" data-tab-target="tab-sorteo"><svg class="tab-ic ic-sorteo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.8 2.8M15.9 15.9l2.8 2.8M18.7 5.3l-2.8 2.8M8.1 15.9l-2.8 2.8"/><circle cx="16.3" cy="8.9" r="1.1" class="tab-ic-ball"/></svg>Sorteo</button>
       <button class="tab" data-tab-target="tab-inf" hidden><svg class="tab-ic ic-inf" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l8 3v6c0 5-3.4 8.8-8 10-4.6-1.2-8-5-8-10v-6z"/><path d="M8.5 12l2.4 2.4 4.6-4.8"/></svg>Informes</button>
       <button class="tab" data-tab-target="tab-jefe" hidden><svg class="tab-ic ic-jefe" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><rect x="5" y="12" width="3.2" height="6.5" rx=".8"/><rect x="10.4" y="7.5" width="3.2" height="11" rx=".8"/><rect x="15.8" y="4" width="3.2" height="14.5" rx=".8"/></svg>Panel</button>
@@ -479,6 +479,146 @@
       </div>
     </section>
 
+    <!-- v138: Gestión de empleados como sección (antes era una ventana encima). -->
+    <section id="tab-emp" class="tab-panel">
+    <div id="employees-admin-modal" class="card emp-card emp-panel">
+      <header class="modal-head emp-head">
+        <h2>👥 Gestión de empleados</h2>
+        <div class="cv-cloud emp-cloud" id="emp-cloud">
+          <span class="cv-dot" id="emp-cloud-dot"></span>
+          <span class="cv-cloud-text" id="emp-cloud-text">Conectando…</span>
+          <span class="cv-cloud-acts">
+            <button type="button" id="emp-cloud-login" class="ghost" hidden>🔑 Iniciar sesión</button>
+            <button type="button" id="emp-cloud-migrate" hidden>☁️ Subir empleados a la nube</button>
+          </span>
+        </div>
+      </header>
+
+      <nav class="emp-tabs" id="emp-tabs" role="tablist">
+        <button type="button" class="emp-tab is-on" data-emp-tab="list">📋 Listado <span class="emp-tab-n" id="emp-tab-n-list"></span></button>
+        <button type="button" class="emp-tab" data-emp-tab="new" id="emp-tab-new">➕ Nuevo empleado</button>
+        <button type="button" class="emp-tab" data-emp-tab="strikes">⚠️ Strikes <span class="emp-tab-n r" id="emp-tab-n-strikes"></span></button>
+        <button type="button" class="emp-tab" data-emp-tab="ranks" id="emp-tab-ranks">🏷️ Rangos</button>
+        <button type="button" class="emp-tab" data-emp-tab="fired" id="emp-tab-fired">🚪 Despedidos <span class="emp-tab-n" id="emp-fired-n"></span></button>
+        <button type="button" class="emp-tab" data-emp-tab="discord" id="emp-tab-discord" hidden>📣 Para Discord</button>
+      </nav>
+
+      <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
+
+      <!-- Listado + ficha -->
+      <section class="emp-pane" data-emp-pane="list">
+        <div id="emp-list-view">
+          <div class="emp-kpis" id="emp-kpis"></div>
+          <div class="emp-bar">
+            <input id="emp-search" class="text-input" type="text" placeholder="🔍 Buscar por nombre o rango…" />
+            <div class="emp-sort" id="emp-sort">
+              <button type="button" class="emp-chip is-on" data-sort="rank">Por rango</button>
+              <button type="button" class="emp-chip" data-sort="az">A–Z</button>
+              <button type="button" class="emp-chip" data-sort="strikes">Más strikes</button>
+              <button type="button" class="emp-chip" data-sort="seniority">Antigüedad</button>
+              <button type="button" class="emp-chip" id="emp-date-toggle">📅 Fechas</button>
+            </div>
+            <button type="button" id="emp-refresh" class="ghost" title="Volver a cargar">↻</button>
+          </div>
+          <div class="emp-datefilter" id="emp-datefilter" hidden>
+            <label>Fecha de <select id="emp-df-field" class="text-input"><option value="altaAt">ingreso al taller</option><option value="contratadoAt">contratación</option></select></label>
+            <label>Desde <input id="emp-df-from" class="text-input" type="date" /></label>
+            <label>Hasta <input id="emp-df-to" class="text-input" type="date" /></label>
+            <button type="button" id="emp-df-clear" class="ghost">Quitar filtro</button>
+          </div>
+          <div class="emp-list" id="emp-list"></div>
+        </div>
+        <div id="emp-ficha-view" hidden></div>
+      </section>
+
+      <!-- Nuevo empleado -->
+      <section class="emp-pane" data-emp-pane="new" hidden>
+        <div class="admin-block emp-new-block">
+          <h4>Nuevo empleado</h4>
+          <div class="form-grid">
+            <input id="emp-new-name" class="text-input" type="text" placeholder="Nombre" />
+            <input id="emp-new-surname" class="text-input" type="text" placeholder="Apellido" />
+            <select id="emp-new-rank" class="text-input"></select>
+            <input id="emp-new-discord" class="text-input emp-discord-new" type="text" inputmode="numeric" placeholder="ID de Discord (opcional)" />
+            <input id="emp-new-iban" class="text-input emp-iban-new" type="text" maxlength="9" placeholder="IBAN (ej. J739745)" />
+          </div>
+          <div class="emp-new-dates" id="emp-new-dates">
+            <label>📅 Ingreso al taller <input id="emp-new-alta" class="text-input" type="date" /></label>
+            <label>📝 Contratación <input id="emp-new-contrato" class="text-input" type="date" /></label>
+          </div>
+          <div class="actions">
+            <button type="button" id="emp-new-add">Añadir</button>
+          </div>
+          <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor). Con el ID de Discord se le etiqueta al copiar los totales, y con el IBAN sale su cuenta para la nómina.</p>
+        </div>
+        <div class="admin-block" hidden>
+          <input id="emp-admin-pass" class="text-input" type="password" autocomplete="current-password" />
+          <button type="button" id="emp-admin-unlock">Desbloquear</button>
+        </div>
+      </section>
+
+      <!-- Strikes -->
+      <section class="emp-pane" data-emp-pane="strikes" hidden>
+        <div id="emp-strikes"></div>
+      </section>
+
+      <!-- Rangos -->
+      <section class="emp-pane" data-emp-pane="ranks" hidden>
+        <div class="admin-block emp-rank-names" id="emp-rank-names" hidden>
+          <h4>🏷️ Nombres de los rangos <small class="muted">(solo Jefe Aguila)</small></h4>
+          <p class="muted emp-rank-names-hint">Así se verán en la página y al copiar las pagas. Vacío = nombre original. La comisión no cambia.</p>
+          <div class="emp-rank-names-grid" id="emp-rank-names-grid"></div>
+          <div class="actions"><button type="button" id="emp-rank-names-save">Guardar nombres</button></div>
+        </div>
+        <div class="emp-rank-table" id="emp-rank-table"></div>
+      </section>
+
+      <!-- Despedidos -->
+      <section class="emp-pane" data-emp-pane="fired" hidden>
+        <div class="emp-fired" id="emp-fired">
+          <p class="muted">Registro de despidos: no cuentan en Pagos ni pueden entrar en la página. «Readmitir» les devuelve su rango y su Discord.</p>
+          <div id="emp-fired-list" class="emp-fired-list"></div>
+        </div>
+      </section>
+
+      <!-- Para Discord: ascensos (v117), descensos y bajas (v119) -->
+      <section class="emp-pane" data-emp-pane="discord" hidden>
+        <div class="emp-dc">
+          <div class="emp-dc-bar">
+            <button type="button" class="ghost" id="emp-dc-prev-w" title="Semana anterior">◀</button>
+            <b id="emp-dc-week"></b>
+            <button type="button" class="ghost" id="emp-dc-next" title="Semana siguiente">▶</button>
+            <span class="muted emp-small" id="emp-dc-info"></span>
+          </div>
+          <div class="emp-dc-list" id="emp-dc-list"></div>
+          <div class="emp-dc-prev-head">
+            <b>Vista previa del mensaje</b>
+            <button type="button" class="ghost" id="emp-dc-frase" title="Cambiar las frases">🎲 Otras frases</button>
+          </div>
+          <pre class="emp-dc-prev" id="emp-dc-prev"></pre>
+          <div class="emp-acts">
+            <button type="button" id="emp-dc-copy">📋 Copiar para Discord</button>
+          </div>
+          <!-- Strikes de la semana: mensaje aparte (v128) -->
+          <div class="emp-dc-st">
+            <div class="emp-dc-group">⚠️ Strikes de la semana · mensaje aparte</div>
+            <div class="emp-dc-list" id="emp-dc-st-list"></div>
+            <div class="emp-dc-prev-head">
+              <b>Vista previa de los strikes</b>
+              <button type="button" class="ghost" id="emp-dc-st-frase" title="Cambiar la frase final">🎲 Otra frase</button>
+            </div>
+            <pre class="emp-dc-prev" id="emp-dc-st-prev"></pre>
+            <div class="emp-acts">
+              <button type="button" id="emp-dc-st-copy">📋 Copiar strikes para Discord</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p class="muted emp-status" id="emp-admin-status" role="status"></p>
+    </div>
+    </section>
+
     <section id="tab-sorteo" class="tab-panel">
       <nav class="sx-subtabs" aria-label="Pasos del sorteo">
         <button type="button" class="sx-subtab is-active" data-sx="sx-part">1 · Participantes</button>
@@ -779,7 +919,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 137 - Aguila Motors</footer>
+    <footer class="app-version">Versión 138 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -877,145 +1017,6 @@
     </form>
   </dialog>
 
-  <dialog id="employees-admin-modal" class="emp-modal">
-    <form method="dialog" class="modal-card emp-card">
-      <header class="modal-head emp-head">
-        <h3>👥 Empleados</h3>
-        <div class="cv-cloud emp-cloud" id="emp-cloud">
-          <span class="cv-dot" id="emp-cloud-dot"></span>
-          <span class="cv-cloud-text" id="emp-cloud-text">Conectando…</span>
-          <span class="cv-cloud-acts">
-            <button type="button" id="emp-cloud-login" class="ghost" hidden>🔑 Iniciar sesión</button>
-            <button type="button" id="emp-cloud-migrate" hidden>☁️ Subir empleados a la nube</button>
-          </span>
-        </div>
-        <button value="cancel" class="ghost">Cerrar</button>
-      </header>
-
-      <nav class="emp-tabs" id="emp-tabs" role="tablist">
-        <button type="button" class="emp-tab is-on" data-emp-tab="list">📋 Listado <span class="emp-tab-n" id="emp-tab-n-list"></span></button>
-        <button type="button" class="emp-tab" data-emp-tab="new" id="emp-tab-new">➕ Nuevo empleado</button>
-        <button type="button" class="emp-tab" data-emp-tab="strikes">⚠️ Strikes <span class="emp-tab-n r" id="emp-tab-n-strikes"></span></button>
-        <button type="button" class="emp-tab" data-emp-tab="ranks" id="emp-tab-ranks">🏷️ Rangos</button>
-        <button type="button" class="emp-tab" data-emp-tab="fired" id="emp-tab-fired">🚪 Despedidos <span class="emp-tab-n" id="emp-fired-n"></span></button>
-        <button type="button" class="emp-tab" data-emp-tab="discord" id="emp-tab-discord" hidden>📣 Para Discord</button>
-      </nav>
-
-      <p class="muted emp-readonly-note" id="emp-readonly-note" hidden></p>
-
-      <!-- Listado + ficha -->
-      <section class="emp-pane" data-emp-pane="list">
-        <div id="emp-list-view">
-          <div class="emp-kpis" id="emp-kpis"></div>
-          <div class="emp-bar">
-            <input id="emp-search" class="text-input" type="text" placeholder="🔍 Buscar por nombre o rango…" />
-            <div class="emp-sort" id="emp-sort">
-              <button type="button" class="emp-chip is-on" data-sort="rank">Por rango</button>
-              <button type="button" class="emp-chip" data-sort="az">A–Z</button>
-              <button type="button" class="emp-chip" data-sort="strikes">Más strikes</button>
-              <button type="button" class="emp-chip" data-sort="seniority">Antigüedad</button>
-              <button type="button" class="emp-chip" id="emp-date-toggle">📅 Fechas</button>
-            </div>
-            <button type="button" id="emp-refresh" class="ghost" title="Volver a cargar">↻</button>
-          </div>
-          <div class="emp-datefilter" id="emp-datefilter" hidden>
-            <label>Fecha de <select id="emp-df-field" class="text-input"><option value="altaAt">ingreso al taller</option><option value="contratadoAt">contratación</option></select></label>
-            <label>Desde <input id="emp-df-from" class="text-input" type="date" /></label>
-            <label>Hasta <input id="emp-df-to" class="text-input" type="date" /></label>
-            <button type="button" id="emp-df-clear" class="ghost">Quitar filtro</button>
-          </div>
-          <div class="emp-list" id="emp-list"></div>
-        </div>
-        <div id="emp-ficha-view" hidden></div>
-      </section>
-
-      <!-- Nuevo empleado -->
-      <section class="emp-pane" data-emp-pane="new" hidden>
-        <div class="admin-block emp-new-block">
-          <h4>Nuevo empleado</h4>
-          <div class="form-grid">
-            <input id="emp-new-name" class="text-input" type="text" placeholder="Nombre" />
-            <input id="emp-new-surname" class="text-input" type="text" placeholder="Apellido" />
-            <select id="emp-new-rank" class="text-input"></select>
-            <input id="emp-new-discord" class="text-input emp-discord-new" type="text" inputmode="numeric" placeholder="ID de Discord (opcional)" />
-            <input id="emp-new-iban" class="text-input emp-iban-new" type="text" maxlength="9" placeholder="IBAN (ej. J739745)" />
-          </div>
-          <div class="emp-new-dates" id="emp-new-dates">
-            <label>📅 Ingreso al taller <input id="emp-new-alta" class="text-input" type="date" /></label>
-            <label>📝 Contratación <input id="emp-new-contrato" class="text-input" type="date" /></label>
-          </div>
-          <div class="actions">
-            <button type="button" id="emp-new-add">Añadir</button>
-          </div>
-          <p class="muted" id="emp-new-hint">Tip: usa el mismo nombre y apellido que sale en Discord (Cobrador / Vendedor). Con el ID de Discord se le etiqueta al copiar los totales, y con el IBAN sale su cuenta para la nómina.</p>
-        </div>
-        <div class="admin-block" hidden>
-          <input id="emp-admin-pass" class="text-input" type="password" autocomplete="current-password" />
-          <button type="button" id="emp-admin-unlock">Desbloquear</button>
-        </div>
-      </section>
-
-      <!-- Strikes -->
-      <section class="emp-pane" data-emp-pane="strikes" hidden>
-        <div id="emp-strikes"></div>
-      </section>
-
-      <!-- Rangos -->
-      <section class="emp-pane" data-emp-pane="ranks" hidden>
-        <div class="admin-block emp-rank-names" id="emp-rank-names" hidden>
-          <h4>🏷️ Nombres de los rangos <small class="muted">(solo Jefe Aguila)</small></h4>
-          <p class="muted emp-rank-names-hint">Así se verán en la página y al copiar las pagas. Vacío = nombre original. La comisión no cambia.</p>
-          <div class="emp-rank-names-grid" id="emp-rank-names-grid"></div>
-          <div class="actions"><button type="button" id="emp-rank-names-save">Guardar nombres</button></div>
-        </div>
-        <div class="emp-rank-table" id="emp-rank-table"></div>
-      </section>
-
-      <!-- Despedidos -->
-      <section class="emp-pane" data-emp-pane="fired" hidden>
-        <div class="emp-fired" id="emp-fired">
-          <p class="muted">Registro de despidos: no cuentan en Pagos ni pueden entrar en la página. «Readmitir» les devuelve su rango y su Discord.</p>
-          <div id="emp-fired-list" class="emp-fired-list"></div>
-        </div>
-      </section>
-
-      <!-- Para Discord: ascensos (v117), descensos y bajas (v119) -->
-      <section class="emp-pane" data-emp-pane="discord" hidden>
-        <div class="emp-dc">
-          <div class="emp-dc-bar">
-            <button type="button" class="ghost" id="emp-dc-prev-w" title="Semana anterior">◀</button>
-            <b id="emp-dc-week"></b>
-            <button type="button" class="ghost" id="emp-dc-next" title="Semana siguiente">▶</button>
-            <span class="muted emp-small" id="emp-dc-info"></span>
-          </div>
-          <div class="emp-dc-list" id="emp-dc-list"></div>
-          <div class="emp-dc-prev-head">
-            <b>Vista previa del mensaje</b>
-            <button type="button" class="ghost" id="emp-dc-frase" title="Cambiar las frases">🎲 Otras frases</button>
-          </div>
-          <pre class="emp-dc-prev" id="emp-dc-prev"></pre>
-          <div class="emp-acts">
-            <button type="button" id="emp-dc-copy">📋 Copiar para Discord</button>
-          </div>
-          <!-- Strikes de la semana: mensaje aparte (v128) -->
-          <div class="emp-dc-st">
-            <div class="emp-dc-group">⚠️ Strikes de la semana · mensaje aparte</div>
-            <div class="emp-dc-list" id="emp-dc-st-list"></div>
-            <div class="emp-dc-prev-head">
-              <b>Vista previa de los strikes</b>
-              <button type="button" class="ghost" id="emp-dc-st-frase" title="Cambiar la frase final">🎲 Otra frase</button>
-            </div>
-            <pre class="emp-dc-prev" id="emp-dc-st-prev"></pre>
-            <div class="emp-acts">
-              <button type="button" id="emp-dc-st-copy">📋 Copiar strikes para Discord</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <p class="muted emp-status" id="emp-admin-status" role="status"></p>
-    </form>
-  </dialog>
 
   <dialog id="access-modal" class="access-modal">
     <form method="dialog" class="modal-card">
@@ -1121,29 +1122,29 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=137"></script>
+  <script src="catalogo/vehiculos.js?v=138"></script>
   <!-- Código de la página (v125: antes todo en app.js). El orden importa; main.js el último. -->
-  <script src="js/base.js?v=137"></script>
-  <script src="js/productos.js?v=137"></script>
-  <script src="js/empleados-datos.js?v=137"></script>
-  <script src="js/datos-compartidos.js?v=137"></script>
-  <script src="js/caja.js?v=137"></script>
-  <script src="js/facturas.js?v=137"></script>
-  <script src="js/pagos.js?v=137"></script>
-  <script src="js/pagos-pasos.js?v=137"></script>
-  <script src="js/empleados.js?v=137"></script>
-  <script src="js/sorteo.js?v=137"></script>
-  <script src="js/movil.js?v=137"></script>
-  <script src="js/nube.js?v=137"></script>
-  <script src="js/inactividad.js?v=137"></script>
-  <script src="js/sesion.js?v=137"></script>
-  <script src="js/compraventa.js?v=137"></script>
-  <script src="js/discord-log.js?v=137"></script>
-  <script src="js/kits.js?v=137"></script>
-  <script src="js/catalogo.js?v=137"></script>
-  <script src="informes/qrcode.js?v=137"></script>
-  <script src="js/informes.js?v=137"></script>
-  <script src="js/panel.js?v=137"></script>
-  <script src="js/main.js?v=137"></script>
+  <script src="js/base.js?v=138"></script>
+  <script src="js/productos.js?v=138"></script>
+  <script src="js/empleados-datos.js?v=138"></script>
+  <script src="js/datos-compartidos.js?v=138"></script>
+  <script src="js/caja.js?v=138"></script>
+  <script src="js/facturas.js?v=138"></script>
+  <script src="js/pagos.js?v=138"></script>
+  <script src="js/pagos-pasos.js?v=138"></script>
+  <script src="js/empleados.js?v=138"></script>
+  <script src="js/sorteo.js?v=138"></script>
+  <script src="js/movil.js?v=138"></script>
+  <script src="js/nube.js?v=138"></script>
+  <script src="js/inactividad.js?v=138"></script>
+  <script src="js/sesion.js?v=138"></script>
+  <script src="js/compraventa.js?v=138"></script>
+  <script src="js/discord-log.js?v=138"></script>
+  <script src="js/kits.js?v=138"></script>
+  <script src="js/catalogo.js?v=138"></script>
+  <script src="informes/qrcode.js?v=138"></script>
+  <script src="js/informes.js?v=138"></script>
+  <script src="js/panel.js?v=138"></script>
+  <script src="js/main.js?v=138"></script>
 </body>
 </html>
