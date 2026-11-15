@@ -70,6 +70,9 @@ async function inactSaveDias(d) {
 // { days, last, level (0-3), more } · more = no facturó en toda la ventana.
 function inactOf(e) {
   if (!INACT.ok || !e || normalizeKeySimple(e.rank) === normalizeKeySimple("Jefe Aguila")) return null;
+  // v135: a los marcados «No cobra» no se les mira la actividad (ni aviso, ni
+  // filtro, ni alerta en el Panel).
+  if (e.noPay || isEmployeeNoPay(fullName(e))) return null;
   const now = Date.now();
   const t = INACT.last.get(normalizeKeySimple(fullName(e)));
   const alta = e.altaAt ? +new Date(`${e.altaAt}T00:00:00`) : 0;

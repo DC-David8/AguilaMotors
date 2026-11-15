@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 135 · 14 de noviembre de 2026
+
+- **Aviso de inactividad solo para quien cobra**: a los empleados marcados «No cobra» ya no se les mira la actividad. No llevan la etiqueta 💤 en el listado, la ficha ni el ranking, no salen en el filtro «Sin facturar» y no generan avisos en el Panel del Jefe.
+
 ### Versión 134 · 14 de noviembre de 2026
 
 - **📣 Para Discord: la semana recién cerrada sale al momento.** La semana por defecto se calculaba con el reloj del PC y el sábado por la noche (ya cerrada la semana en España) seguía saliendo la anterior, sin poder avanzar. Ahora usa el mismo reloj que Pagos (hora de España): en cuanto cierra la semana, se abre esa.
