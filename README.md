@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### 14 de noviembre de 2026 · Separador automático (sin cambio de versión)
+
+- **`bot-facturas/15_separador_automatico.sql`**: tarea programada en Supabase que publica el separador 🦅 en los canales propios (por webhook) cada sábado a las 24:00 de España (17:00 en Guatemala en invierno, 16:00 en verano; el cambio de hora se resuelve solo). Copia el último separador del canal de facturas, así la página lo reconoce igual. Las direcciones de los webhooks van en la tabla privada `separador_webhooks` y cada envío queda en `separador_envios`. `select public.enviar_separador(prueba => true);` manda un mensaje de prueba que no corta la semana.
+
 ### Versión 133 · 8 de noviembre de 2026
 
 - Los mensajes de **strikes de la semana** y de **pagas** etiquetan el **rol de Discord del strike** que corresponde (1.er, 2.º o 3.er strike, `STRIKE_ROLE_IDS` en `js/productos.js`) en lugar de escribir «Strike n/3»; el 3.º lleva además «despido».
