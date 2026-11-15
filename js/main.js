@@ -23,6 +23,7 @@ Promise.allSettled([
     setupAuthUI();
     if (typeof setupInformes === "function") setupInformes();
     if (typeof setupPanelJefe === "function") setupPanelJefe();
+    if (typeof setupPagosPasos === "function") setupPagosPasos();
     setupSideRail();
     setupMobileNav();
   });

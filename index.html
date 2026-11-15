@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=136" />
+  <link rel="stylesheet" href="styles.css?v=137" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=136" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=137" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -155,17 +155,38 @@
     </section>
 
     <section id="tab-conta" class="tab-panel">
-      <div class="split">
-        <section class="card pg-src" id="pg-src">
-          <h2>Texto de Discord</h2>
-          <div class="pg-src-sum" id="pg-src-sum" hidden>
-            <span class="pg-src-sum-txt" id="pg-src-sum-txt"></span>
-            <span class="pg-src-sum-acts">
-              <button type="button" id="pg-src-paste">🧩 Pegar kits</button>
-              <button type="button" id="pg-src-toggle" class="ghost">Ver / cambiar</button>
-            </span>
-          </div>
-          <div id="dlog-box" class="dlog-box hidden">
+      <!-- v137 · Pagos como cierre guiado: 7 pasos de arriba abajo. Los pasos y su
+           estado los lleva js/pagos-pasos.js; los cálculos siguen en js/pagos.js. -->
+      <div class="pgs-top">
+        <h2>💸 Pagos · Cierre de semana</h2>
+        <span class="pgs-week" id="pgs-week"></span>
+        <button type="button" class="ghost" id="pgs-settings-btn" aria-expanded="false">⚙️ Ajustes</button>
+      </div>
+      <p class="muted pgs-lead" id="pgs-lead">Sigue los pasos de arriba abajo.</p>
+      <div class="pgs-settings card" id="pgs-settings" hidden>
+        <h3>⚙️ Ajustes de Pagos</h3>
+        <label class="pg-kitprice" for="kit-price">Precio por kit ($) <input id="kit-price" class="text-input" type="number" min="0" step="1" value="800" /></label>
+        <div class="pg-actions"><button type="button" id="pg-rules-edit" class="ghost" hidden>📏 Mínimo semanal y metas de ascenso</button></div>
+        <div class="pg-rules-box" id="pg-rules-box" hidden>
+              <label>Mínimo para mantener el rango ($) <input id="rr-min" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Aprendiz → Mecánico ($) <input id="rr-chalan" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Mecánico → Especialista ($) <input id="rr-mecanico" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Especialista → Jefe de Taller ($) <input id="rr-exp" class="text-input" type="number" min="0" step="1000" /></label>
+              <label>Jefe de Taller: candidato a Gerente ($) <input id="rr-cand" class="text-input" type="number" min="0" step="1000" /></label>
+              <button type="button" id="rr-save">Guardar umbrales</button>
+            </div>
+        <p class="muted pgs-small">El mínimo semanal y las metas solo los cambia el Jefe Aguila.</p>
+      </div>
+      <div class="pgs-prog" id="pgs-prog" aria-hidden="true"></div>
+
+      <div class="pgs-wrap">
+        <div class="pgs-steps" id="pgs-steps">
+          <section class="pgs-step" data-step="1">
+            <button type="button" class="pgs-head" aria-expanded="false">
+              <span class="pgs-n">1</span><span class="pgs-t">Facturas</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+            </button>
+            <div class="pgs-body" hidden>
+              <div id="dlog-box" class="dlog-box hidden">
             <div class="dlog-title">📥 Facturas desde el Discord del taller</div>
             <div class="dlog-row">
               <label>Hasta dónde <select id="dlog-mode" class="text-input">
@@ -178,25 +199,130 @@
               <button id="dlog-load" class="primary">Traer facturas</button>
             </div>
             <div id="dlog-range" class="dlog-range"></div>
-            <div class="dlog-kits">🧩 Kits del Discord de la ciudad: <a class="dlog-kits-link" href="https://discord.com/channels/943830234128597003/1364925335656857622" target="_blank" rel="noopener">Abrir canal Venta de Kits ↗</a> <button type="button" id="kits-install" class="ghost">Copiador de logs</button></div>
-            <div id="dlog-status" class="dlog-status">Es la misma semana en los dos países: cierra el sábado a medianoche en España, que en Guatemala es el sábado por la tarde. Después pega los kits con <strong>Pegar + Procesar</strong>.</div>
+              <div id="dlog-status" class="dlog-status">Es la misma semana en los dos países: cierra el sábado a medianoche en España, que en Guatemala es el sábado por la tarde. Después pega los kits en el paso 2.</div>
+              </div>
+            </div>
+          </section>
+          <section class="pgs-step" data-step="2">
+            <button type="button" class="pgs-head" aria-expanded="false">
+              <span class="pgs-n">2</span><span class="pgs-t">Kits</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+            </button>
+            <div class="pgs-body" hidden>
+              <p class="pgs-p">Copia el log de kits en el Discord de la ciudad y pégalo aquí. Si esta semana no hubo kits, sáltate este paso.</p>
+              <div class="dlog-kits">🧩 <a class="dlog-kits-link" href="https://discord.com/channels/943830234128597003/1364925335656857622" target="_blank" rel="noopener">Abrir canal Venta de Kits ↗</a> <button type="button" id="kits-install" class="ghost">Copiador de logs</button></div>
+              <div class="pg-actions"><button type="button" id="pg-src-paste">🧩 Pegar kits</button></div>
+            </div>
+          </section>
+          <section class="pgs-step" data-step="3">
+            <button type="button" class="pgs-head" aria-expanded="false">
+              <span class="pgs-n">3</span><span class="pgs-t">Revisar</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+            </button>
+            <div class="pgs-body" hidden>
+              <div class="pg-sec"><h3>Ranking de la semana</h3></div>
+              <div class="pg-list" id="pg-ranking">
+                <p class="muted pg-empty">Trae las facturas (paso 1) para ver el ranking.</p>
+              </div>
+              <div class="pg-actions"><button type="button" id="pgs-reviewed" class="ghost">✓ Revisado · ir a cerrar la semana</button></div>
+            </div>
+          </section>
+          <section class="pgs-step" data-step="4">
+            <button type="button" class="pgs-head" aria-expanded="false">
+              <span class="pgs-n">4</span><span class="pgs-t">Cerrar semana</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+            </button>
+            <div class="pgs-body" hidden>
+              <div class="pg-close" id="pg-close" hidden>
+            <div class="pg-close-head"><b>🔒 Cierre de semana</b> <span id="pg-close-week"></span></div>
+            <div class="pg-close-info muted" id="pg-close-info"></div>
+            <div class="pg-actions">
+              <button type="button" id="pg-close-btn" disabled>Cerrar semana</button>
+              <button type="button" id="pg-reopen-btn" class="ghost" hidden>Reabrir</button>
+            </div>
           </div>
-          <textarea id="conta-input" class="terminal-input" rows="14" placeholder="Pega aqui el texto y pulsa Procesar"></textarea>
-          <div class="actions">
-            <button id="conta-paste">Pegar + Procesar</button>
-            <button id="conta-process">Procesar</button>
-            <button id="conta-clear">Limpiar</button>
-            <button id="conta-export">Exportar CSV</button>
-          </div>
-          <div class="pg-steps">
-            <div class="pg-step"><b>1</b>Pulsa <strong>Traer facturas</strong> (o cópialas a mano) y copia el log de kits en Discord</div>
-            <div class="pg-step"><b>2</b>Pulsa <strong>Pegar + Procesar</strong></div>
-            <div class="pg-step"><b>3</b>Revisa el ranking y pulsa <strong>Copiar para Discord</strong></div>
-          </div>
-        </section>
+            </div>
+          </section>
+          <section class="pgs-step" data-step="5">
+            <button type="button" class="pgs-head" aria-expanded="false">
+              <span class="pgs-n">5</span><span class="pgs-t">Pagas</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+            </button>
+            <div class="pgs-body" hidden>
+              <p class="pgs-warn" data-need-closed hidden>⚠ La semana aún no está cerrada: las pagas pueden cambiar si entran más facturas.</p>
+              <div class="pg-total">
+                <span id="pg-total-label">TOTAL A PAGAR</span>
+                <b id="conta-total-a-pagar">$ 0</b>
+              </div>
+              <div class="pg-actions">
+                <button type="button" id="pg-copy-discord" class="pg-ic-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1.1a15.6 15.6 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.2 12.2 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.7 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z" fill="currentColor"/></svg>Copiar para Discord</button>
+                <button type="button" id="conta-manage-employees" class="ghost pg-ic-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Gestión de empleados</button>
+              </div>
+              <p class="muted pg-copied" id="pg-copy-status" role="status"></p>
+            </div>
+          </section>
+          <section class="pgs-step" data-step="6">
+            <button type="button" class="pgs-head" aria-expanded="false">
+              <span class="pgs-n">6</span><span class="pgs-t">Ascensos y descensos</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+            </button>
+            <div class="pgs-body" hidden>
+              <p class="muted pg-empty" id="pgs-promo-empty">Trae las facturas de la semana para ver la propuesta.</p>
+              <section class="pg-promos" id="pg-promos" hidden>
+            <div class="pg-sec">
+              <h3>📊 Ascensos y descensos de la semana</h3>
+              <span class="muted pg-promo-rules" id="pg-promo-rules"></span>
+            </div>
+            <p class="muted pg-promo-hint">Nada sale marcado: revisa ausencias y comportamiento IC y marca solo los que sí van. Solo tú ves esta sección.</p>
+            <div class="pg-promo-grid">
+              <div class="pg-promo-col up">
+                <h4>⬆️ Ascensos <span id="pg-up-count"></span></h4>
+                <div id="pg-up-list"></div>
+              </div>
+              <div class="pg-promo-col down">
+                <h4>⬇️ Descensos <span id="pg-down-count"></span></h4>
+                <div id="pg-down-list"></div>
+              </div>
+            </div>
+            <div class="pg-promo-add">
+              <select id="pg-add-emp" class="text-input" aria-label="Empleado"></select>
+              <select id="pg-add-dir" class="text-input" aria-label="Tipo">
+                <option value="up">⬆️ Ascenso</option>
+                <option value="down">⬇️ Descenso</option>
+              </select>
+              <input id="pg-add-why" class="text-input" maxlength="140" placeholder="Motivo (p. ej. buen comportamiento IC)" />
+              <button type="button" id="pg-add-btn" class="ghost">➕ Añadir a la lista</button>
+            </div>
+                <div class="pg-actions pg-promo-actions">
+                  <button type="button" id="pg-apply-ranks" class="ghost">✅ Aplicar rangos en Gestión</button>
+                </div>
+                <p class="muted pg-copied" id="pg-promo-status" role="status"></p>
+              </section>
+            </div>
+          </section>
+          <section class="pgs-step" data-step="7">
+            <button type="button" class="pgs-head" aria-expanded="false">
+              <span class="pgs-n">7</span><span class="pgs-t">Anunciar</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+            </button>
+            <div class="pgs-body" hidden>
+              <p class="pgs-warn" data-need-closed hidden>⚠ La semana aún no está cerrada: el Empleado de la Semana y los strikes salen al cerrarla.</p>
+              <p class="pgs-p">Los dos mensajes de la semana, listos para copiar y pegar en Discord. Se abren en Gestión de empleados → <b>Para Discord</b>, con esta semana ya puesta.</p>
+              <div class="pg-actions">
+                <button type="button" id="pgs-open-mov">📣 Movimientos de personal y Empleado de la Semana</button>
+                <button type="button" id="pgs-open-strikes" class="ghost">⚠️ Strikes de la semana</button>
+              </div>
+            </div>
+          </section>
 
-        <section class="card">
-          <h2>Resumen</h2>
+          <details class="pgs-adv" id="pgs-adv">
+            <summary>Avanzado · pegar facturas a mano (si el bot falla), exportar o limpiar</summary>
+            <textarea id="conta-input" class="terminal-input" rows="10" placeholder="Pega aqui el texto y pulsa Procesar"></textarea>
+            <div class="actions">
+              <button id="conta-paste">Pegar + Procesar</button>
+              <button id="conta-process">Procesar</button>
+              <button id="conta-clear">Limpiar</button>
+              <button id="conta-export">Exportar CSV</button>
+            </div>
+          </details>
+        </div>
+
+        <aside class="pgs-side card">
+          <h2>Resumen de la semana</h2>
           <div class="pg-kpis">
             <div class="pg-kpi">
               <div class="lbl"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Facturado</div>
@@ -219,77 +345,7 @@
               <div class="sub" id="pg-kpi-top-sub">-</div>
             </div>
           </div>
-
-          <div class="pg-sec">
-            <h3>Ranking de la semana</h3>
-            <label class="pg-kitprice" for="kit-price">Precio por kit ($) <input id="kit-price" class="text-input" type="number" min="0" step="1" value="800" /></label>
-          </div>
-          <div class="pg-list" id="pg-ranking">
-            <p class="muted pg-empty">Pega el texto de Discord y pulsa Procesar para ver el ranking.</p>
-          </div>
-
-          <div class="pg-total">
-            <span id="pg-total-label">TOTAL A PAGAR</span>
-            <b id="conta-total-a-pagar">$ 0</b>
-          </div>
-          <div class="pg-actions">
-            <button type="button" id="pg-copy-discord" class="pg-ic-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.3 5.3A17 17 0 0 0 15 4l-.5 1.1a15.6 15.6 0 0 0-5 0L9 4a17 17 0 0 0-4.3 1.3C2 9.4 1.3 13.3 1.6 17.2A17.2 17.2 0 0 0 6.9 20l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.2 12.2 0 0 0 10.6 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17.1 17.1 0 0 0 5.3-2.8c.4-4.5-.7-8.4-3.1-11.9zM8.7 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2zm6.6 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2z" fill="currentColor"/></svg>Copiar para Discord</button>
-            <button type="button" id="conta-manage-employees" class="ghost pg-ic-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Gestión de empleados</button>
-          </div>
-          <p class="muted pg-copied" id="pg-copy-status" role="status"></p>
-
-          <div class="pg-close" id="pg-close" hidden>
-            <div class="pg-close-head"><b>🔒 Cierre de semana</b> <span id="pg-close-week"></span></div>
-            <div class="pg-close-info muted" id="pg-close-info"></div>
-            <div class="pg-actions">
-              <button type="button" id="pg-close-btn" disabled>Cerrar semana</button>
-              <button type="button" id="pg-reopen-btn" class="ghost" hidden>Reabrir</button>
-            </div>
-          </div>
-
-          <section class="pg-promos" id="pg-promos" hidden>
-            <div class="pg-sec">
-              <h3>📊 Ascensos y descensos de la semana</h3>
-              <span class="muted pg-promo-rules" id="pg-promo-rules"></span>
-            </div>
-            <p class="muted pg-promo-hint">Nada sale marcado: revisa ausencias y comportamiento IC y marca solo los que sí van. Solo tú ves esta sección.</p>
-            <div class="pg-promo-grid">
-              <div class="pg-promo-col up">
-                <h4>⬆️ Ascensos <span id="pg-up-count"></span></h4>
-                <div id="pg-up-list"></div>
-                <button type="button" id="pg-copy-up">📋 Copiar ascensos</button>
-              </div>
-              <div class="pg-promo-col down">
-                <h4>⬇️ Descensos <span id="pg-down-count"></span></h4>
-                <div id="pg-down-list"></div>
-                <button type="button" id="pg-copy-down">📋 Copiar descensos</button>
-              </div>
-            </div>
-            <div class="pg-promo-add">
-              <select id="pg-add-emp" class="text-input" aria-label="Empleado"></select>
-              <select id="pg-add-dir" class="text-input" aria-label="Tipo">
-                <option value="up">⬆️ Ascenso</option>
-                <option value="down">⬇️ Descenso</option>
-              </select>
-              <input id="pg-add-why" class="text-input" maxlength="140" placeholder="Motivo (p. ej. buen comportamiento IC)" />
-              <button type="button" id="pg-add-btn" class="ghost">➕ Añadir a la lista</button>
-            </div>
-            <div class="pg-actions pg-promo-actions">
-              <button type="button" id="pg-apply-ranks" class="ghost">✅ Aplicar rangos en Gestión</button>
-              <button type="button" id="pg-rules-edit" class="ghost" hidden>⚙️ Umbrales</button>
-            </div>
-            <p class="muted pg-copied" id="pg-promo-status" role="status"></p>
-            <div class="pg-rules-box" id="pg-rules-box" hidden>
-              <label>Mínimo para mantener el rango ($) <input id="rr-min" class="text-input" type="number" min="0" step="1000" /></label>
-              <label>Aprendiz → Mecánico ($) <input id="rr-chalan" class="text-input" type="number" min="0" step="1000" /></label>
-              <label>Mecánico → Especialista ($) <input id="rr-mecanico" class="text-input" type="number" min="0" step="1000" /></label>
-              <label>Especialista → Jefe de Taller ($) <input id="rr-exp" class="text-input" type="number" min="0" step="1000" /></label>
-              <label>Jefe de Taller: candidato a Gerente ($) <input id="rr-cand" class="text-input" type="number" min="0" step="1000" /></label>
-              <button type="button" id="rr-save">Guardar umbrales</button>
-            </div>
-          </section>
-
-        </section>
+        </aside>
       </div>
     </section>
 
@@ -723,7 +779,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 136 - Aguila Motors</footer>
+    <footer class="app-version">Versión 137 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -1065,28 +1121,29 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=136"></script>
+  <script src="catalogo/vehiculos.js?v=137"></script>
   <!-- Código de la página (v125: antes todo en app.js). El orden importa; main.js el último. -->
-  <script src="js/base.js?v=136"></script>
-  <script src="js/productos.js?v=136"></script>
-  <script src="js/empleados-datos.js?v=136"></script>
-  <script src="js/datos-compartidos.js?v=136"></script>
-  <script src="js/caja.js?v=136"></script>
-  <script src="js/facturas.js?v=136"></script>
-  <script src="js/pagos.js?v=136"></script>
-  <script src="js/empleados.js?v=136"></script>
-  <script src="js/sorteo.js?v=136"></script>
-  <script src="js/movil.js?v=136"></script>
-  <script src="js/nube.js?v=136"></script>
-  <script src="js/inactividad.js?v=136"></script>
-  <script src="js/sesion.js?v=136"></script>
-  <script src="js/compraventa.js?v=136"></script>
-  <script src="js/discord-log.js?v=136"></script>
-  <script src="js/kits.js?v=136"></script>
-  <script src="js/catalogo.js?v=136"></script>
-  <script src="informes/qrcode.js?v=136"></script>
-  <script src="js/informes.js?v=136"></script>
-  <script src="js/panel.js?v=136"></script>
-  <script src="js/main.js?v=136"></script>
+  <script src="js/base.js?v=137"></script>
+  <script src="js/productos.js?v=137"></script>
+  <script src="js/empleados-datos.js?v=137"></script>
+  <script src="js/datos-compartidos.js?v=137"></script>
+  <script src="js/caja.js?v=137"></script>
+  <script src="js/facturas.js?v=137"></script>
+  <script src="js/pagos.js?v=137"></script>
+  <script src="js/pagos-pasos.js?v=137"></script>
+  <script src="js/empleados.js?v=137"></script>
+  <script src="js/sorteo.js?v=137"></script>
+  <script src="js/movil.js?v=137"></script>
+  <script src="js/nube.js?v=137"></script>
+  <script src="js/inactividad.js?v=137"></script>
+  <script src="js/sesion.js?v=137"></script>
+  <script src="js/compraventa.js?v=137"></script>
+  <script src="js/discord-log.js?v=137"></script>
+  <script src="js/kits.js?v=137"></script>
+  <script src="js/catalogo.js?v=137"></script>
+  <script src="informes/qrcode.js?v=137"></script>
+  <script src="js/informes.js?v=137"></script>
+  <script src="js/panel.js?v=137"></script>
+  <script src="js/main.js?v=137"></script>
 </body>
 </html>

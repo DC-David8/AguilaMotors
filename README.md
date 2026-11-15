@@ -251,6 +251,16 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 137 · 15 de noviembre de 2026
+
+- **Pagos como cierre guiado** (`js/pagos-pasos.js`; los cálculos no cambian). La pestaña pasa a siete pasos de arriba abajo, cada uno con su estado (hecho, ahora, pendiente) y su resumen: **1 Facturas → 2 Kits → 3 Revisar → 4 Cerrar semana → 5 Pagas → 6 Ascensos y descensos → 7 Anunciar**. Una barra marca por qué paso se va; el que toca se abre solo y los hechos se pliegan. Cualquier paso se puede abrir cuando se quiera; Pagas y Anunciar avisan si la semana aún no está cerrada.
+  - **Resumen de la semana** siempre a la vista a la derecha (arriba en móvil).
+  - **⚙️ Ajustes**: precio del kit y, para el Jefe Aguila, mínimo semanal y metas de ascenso (antes escondidos al fondo y solo con facturas cargadas).
+  - **Anunciar** abre Gestión de empleados → Para Discord con la semana de Pagos ya puesta (la pestaña sigue también en Gestión).
+  - **Avanzado**, plegado al final: pegar facturas a mano, exportar CSV y limpiar.
+  - Se quitan los botones antiguos «Copiar ascensos» y «Copiar descensos» (el mensaje bueno es el de movimientos de personal).
+  - «Pagas», «Revisar», «Ascensos» y «Anunciar» se marcan como hechos en el navegador donde se hacen (copiar el mensaje, pulsar Revisado, aplicar rangos, abrir los anuncios); el resto sale de los datos.
+
 ### Versión 136 · 15 de noviembre de 2026
 
 - **Acceso rápido a Gestión de empleados**: nuevo botón **Empleados** en el menú principal (y en la barra de abajo del móvil), solo para Jefes. Abre la ventana desde cualquier sección, sin pasar por Pagos; el botón de Pagos sigue ahí.

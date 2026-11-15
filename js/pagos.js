@@ -826,6 +826,10 @@ function setupContabilidad() {
     renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar });
     renderClose();
     syncMobilePagos(invSummary, kitsSummary);
+    // v137: avisa al cierre guiado (js/pagos-pasos.js) de cómo va la semana.
+    document.dispatchEvent(new CustomEvent("aguila-pagos", {
+      detail: { inv: invSummary, kits: kitsSummary, pay: totalAPagar, week: payWeekKey(), to: byId("dlog-to")?.value || "", snap: lastSnapshot, promo: { up: promo.up.length, down: promo.down.length } },
+    }));
   }
 
   // ---------- Movil (v98): "Texto de Discord" plegado y barra fija con el total ----------

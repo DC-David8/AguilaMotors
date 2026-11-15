@@ -202,7 +202,7 @@ function setupDiscordLog(refs, processCurrent, invoiceCount) {
       refs.input.dataset.discord = "1";
       await processCurrent();
       const n = invoiceCount();
-      say(`✅ ${rows.length} mensajes · <b>${n}</b> facturas cargadas. Ahora copia el log de <b>kits</b> y pulsa <strong>Pegar + Procesar</strong> (se añade debajo).${botNote}`, "ok");
+      say(`✅ ${rows.length} mensajes · <b>${n}</b> facturas cargadas. Ahora copia el log de <b>kits</b> y pulsa <strong>Pegar kits</strong> en el paso 2.${botNote}`, "ok");
     } catch (e) {
       say(`No se pudieron traer: ${String(e.message).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c])}`, "err");
     } finally {

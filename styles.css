@@ -2483,3 +2483,49 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 /* v136 · Empleado de la Semana en el listado y acceso rápido a Empleados */
 .emp-eow { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; color: #ffcf7a; background: rgba(255,200,90,.12); border: 1px solid rgba(255,200,90,.35); }
+
+/* v137 · Pagos como cierre guiado */
+.pgs-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 2px; }
+.pgs-top h2 { margin: 0; }
+.pgs-week { margin-left: auto; font-weight: 800; }
+.pgs-lead { margin: 2px 0 10px; font-size: 13px; }
+.pgs-small { font-size: 12px; margin: 6px 0 0; }
+.pgs-settings { margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.pgs-settings[hidden] { display: none; }
+.pgs-settings h3 { margin: 0; font-size: 14px; }
+.pgs-settings .pg-rules-box { width: 100%; margin-top: 0; }
+.pgs-prog { display: flex; gap: 6px; margin-bottom: 14px; }
+.pgs-prog i { flex: 1; height: 6px; border-radius: 4px; background: #2a2119; }
+.pgs-prog i.d { background: var(--ok); }
+.pgs-prog i.c { background: var(--accent); }
+.pgs-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.pgs-steps { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pgs-step { background: linear-gradient(180deg, #17130f, #120f0c); border: 1px solid var(--line); border-radius: 14px; min-width: 0; }
+.pgs-step[hidden] { display: none; }
+.pgs-step.is-now { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(249,125,2,.35); }
+.pgs-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; background: transparent; border: 0; box-shadow: none; color: inherit; text-align: left; text-transform: none; letter-spacing: 0; font: inherit; cursor: pointer; border-radius: 14px; min-height: 0; }
+.pgs-head:hover { background: rgba(255,255,255,.025); }
+.pgs-n { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: #2a2119; color: var(--muted); }
+.pgs-step.is-done .pgs-n { background: rgba(138,219,181,.16); color: var(--ok); }
+.pgs-step.is-now .pgs-n { background: var(--accent); color: #1a0d00; }
+.pgs-t { font-weight: 800; font-size: 15px; white-space: nowrap; }
+.pgs-sum { color: var(--muted); font-size: 12.5px; min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+.pgs-chip { flex: none; font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; letter-spacing: .04em; }
+.pgs-chip.d { background: rgba(138,219,181,.12); color: var(--ok); border: 1px solid rgba(138,219,181,.35); }
+.pgs-chip.c { background: rgba(249,125,2,.15); color: var(--accent-2); border: 1px solid rgba(249,125,2,.4); }
+.pgs-chip.p { background: #221a12; color: var(--muted); border: 1px solid var(--line); }
+.pgs-body { padding: 2px 14px 14px 54px; min-width: 0; }
+.pgs-body[hidden] { display: none; }
+.pgs-p { margin: 4px 0 10px; font-size: 13px; color: var(--muted); }
+.pgs-warn { margin: 2px 0 10px; padding: 7px 10px; border-radius: 10px; font-size: 12.5px; font-weight: 700; color: #ffcf7a; background: rgba(255,200,90,.1); border: 1px solid rgba(255,200,90,.3); }
+.pgs-warn[hidden] { display: none; }
+.pgs-body .pg-promos { margin-top: 0; padding-top: 0; border-top: 0; }
+.pgs-body .pg-close { margin-top: 0; }
+.pgs-adv { border: 1px dashed var(--line); border-radius: 14px; padding: 10px 14px; }
+.pgs-adv summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.pgs-adv[open] summary { margin-bottom: 10px; }
+.pgs-side { position: sticky; top: 12px; }
+.pgs-side h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-2); margin: 0 0 10px; }
+.pgs-side .pg-kpis { display: flex; flex-direction: column; gap: 8px; grid-template-columns: none; }
+@media (max-width: 1100px) { .pgs-wrap { grid-template-columns: 1fr; } .pgs-side { position: static; order: -1; } .pgs-side .pg-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .pgs-body { padding-left: 14px; } .pgs-sum { display: none; } .pgs-step.is-now .pgs-sum, .pgs-step.is-open .pgs-sum { display: block; white-space: normal; flex-basis: 100%; order: 5; } .pgs-head { flex-wrap: wrap; } .pgs-t { flex: 1; } .pgs-week { margin-left: 0; width: 100%; } }

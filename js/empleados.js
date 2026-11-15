@@ -1441,6 +1441,18 @@ function setupEmployeesAdminModal({ onChanged }) {
   });
 
   modal.addEventListener("aguila-open", refresh);
+  // v137: abrir directamente en «Para Discord» con una semana (desde Pagos → Anunciar).
+  modal.addEventListener("aguila-open-discord", (ev) => {
+    const iso = ev.detail?.week || "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      const [y, m, d] = iso.split("-").map(Number);
+      dc.sun = new Date(y, m - 1, d);
+    } else dc.sun = ascDefaultWeek();
+    dc.key = "";
+    fichaId = null;
+    setTab("discord");
+    if (ev.detail?.strikes) setTimeout(() => byId("emp-dc-st-list")?.scrollIntoView({ block: "center", behavior: "smooth" }), 1500);
+  });
 
   refresh();
 }
