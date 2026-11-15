@@ -251,6 +251,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 134 · 14 de noviembre de 2026
+
+- **📣 Para Discord: la semana recién cerrada sale al momento.** La semana por defecto se calculaba con el reloj del PC y el sábado por la noche (ya cerrada la semana en España) seguía saliendo la anterior, sin poder avanzar. Ahora usa el mismo reloj que Pagos (hora de España): en cuanto cierra la semana, se abre esa.
+- Los movimientos de cada semana son los hechos desde el sábado de su cierre a mediodía (hora de España) hasta el sábado siguiente a mediodía; antes el sábado entero contaba para dos semanas a la vez.
+
 ### 14 de noviembre de 2026 · Separador automático (sin cambio de versión)
 
 - **`bot-facturas/15_separador_automatico.sql`**: tarea programada en Supabase que publica el separador 🦅 en los canales propios (por webhook) cada sábado a las 24:00 de España (17:00 en Guatemala en invierno, 16:00 en verano; el cambio de hora se resuelve solo). Copia el último separador del canal de facturas, así la página lo reconoce igual. Las direcciones de los webhooks van en la tabla privada `separador_webhooks` y cada envío queda en `separador_envios`. `select public.enviar_separador(prueba => true);` manda un mensaje de prueba que no corta la semana.

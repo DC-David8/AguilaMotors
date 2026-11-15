@@ -464,15 +464,26 @@ function parseRankLog(texto) {
 const ascDay = (d, add = 0) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + add);
 const ascSunday = (d) => ascDay(d, -d.getDay());
 const ascDM = (d) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
-// Semana que se anuncia por defecto: la última cerrada (los ascensos se dan
-// al cerrarla). Hoy domingo 08/11 → semana del 01/11 al 07/11.
-const ascDefaultWeek = () => ascSunday(ascDay(new Date(), -7));
+// Semana que se anuncia por defecto: la última CERRADA, con el mismo reloj que
+// Pagos (domingo a sábado en hora de España; cierra el sábado a medianoche de
+// allí, que en Guatemala es el sábado por la tarde). v134: antes se miraba el
+// reloj del PC y el sábado por la noche aún salía la semana anterior.
+const ascDefaultWeek = () => {
+  const md = dlogMadridParts(Date.now());
+  return new Date(md.y, md.m - 1, md.d - md.wd - 7);
+};
+// Movimientos que se anuncian con la semana `sun`: los hechos desde el sábado
+// de su cierre a mediodía (hora de España) hasta el sábado siguiente a
+// mediodía. Así no se pisan dos semanas y entran los dados el mismo sábado.
+const ascWindow = (sun) => {
+  const iso = `${sun.getFullYear()}-${String(sun.getMonth() + 1).padStart(2, "0")}-${String(sun.getDate()).padStart(2, "0")}`;
+  return [new Date(dlogMadridMidnight(iso, 6) + 12 * 3600000), new Date(dlogMadridMidnight(iso, 13) + 12 * 3600000)];
+};
 // Ascensos de la semana que empieza el domingo `sun`: los dados desde su
 // sábado de cierre hasta el sábado siguiente. Si alguien sube dos veces se
 // junta en uno (de su primer rango al último).
 async function ascensosSemana(sun, people) {
-  const a = ascDay(sun, 6).toISOString();
-  const b = ascDay(sun, 14).toISOString();
+  const [a, b] = ascWindow(sun).map((d) => d.toISOString());
   const rows = await cvCloud.req(`/rest/v1/emp_historial?select=employee_id,at,texto&tipo=eq.rango&at=gte.${encodeURIComponent(a)}&at=lt.${encodeURIComponent(b)}&order=at.asc`, { auth: true });
   const by = new Map();
   for (const r of rows || []) {
@@ -585,7 +596,7 @@ function parseBaja(motivo) {
 const bajaMotivoText = (tipo, nota) => `${bajaTipo(tipo).label}${nota ? `: ${nota}` : ""}`;
 // Descensos (dados al cerrar la semana) y bajas (despidos) de la semana `sun`.
 async function descensosSemana(sun, people, fired) {
-  const a = ascDay(sun, 6), b = ascDay(sun, 14);
+  const [a, b] = ascWindow(sun);
   const rows = await cvCloud.req(`/rest/v1/emp_historial?select=employee_id,at,texto&tipo=eq.rango&at=gte.${encodeURIComponent(a.toISOString())}&at=lt.${encodeURIComponent(b.toISOString())}&order=at.asc`, { auth: true });
   const inWeek = (iso) => { const t = new Date(iso); return t >= a && t < b; };
   const bajas = fired
