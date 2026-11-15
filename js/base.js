@@ -345,7 +345,9 @@ function showAccessModalLegacy({ sectionLabel }) {
 }
 
 function setupTabs() {
-  const tabs = document.querySelectorAll(".tab");
+  // Solo las pestañas que abren una sección (las de acción, como Empleados,
+  // abren una ventana y se enganchan aparte).
+  const tabs = document.querySelectorAll(".tab[data-tab-target]");
   const panels = document.querySelectorAll(".tab-panel");
   const unlocked = new Set();
 

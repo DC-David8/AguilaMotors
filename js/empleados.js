@@ -290,7 +290,19 @@ function setupEmployeesAdminModal({ onChanged }) {
     { k: "discord", label: "Sin Discord", test: (e) => !getEmployeeDiscord(fullName(e)), cls: "w" },
     { k: "nodates", label: "Sin fecha de ingreso", test: (e) => !e.altaAt, cls: "w", dates: true },
     { k: "inact", label: "Sin facturar", test: (e) => (inactOf(e)?.level || 0) >= 1, cls: "w", access: true },
+    { k: "nopay", label: "No cobran", test: (e) => isEmployeeNoPay(fullName(e)), access: true },
   ];
+  // 🏆 Empleado(s) de la Semana de la última semana cerrada en Pagos (v136).
+  function eowIds() {
+    const w = STRIKE_HIST.find((x) => Array.isArray(x.datos?.rows));
+    const ids = new Set();
+    for (const r of w?.datos?.rows || []) {
+      if (!(Number(r.bonus) > 0)) continue;
+      const e = employees.find((x) => (r.id != null && String(x.id) === String(r.id)) || normalizeKeySimple(fullName(x)) === normalizeKeySimple(r.name));
+      if (e) ids.add(String(e.id));
+    }
+    return { ids, week: w ? `${String(w.semana).slice(8, 10)}/${String(w.semana).slice(5, 7)}` : "" };
+  }
   // 💤 Chip de inactividad (solo a partir del primer aviso).
   function inactChip(e, always = false) {
     const x = inactOf(e);
@@ -359,6 +371,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     const list = byId("emp-list");
     list.textContent = "";
     const shown = shownList();
+    const eow = hasAccess() ? eowIds() : { ids: new Set(), week: "" };
     if (!shown.length) list.appendChild(mk("p", "muted emp-empty", employees.length ? "Nadie con ese filtro." : "Todavía no hay empleados."));
     for (const e of shown) {
       const full = fullName(e);
@@ -385,6 +398,11 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (hasAccess()) row.append(strikeChip(strikesOf(e)));
       const ic = hasAccess() ? inactChip(e) : null;
       if (ic) flags.prepend(ic);
+      if (hasAccess() && eow.ids.has(String(e.id))) {
+        const t = mk("span", "emp-eow", "🏆 Empleado de la Semana");
+        t.title = `Empleado de la Semana (semana del ${eow.week})`;
+        flags.prepend(t);
+      }
       row.append(flags, mk("span", "emp-go", "›"));
       row.addEventListener("click", () => {
         fichaId = String(e.id);

@@ -251,6 +251,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 136 · 15 de noviembre de 2026
+
+- **Acceso rápido a Gestión de empleados**: nuevo botón **Empleados** en el menú principal (y en la barra de abajo del móvil), solo para Jefes. Abre la ventana desde cualquier sección, sin pasar por Pagos; el botón de Pagos sigue ahí.
+- **Listado de empleados**: nuevo filtro **No cobran** y etiqueta **🏆 Empleado de la Semana** junto a quien lo fue en la última semana cerrada en Pagos.
+
 ### Versión 135 · 14 de noviembre de 2026
 
 - **Aviso de inactividad solo para quien cobra**: a los empleados marcados «No cobra» ya no se les mira la actividad. No llevan la etiqueta 💤 en el listado, la ficha ni el ranking, no salen en el filtro «Sin facturar» y no generan avisos en el Panel del Jefe.

@@ -1087,6 +1087,7 @@ function setupEmployeesModal(state, refreshPagos) {
   }
 
   byId("conta-manage-employees").addEventListener("click", openAdminModal);
+  byId("nav-employees")?.addEventListener("click", openAdminModal); // acceso rápido desde el menú (v136)
 
   setupEmployeesAdminModal({
     onChanged: async () => {
