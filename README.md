@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 140 · 15 de noviembre de 2026
+
+- **Informes · cadena de custodia**: la casilla «Solicitado / entregado por» muestra también el **nombre del agente** (agencia, nombre y placa), igual que «Devuelto a». Si no hay nombre, sigue saliendo «agencia · placa».
+
 ### Versión 139 · 15 de noviembre de 2026
 
 - **Informes por pasos** (`js/informes.js`), igual que Pagos: **1 Tipo → 2 Solicitante → 3 Vehículo → 4 Inspección → 5 Entrega**, cada uno con su estado (hecho, ahora, pendiente, opcional) y, debajo, **qué falta para poder emitir**.

@@ -2582,3 +2582,4 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .rp-void small { display: block; margin-top: 4px; font: 700 13px "Segoe UI", Arial, sans-serif; letter-spacing: .06em; max-width: 520px; }
 .rp-nulo .rp-cls { background: #7a1410; letter-spacing: .32em; }
 .inf-concl { min-height: 110px; }
+.rp .cust > div:first-child .rp-recibe { max-width: none; }
