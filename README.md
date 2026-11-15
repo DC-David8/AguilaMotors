@@ -251,6 +251,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 141 · 15 de noviembre de 2026
+
+- **Informes · sello de «Recibido» con fecha y hora**: el sello de FBI, LSPD y LSSD lleva ya escritas la fecha y la hora de recepción (hora de España): las de emisión del informe; en un borrador, las del informe. Sellos nuevos sin los huecos en blanco (`informes/sello_*_fh.png`).
+- **Firma del agente**: en «Solicitado / entregado por» se firma con las **iniciales del agente** («Of. Josué Pérez» → «J. P.»; se saltan rangos y tratamientos). Sin nombre de agente no hay firma.
+
 ### Versión 140 · 15 de noviembre de 2026
 
 - **Informes · cadena de custodia**: la casilla «Solicitado / entregado por» muestra también el **nombre del agente** (agencia, nombre y placa), igual que «Devuelto a». Si no hay nombre, sigue saliendo «agencia · placa».

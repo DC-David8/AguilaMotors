@@ -177,6 +177,13 @@ function infInstant(st) {
   if (!m) return new Date();
   return new Date(Date.UTC(+m[3], +m[2] - 1, +m[1], (h ? +h[1] : 0) + 6, h ? +h[2] : 0));
 }
+// Iniciales del agente para su firma («Of. Josué Pérez» → «J. P.»); se saltan
+// los tratamientos y rangos.
+function infIniciales(name) {
+  const skip = /^(of|ofc|oficial|agente|agt|sgto|sargento|tte|teniente|cap|capitan|capitán|cmdte|comandante|insp|inspector|det|detective|cabo|sheriff|deputy|dep|sr|sra|don|doña|de|del|la|las|los|y)\.?$/i;
+  const parts = String(name || "").trim().split(/\s+/).filter((w) => w && !skip.test(w) && /\p{L}/u.test(w));
+  return parts.slice(0, 3).map((w) => w.match(/\p{L}/u)[0].toUpperCase() + ".").join(" ");
+}
 function infDateIn(st, tz) {
   const f = new Intl.DateTimeFormat("es-ES", { timeZone: tz, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(infInstant(st));
   const g = (t) => f.find((x) => x.type === t)?.value || "";
@@ -533,6 +540,10 @@ function infReportHtml(st) {
   const short = st.agencia === "Particular" ? "Cliente" : ag.name;
   const fotos = infFotos(st);
   const photo = `<div class="rp-photo">${fotos.length ? `<img class="rp-ph-main" src="${fotos[0]}" alt="">` : '<div class="rp-nophoto">Sin captura</div>'}${fotos.length > 1 ? `<div class="rp-ph-more n${fotos.length - 1}">${fotos.slice(1).map((f, i) => `<figure><img src="${f}" alt=""><figcaption>Nº ${i + 2}</figcaption></figure>`).join("")}</div>` : ""}<small>EVIDENCIA FOTOGRÁFICA ${fotos.length > 1 ? `Nº 1 A ${fotos.length}` : "Nº 1"}</small></div>`;
+  // v141: el sello de «Recibido» lleva la fecha y la hora (España) de la entrega:
+  // la de emisión si ya está emitido; si no, la del informe.
+  const recAt = st.emitidoAt ? Date.parse(st.emitidoAt) : NaN;
+  const recWhen = infDateIn(Number.isFinite(recAt) ? { ts: recAt } : st, "Europe/Madrid");
   const rec = st.recibe || {};
   const recLine = short;
   const recMore = [rec.nombre ? infEsc(rec.nombre) : "", rec.placa ? `Placa ${infEsc(rec.placa)}` : ""].filter(Boolean).map((t) => `<em class="rp-recibe">${t}</em>`).join("");
@@ -541,7 +552,7 @@ function infReportHtml(st) {
   const voidHtml = nulo ? `<div class="rp-void"><b>ANULADO</b><small>${infEsc([nuloWhen, st.anuladoMotivo].filter(Boolean).join(" · ") || "Documento sin validez")}</small></div>` : "";
   const bottom = pres
     ? `<h3>ACEPTACIÓN DEL CLIENTE</h3><div class="cust"><div><span>CLIENTE</span><b>${infEsc(st.propietario || "—")}</b><i>Firma del cliente</i></div><div><span>FECHA DE ACEPTACIÓN</span><b>__ / __ / ____</b><i>Fecha</i></div><div><span>ANTICIPO</span><b>$ ________</b><i>Recibido por el taller</i></div></div>`
-    : `<h3>CADENA DE CUSTODIA</h3><div class="cust"><div><span>SOLICITADO / ENTREGADO POR</span><b>${st.agencia === "Particular" ? infEsc(st.propietario || "Cliente") : st.agente ? ag.name : `${ag.name}${st.placa ? ` · placa ${infEsc(st.placa)}` : ""}`}</b>${st.agencia !== "Particular" && st.agente ? `<em class="rp-recibe">${infEsc(st.agente)}</em>${st.placa ? `<em class="rp-recibe">Placa ${infEsc(st.placa)}</em>` : ""}` : ""}<i>Firma</i></div><div class="ret"><span>INSPECCIONADO POR</span><b>Aguila Motors · ${infEsc(st.inspector)}</b><i>Firma del inspector</i><img class="rp-rub" src="informes/rubrica.png" alt=""></div><div class="ret"><span>DEVUELTO A</span><b>${recLine}</b>${recMore}<i>Firma de recepción · fecha y hora</i>${st.agencia !== "Particular" && ["FBI", "LSPD", "LSSD"].includes(st.agencia) ? `<img class="rp-fstamp" src="informes/sello_${st.agencia.toLowerCase()}.png" alt="">` : ""}</div></div>`;
+    : `<h3>CADENA DE CUSTODIA</h3><div class="cust"><div class="ret"><span>SOLICITADO / ENTREGADO POR</span><b>${st.agencia === "Particular" ? infEsc(st.propietario || "Cliente") : st.agente ? ag.name : `${ag.name}${st.placa ? ` · placa ${infEsc(st.placa)}` : ""}`}</b>${st.agencia !== "Particular" && st.agente ? `<em class="rp-recibe">${infEsc(st.agente)}</em>${st.placa ? `<em class="rp-recibe">Placa ${infEsc(st.placa)}</em>` : ""}` : ""}<i>Firma</i>${st.agencia !== "Particular" && infIniciales(st.agente) ? `<u class="rp-ini">${infEsc(infIniciales(st.agente))}</u>` : ""}</div><div class="ret"><span>INSPECCIONADO POR</span><b>Aguila Motors · ${infEsc(st.inspector)}</b><i>Firma del inspector</i><img class="rp-rub" src="informes/rubrica.png" alt=""></div><div class="ret"><span>DEVUELTO A</span><b>${recLine}</b>${recMore}<i>Firma de recepción · fecha y hora</i>${st.agencia !== "Particular" && ["FBI", "LSPD", "LSSD"].includes(st.agencia) ? `<span class="rp-fstamp s-${st.agencia.toLowerCase()}"><img src="informes/sello_${st.agencia.toLowerCase()}_fh.png" alt=""><em class="f">${recWhen.date}</em><em class="h">${recWhen.time}</em></span>` : ""}</div></div>`;
   return `<div class="rp${pres ? " rp-pres" : ""}${nulo ? " rp-nulo" : ""}">
 <div class="rp-bar">${st.agencia === "Particular" ? "" : `<img class="s" src="${ag.logo}" alt="">`}<div><h1>${tipo.title}</h1><p>Solicitado por ${solicit}</p></div><img class="am" src="aguila_motors_logo.png" alt=""></div>
 <div class="rp-cls">${nulo ? "DOCUMENTO ANULADO · SIN VALIDEZ" : pres ? "PRESUPUESTO · AGUILA MOTORS" : "CONFIDENCIAL · USO POLICIAL"}</div>

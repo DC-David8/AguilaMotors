@@ -2583,3 +2583,14 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .rp-nulo .rp-cls { background: #7a1410; letter-spacing: .32em; }
 .inf-concl { min-height: 110px; }
 .rp .cust > div:first-child .rp-recibe { max-width: none; }
+
+/* v141 · Sello de recibido con fecha y hora, e iniciales del agente como firma */
+.rp-fstamp { display: block; }
+.rp-fstamp img { display: block; width: 100%; }
+.rp-fstamp em { position: absolute; font: 700 7px/1 Arial, Helvetica, sans-serif; letter-spacing: .04em; font-style: normal; transform: rotate(-2deg); transform-origin: left center; white-space: nowrap; opacity: .9; }
+.rp-fstamp em.f { left: 57.5%; top: 50%; }
+.rp-fstamp em.h { left: 56.2%; top: 62.5%; }
+.rp-fstamp.s-fbi em { color: #96171e; }
+.rp-fstamp.s-lspd em { color: #1c3a8c; }
+.rp-fstamp.s-lssd em { color: #266034; }
+.rp-ini { position: absolute; right: 14px; bottom: 9px; font-family: "Great Vibes", cursive; font-size: 27px; line-height: 1; color: #1a2a55; text-decoration: none; transform: rotate(-6deg); white-space: nowrap; pointer-events: none; }
