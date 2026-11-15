@@ -2535,3 +2535,50 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 #tab-emp .emp-head { display: flex; align-items: center; }
 #tab-emp .emp-head h2 { margin: 0; font-size: 1.25rem; white-space: nowrap; }
 #tab-emp .emp-list, #tab-emp .emp-ficha { max-height: none; overflow: visible; }
+
+/* v139 · Informes: pasos, fotos múltiples, plantillas, anulado y entrega */
+.inf-form .inf-step { margin-bottom: 10px; }
+.inf-form .inf-step-body { padding: 4px 14px 14px; }
+.inf-form #inf-prog { margin-bottom: 10px; }
+.inf-photos { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.inf-thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.inf-thumbs:empty { display: none; }
+.inf-thumb { position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; border: 1px solid #3a2c1d; background: #0e0b08; }
+.inf-thumb.main { grid-column: 1 / -1; aspect-ratio: 16 / 9; border-color: #ff9a1f; }
+.inf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.inf-thumb-n { position: absolute; left: 6px; bottom: 6px; font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 99px; background: rgba(0,0,0,.7); color: #fff; }
+.inf-thumb-del, .inf-thumb-up { position: absolute; top: 5px; width: 24px; height: 24px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.72); border: 0; color: #fff; box-shadow: none; font-size: 12px; cursor: pointer; }
+.inf-thumb-del { right: 5px; }
+.inf-thumb-up { left: 5px; color: #ffcf7a; }
+.inf-paste[hidden] { display: none; }
+.inf-paste.small { height: 64px; }
+.inf-paste.small .inf-paste-txt { font-size: 0.76rem; padding: 4px; }
+.inf-auto { margin: 8px 0 0; font-size: 0.76rem; color: #8ff0c8; }
+.inf-auto[hidden] { display: none; }
+.inf-tpls { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 8px; }
+.inf-tpls:empty { display: none; }
+.inf-tpl { padding: 5px 11px; min-height: 0; border-radius: 99px; font-size: 0.74rem; font-weight: 700; text-transform: none; letter-spacing: 0; background: #1a140e; border: 1px solid #3a2c1d; color: #d8cbbd; box-shadow: none; cursor: pointer; }
+.inf-tpl:hover { border-color: #ff9a1f; color: #fff; }
+.inf-tpl.is-on { background: rgba(249,125,2,.18); border-color: #ff9a1f; color: #ffb15c; }
+.inf-btns .inf-wide { grid-column: 1 / -1; }
+.inf-miss { grid-column: 1 / -1; margin: 2px 0 0; font-size: 0.78rem; font-weight: 700; text-align: center; }
+.inf-miss.ok { color: #7fe0a8; } .inf-miss.warn { color: #ffcf6a; } .inf-miss.bad { color: #ff8a7a; }
+.inf-void-note { margin: 0 0 10px; padding: 9px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; color: #ff8a7a; background: #2a120d; border: 1px solid rgba(255,90,70,.5); }
+.inf-void-note[hidden] { display: none; }
+.inf-void { font-style: normal; font-size: 0.68rem; font-weight: 800; color: #ff8a7a; }
+.inf-reg-table tr.is-void td { opacity: .62; }
+.inf-reg-table tr.is-void td:first-child, .inf-reg-table tr.is-void td.inf-acts { opacity: 1; }
+/* en el informe */
+.rp { position: relative; }
+.rp-ph-more { display: grid; gap: 5px; margin-top: 5px; }
+.rp-ph-more.n1 { grid-template-columns: 1fr; }
+.rp-ph-more.n2 { grid-template-columns: 1fr 1fr; }
+.rp-ph-more figure { margin: 0; position: relative; }
+.rp .rp-photo .rp-ph-more img { width: 100%; height: 62px !important; object-fit: cover; display: block; }
+.rp-ph-more figcaption { position: absolute; left: 3px; bottom: 3px; font-size: 8px; font-weight: 800; padding: 0 4px; background: rgba(255,255,255,.85); color: #1a1a1a; }
+.rp-recibe { display: block; font-style: normal; font-size: 10.5px; line-height: 1.25; max-width: 46%; }
+.rp-void { position: absolute; left: 50%; top: 46%; z-index: 5; transform: translate(-50%, -50%) rotate(-18deg); border: 7px double #b3261e; color: #b3261e; padding: 10px 38px 12px; text-align: center; opacity: .82; pointer-events: none; background: rgba(243,239,228,.55); }
+.rp-void b { display: block; font: 900 74px/1 "Segoe UI", Arial, sans-serif; letter-spacing: .08em; }
+.rp-void small { display: block; margin-top: 4px; font: 700 13px "Segoe UI", Arial, sans-serif; letter-spacing: .06em; max-width: 520px; }
+.rp-nulo .rp-cls { background: #7a1410; letter-spacing: .32em; }
+.inf-concl { min-height: 110px; }

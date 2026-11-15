@@ -211,6 +211,63 @@ function infProductPrice(name) {
   return p ? Number(p.price) || 0 : 0;
 }
 
+// v139 · Evidencias: hasta 3 fotos. Los informes antiguos solo tienen "captura".
+const INF_MAX_FOTOS = 3;
+const infFotos = (st) => (Array.isArray(st.fotos) && st.fotos.length ? st.fotos : st.captura ? [st.captura] : []).filter(Boolean).slice(0, INF_MAX_FOTOS);
+
+// v139 · Conclusiones ya redactadas por tipo de informe (se eligen con un clic
+// y se pueden retocar). {veh} y {ag} se rellenan con los datos del informe.
+const INF_CONCL_TPL = {
+  nitro: [
+    ["Retirada obligatoria", "Se constata la presencia de un sistema de óxido nitroso (N₂O) en el {veh}. Se recomienda su retirada inmediata en un taller autorizado y una nueva inspección que certifique que el vehículo queda libre de nitro."],
+    ["Sistema precintado", "El sistema de óxido nitroso del {veh} queda precintado por Aguila Motors a petición {ag}. Cualquier manipulación del precinto deberá comunicarse a la autoridad."],
+    ["Limpio tras la retirada", "Tras la retirada del sistema, el {veh} se ha vuelto a inspeccionar y no conserva ningún componente de óxido nitroso (N₂O). Queda apto para circular."],
+  ],
+  danos: [
+    ["Siniestro total", "Los daños del {veh} afectan a elementos estructurales y el coste de la reparación supera su valor razonable. Se considera siniestro total a efectos de este peritaje."],
+    ["Compatible con colisión", "Los daños observados en el {veh} son compatibles con una colisión reciente. No se aprecian daños anteriores sin reparar fuera de las zonas señaladas."],
+    ["Solo estéticos", "Los daños del {veh} son únicamente estéticos y no afectan a la seguridad ni a la mecánica. El vehículo puede circular con normalidad hasta su reparación."],
+  ],
+  incautado: [
+    ["Compatible con robo", "El {veh} presenta signos de manipulación compatibles con un robo. Se recomienda mantenerlo en custodia hasta localizar a su titular."],
+    ["Sin manipulación", "El {veh} no presenta signos de forzado ni de manipulación. Puede devolverse a su titular cuando la autoridad lo autorice."],
+    ["Matrículas dobladas", "Las matrículas del {veh} no corresponden con su número de bastidor, por lo que se consideran dobladas o sustituidas. Se recomienda cotejar el bastidor con el registro de vehículos."],
+  ],
+  modificaciones: [
+    ["Apto", "Todas las modificaciones del {veh} son legales en la ciudad. El vehículo es apto para circular y no lleva sistema de nitro (N₂O)."],
+    ["No apto hasta retirar", "El {veh} no es apto para circular hasta que se retire la modificación prohibida. Una vez retirada, deberá pasar una nueva inspección en Aguila Motors."],
+    ["Apto con observaciones", "El {veh} es apto para circular. Se deja constancia de modificaciones de alto rendimiento que, siendo legales, conviene revisar periódicamente."],
+  ],
+  grua: [
+    ["Entrega con autorización", "El {veh} queda en el depósito de Aguila Motors y solo se entregará a su titular con la autorización {ag} y previo pago de las tasas de grúa y depósito."],
+    ["Sin daños al llegar", "El {veh} llegó al depósito sin daños apreciables. Cualquier desperfecto posterior a esta fecha no es atribuible al traslado."],
+    ["A disposición de la autoridad", "El {veh} queda a disposición {ag} en el depósito de Aguila Motors hasta nueva orden."],
+  ],
+  presupuesto: [
+    ["Validez 7 días", "Presupuesto válido durante 7 días con la tarifa vigente de Aguila Motors. Los importes pueden variar si al desmontar aparecen daños no visibles."],
+    ["Con anticipo", "Para iniciar los trabajos se requiere un anticipo del 50 %. El resto se abona a la entrega del vehículo, por datáfono en el taller."],
+    ["Trabajo urgente", "Trabajo con prioridad: el vehículo entra en el taller el mismo día de la aceptación. Los plazos dependen de la disponibilidad de piezas."],
+  ],
+};
+function infTplText(st, tpl) {
+  const veh = `${st.vehiculo || "vehículo"}${st.matricula ? ` con matrícula ${st.matricula}` : ""}`;
+  const ag = st.agencia === "Particular" ? "del propietario" : `del ${st.agencia}`;
+  return tpl.replace(/\{veh\}/g, veh).replace(/\{ag\}/g, ag);
+}
+
+// v139 · Mensaje para entregar el informe por Discord (acompaña al PNG o PDF).
+function infDiscordText(st) {
+  const v = infVerdict(st);
+  const ag = INF_AG[st.agencia] || INF_AG.FBI;
+  const dot = { red: "🔴", green: "🟢", amber: "🟠", blue: "🔵" }[v.c] || "🔵";
+  const quien = st.agencia === "Particular" ? st.propietario || "Cliente particular" : `${ag.name}${st.placa ? ` · placa ${st.placa}` : ""}`;
+  const rec = st.recibe?.nombre || st.recibe?.placa ? `\n> 🤝 **Recibe:** ${[st.recibe.nombre, st.recibe.placa ? `placa ${st.recibe.placa}` : ""].filter(Boolean).join(" · ")}` : "";
+  const nulo = st.estado === "anulado" ? `\n\n⛔ **INFORME ANULADO**${st.anuladoMotivo ? ` — ${st.anuladoMotivo}` : ""}` : "";
+  const gt = infDateIn(st, "America/Guatemala");
+  const txt = `# 🛡️ ${INF_TIPOS[st.tipo].title} · ${st.numero || "BORRADOR"}\n-# 🦅 Aguila Motors · ${gt.date} ${gt.time} (Guatemala)\n\n> 🚗 **Vehículo:** ${st.vehiculo || "—"}${st.matricula ? ` · \`${st.matricula}\`` : ""}\n> 🏛️ **Solicitado por:** ${quien}\n> 📋 **Motivo:** ${st.motivo}\n> ${dot} **Resultado:** **${v.t}**${v.s ? ` — ${v.s}` : ""}${rec}${nulo}\n\n🔐 **Verificación:** \`${st.codigo}\` · <${INF_VERIFY_URL}${st.codigo}>\n-# 📎 Se adjunta el informe. Documento de rol, sin validez real.\n-# — Ing. ${st.inspector} · Jefe Aguila`;
+  return typeof dcAguila === "function" ? dcAguila(txt) : txt;
+}
+
 function infNewState(tipo = "nitro") {
   const now = infNowParts();
   return {
@@ -227,7 +284,9 @@ function infNewState(tipo = "nitro") {
     placa: "",
     agente: "",
     motivo: INF_TIPOS[tipo].motivos[0],
-    captura: "",
+    captura: "", // primera foto (se mantiene por los informes antiguos)
+    fotos: [], // v139: hasta 3 evidencias
+    recibe: { nombre: "", placa: "" }, // v139: quien recoge (sale en «Devuelto a»)
     vehiculo: "",
     matricula: "",
     color: "",
@@ -472,15 +531,23 @@ function infReportHtml(st) {
   const veh = [["Vehículo", `${infEsc(st.vehiculo || "—")}${st.vehiculo && !infCatalogFind(st.vehiculo) ? " (custom)" : ""}`], ["Matrícula", infEsc(st.matricula || "—")], ["Carrocería", (INF_BODIES[st.body] || INF_BODIES.sedan).l], ["Color", infEsc(st.color || "—")], ["Propietario", infEsc(st.propietario || "—")]];
   const concl = st.conclEdited && st.concl ? infEsc(st.concl).replace(/\n/g, "<br>") : infAutoConclusion(st);
   const short = st.agencia === "Particular" ? "Cliente" : ag.name;
+  const fotos = infFotos(st);
+  const photo = `<div class="rp-photo">${fotos.length ? `<img class="rp-ph-main" src="${fotos[0]}" alt="">` : '<div class="rp-nophoto">Sin captura</div>'}${fotos.length > 1 ? `<div class="rp-ph-more n${fotos.length - 1}">${fotos.slice(1).map((f, i) => `<figure><img src="${f}" alt=""><figcaption>Nº ${i + 2}</figcaption></figure>`).join("")}</div>` : ""}<small>EVIDENCIA FOTOGRÁFICA ${fotos.length > 1 ? `Nº 1 A ${fotos.length}` : "Nº 1"}</small></div>`;
+  const rec = st.recibe || {};
+  const recLine = short;
+  const recMore = [rec.nombre ? infEsc(rec.nombre) : "", rec.placa ? `Placa ${infEsc(rec.placa)}` : ""].filter(Boolean).map((t) => `<em class="rp-recibe">${t}</em>`).join("");
+  const nulo = st.estado === "anulado";
+  const nuloWhen = st.anuladoAt ? new Date(st.anuladoAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+  const voidHtml = nulo ? `<div class="rp-void"><b>ANULADO</b><small>${infEsc([nuloWhen, st.anuladoMotivo].filter(Boolean).join(" · ") || "Documento sin validez")}</small></div>` : "";
   const bottom = pres
     ? `<h3>ACEPTACIÓN DEL CLIENTE</h3><div class="cust"><div><span>CLIENTE</span><b>${infEsc(st.propietario || "—")}</b><i>Firma del cliente</i></div><div><span>FECHA DE ACEPTACIÓN</span><b>__ / __ / ____</b><i>Fecha</i></div><div><span>ANTICIPO</span><b>$ ________</b><i>Recibido por el taller</i></div></div>`
-    : `<h3>CADENA DE CUSTODIA</h3><div class="cust"><div><span>SOLICITADO / ENTREGADO POR</span><b>${st.agencia === "Particular" ? infEsc(st.propietario || "Cliente") : `${ag.name}${st.placa ? ` · placa ${infEsc(st.placa)}` : ""}`}</b><i>Firma</i></div><div class="ret"><span>INSPECCIONADO POR</span><b>Aguila Motors · ${infEsc(st.inspector)}</b><i>Firma del inspector</i><img class="rp-rub" src="informes/rubrica.png" alt=""></div><div class="ret"><span>DEVUELTO A</span><b>${short}</b><i>Firma de recepción · fecha y hora</i>${st.agencia !== "Particular" && ["FBI", "LSPD", "LSSD"].includes(st.agencia) ? `<img class="rp-fstamp" src="informes/sello_${st.agencia.toLowerCase()}.png" alt="">` : ""}</div></div>`;
-  return `<div class="rp${pres ? " rp-pres" : ""}">
+    : `<h3>CADENA DE CUSTODIA</h3><div class="cust"><div><span>SOLICITADO / ENTREGADO POR</span><b>${st.agencia === "Particular" ? infEsc(st.propietario || "Cliente") : `${ag.name}${st.placa ? ` · placa ${infEsc(st.placa)}` : ""}`}</b><i>Firma</i></div><div class="ret"><span>INSPECCIONADO POR</span><b>Aguila Motors · ${infEsc(st.inspector)}</b><i>Firma del inspector</i><img class="rp-rub" src="informes/rubrica.png" alt=""></div><div class="ret"><span>DEVUELTO A</span><b>${recLine}</b>${recMore}<i>Firma de recepción · fecha y hora</i>${st.agencia !== "Particular" && ["FBI", "LSPD", "LSSD"].includes(st.agencia) ? `<img class="rp-fstamp" src="informes/sello_${st.agencia.toLowerCase()}.png" alt="">` : ""}</div></div>`;
+  return `<div class="rp${pres ? " rp-pres" : ""}${nulo ? " rp-nulo" : ""}">
 <div class="rp-bar">${st.agencia === "Particular" ? "" : `<img class="s" src="${ag.logo}" alt="">`}<div><h1>${tipo.title}</h1><p>Solicitado por ${solicit}</p></div><img class="am" src="aguila_motors_logo.png" alt=""></div>
-<div class="rp-cls">${pres ? "PRESUPUESTO · AGUILA MOTORS" : "CONFIDENCIAL · USO POLICIAL"}</div>
+<div class="rp-cls">${nulo ? "DOCUMENTO ANULADO · SIN VALIDEZ" : pres ? "PRESUPUESTO · AGUILA MOTORS" : "CONFIDENCIAL · USO POLICIAL"}</div>
 <div class="rp-body">
 <div class="rp-row"><div><span>Nº DE INSPECCIÓN</span><b>${infEsc(num)}</b></div><div><span>FECHA</span>${infDatesHtml(st)}</div><div><span>MOTIVO</span><b>${infEsc(st.motivo)}</b></div><div class="rp-insp"><span>INSPECTOR</span><b>Ing. ${infEsc(st.inspector)}</b><em>Ingeniero en Mecánica<br>Automotriz · Jefe Aguila</em><img class="rp-jstamp" src="informes/sello_jefe.png" alt=""></div></div>
-<div class="rp-two"><div class="rp-photo">${st.captura ? `<img src="${st.captura}" alt="">` : '<div class="rp-nophoto">Sin captura</div>'}<small>EVIDENCIA FOTOGRÁFICA Nº 1</small></div>
+<div class="rp-two">${photo}
 <div class="rp-veh"><h3>VEHÍCULO</h3><dl>${veh.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
 <div class="rp-verdict" style="border-color:${col};color:${col};background:${col}12">${v.t}<small>${v.s}</small></div></div></div>
 ${infSchemeBlock(st)}
@@ -488,7 +555,7 @@ ${infSchemeBlock(st)}
 ${bottom}
 <div class="rp-foot"><div><div class="rp-cal">${infEsc(st.inspector)}</div><div class="rp-sig">ING. ${infEsc(st.inspector).toUpperCase()} · JEFE AGUILA<span class="rp-tit">Ingeniero en Mecánica Automotriz · Aguila Motors</span></div></div><img class="rp-stamp" src="informes/sello.png" alt=""><div class="rp-code"><div>VERIFICACIÓN<br><b>${infEsc(st.codigo)}</b><small>Escanea para<br>comprobar el documento</small></div>${infQrHtml(st.codigo)}</div></div>
 <div class="rp-rol">Documento de rol · Uso exclusivo en el servidor de FiveM JerarquíaRP · Ficticio, sin validez real</div>
-</div></div>`;
+</div>${voidHtml}</div>`;
 }
 
 // QR de verificacion (v112): lleva a v.html?CODIGO. Correccion H para que el logo del centro no lo rompa.
@@ -618,13 +685,13 @@ async function infExportPdf(st) {
 }
 
 // Reduce la captura pegada a JPEG (max 1100 px de ancho).
-function infCompressImage(file) {
+function infCompressImage(file, maxW = 1100) {
   return new Promise((resolve, reject) => {
     const fr = new FileReader();
     fr.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const w = Math.min(1100, img.naturalWidth);
+        const w = Math.min(maxW, img.naturalWidth);
         const h = Math.round((img.naturalHeight * w) / img.naturalWidth);
         const c = document.createElement("canvas");
         c.width = w;
@@ -644,7 +711,7 @@ function infCompressImage(file) {
 const INF_CLOUD = { ok: null, list: [] };
 async function infCloudList() {
   try {
-    INF_CLOUD.list = (await cvCloud.req("/rest/v1/informes?select=id,numero,estado,tipo,agencia,placa,vehiculo,matricula,resultado,codigo,created_at,emitido_at&order=created_at.desc&limit=300", { auth: true })) || [];
+    INF_CLOUD.list = (await cvCloud.req("/rest/v1/informes?select=id,numero,estado,tipo,agencia,placa,vehiculo,matricula,resultado,codigo,created_at,emitido_at,color:datos->>color,propietario:datos->>propietario,agente:datos->>agente,body:datos->>body,recibe:datos->recibe&order=created_at.desc&limit=300", { auth: true })) || [];
     INF_CLOUD.ok = true;
   } catch (e) {
     INF_CLOUD.ok = !(e.status === 404 || e.code === "PGRST205" || e.code === "42P01");
@@ -752,6 +819,8 @@ function setupInformes() {
       renderScheme();
       renderPointsTable();
       renderConcl();
+      renderRecibe();
+      renderSteps();
     }
     renderPreview();
     saveLocal();
@@ -770,7 +839,7 @@ function setupInformes() {
         if (st.numero) {
           // Un informe emitido no cambia de tipo: se empieza otro con el mismo solicitante y vehiculo.
           if (!confirm(`${st.numero} ya está emitido. ¿Empezar un informe nuevo de ${t.label} con el mismo solicitante y vehículo?`)) return;
-          const keep = { agencia: st.agencia, placa: st.placa, agente: st.agente, vehiculo: st.vehiculo, matricula: st.matricula, color: st.color, propietario: st.propietario, body: st.body, bodySrc: st.bodySrc, view: st.view || "", captura: st.captura };
+          const keep = { agencia: st.agencia, placa: st.placa, agente: st.agente, vehiculo: st.vehiculo, matricula: st.matricula, color: st.color, propietario: st.propietario, body: st.body, bodySrc: st.bodySrc, view: st.view || "", captura: st.captura, fotos: infFotos(st) };
           st = Object.assign(infNewState(k), keep);
         }
         st.tipo = k;
@@ -826,11 +895,7 @@ function setupInformes() {
     $("inf-color-otro").value = known ? "" : st.color;
     const sw = INF_COLORS.find(([n]) => n === st.color);
     $("inf-color-sw").style.background = sw ? sw[1] : "transparent";
-    const pz = $("inf-paste");
-    pz.classList.toggle("has", !!st.captura);
-    const img = pz.querySelector("img");
-    img.hidden = !st.captura;
-    if (st.captura) img.src = st.captura;
+    renderPhotos();
     const custom = st.vehiculo && !infCatalogFind(st.vehiculo);
     $("inf-badges").innerHTML = (st.vehiculo ? `<span class="inf-badge">✔ Tipo: ${(INF_BODIES[st.body] || INF_BODIES.sedan).l}${st.bodySrc ? ` · ${infEsc(st.bodySrc)}` : ""}</span>` : "") + (custom ? '<span class="inf-badge vip">Custom · no está en el catálogo</span>' : "");
     const bb = $("inf-bodies");
@@ -867,6 +932,48 @@ function setupInformes() {
         vb.appendChild(btn);
       }
     }
+  }
+
+  // Evidencias (v139): hasta 3 fotos; la primera es la grande del informe.
+  function renderPhotos() {
+    const fotos = infFotos(st);
+    const box = $("inf-thumbs");
+    box.textContent = "";
+    fotos.forEach((f, i) => {
+      const t = mk("div", "inf-thumb" + (i === 0 ? " main" : ""));
+      const img = mk("img");
+      img.src = f;
+      img.alt = "";
+      const del = mk("button", "inf-thumb-del", "✕");
+      del.type = "button";
+      del.title = "Quitar esta foto";
+      del.addEventListener("click", () => {
+        st.fotos = infFotos(st).filter((_, k) => k !== i);
+        st.captura = st.fotos[0] || "";
+        renderPhotos();
+        sync();
+      });
+      t.append(img, mk("span", "inf-thumb-n", `Nº ${i + 1}`), del);
+      if (i > 0) {
+        const up = mk("button", "inf-thumb-up", "★");
+        up.type = "button";
+        up.title = "Usarla como foto principal";
+        up.addEventListener("click", () => {
+          const a = infFotos(st);
+          a.unshift(a.splice(i, 1)[0]);
+          st.fotos = a;
+          st.captura = a[0];
+          renderPhotos();
+          sync();
+        });
+        t.appendChild(up);
+      }
+      box.appendChild(t);
+    });
+    const pz = $("inf-paste");
+    pz.hidden = fotos.length >= INF_MAX_FOTOS;
+    pz.classList.toggle("small", fotos.length > 0);
+    $("inf-paste-txt").innerHTML = fotos.length ? `➕ Añadir otra foto (${fotos.length} de ${INF_MAX_FOTOS})<br><small>Ctrl+V, arrastrar o clic</small>` : "📋 Pega la captura con <b>Ctrl+V</b><br>o arrástrala aquí · o haz clic";
   }
 
   // ---------- Paso 4: esquema, herramientas y extras ----------
@@ -1119,7 +1226,22 @@ function setupInformes() {
       ta.value = st.conclEdited ? st.concl : tmp.textContent;
     }
     $("inf-concl-auto").hidden = !st.conclEdited;
-    $("inf-concl-hint").textContent = st.conclEdited ? "✏️ Conclusión editada a mano" : "✨ Conclusión redactada sola · escribe para cambiarla";
+    $("inf-concl-hint").textContent = st.conclEdited ? "✏️ Conclusión editada a mano" : "✨ Conclusión redactada sola · escribe para cambiarla o elige una plantilla";
+    const tb = $("inf-tpls");
+    tb.textContent = "";
+    for (const [label, tpl] of INF_CONCL_TPL[st.tipo] || []) {
+      const text = infTplText(st, tpl);
+      const b = mk("button", "inf-tpl" + (st.conclEdited && st.concl === text ? " is-on" : ""), label);
+      b.type = "button";
+      b.title = text;
+      b.addEventListener("click", () => {
+        st.concl = text;
+        st.conclEdited = true;
+        ta.value = text;
+        sync();
+      });
+      tb.appendChild(b);
+    }
   }
 
   function renderForm() {
@@ -1133,7 +1255,104 @@ function setupInformes() {
     renderPointsTable();
     renderExtra();
     renderConcl();
-    $("inf-emit").textContent = st.estado === "emitido" ? "✔ Guardar cambios del informe emitido" : "✔ Emitir y guardar en el registro";
+    renderRecibe();
+    $("inf-emit").textContent = st.estado === "anulado" ? "✔ Guardar cambios (sigue anulado)" : st.estado === "emitido" ? "✔ Guardar cambios del informe emitido" : "✔ Emitir y guardar en el registro";
+    const vn = $("inf-void-note");
+    vn.hidden = st.estado !== "anulado";
+    vn.textContent = st.estado === "anulado" ? `⛔ ${st.numero || "Este informe"} está ANULADO${st.anuladoMotivo ? `: ${st.anuladoMotivo}` : ""}. Para volver a darlo por válido, usa «Restaurar» en el Registro.` : "";
+    renderSteps();
+  }
+
+  // ---------- Paso 5: quien recibe ----------
+  function renderRecibe() {
+    const r = (st.recibe ||= { nombre: "", placa: "" });
+    if (document.activeElement !== $("inf-recibe-nombre")) $("inf-recibe-nombre").value = r.nombre || "";
+    if (document.activeElement !== $("inf-recibe-placa")) $("inf-recibe-placa").value = r.placa || "";
+    const police = st.agencia !== "Particular";
+    $("inf-recibe-placa-wrap").hidden = !police;
+    const same = $("inf-recibe-same");
+    same.hidden = st.tipo === "presupuesto";
+    same.textContent = police ? "= El mismo agente que lo solicita" : "= El propietario";
+    $("inf-recibe-help").textContent = st.tipo === "presupuesto" ? "En un presupuesto no hay entrega: este paso no se usa." : "Quién recoge el vehículo o el informe. Es opcional: sale en «Devuelto a» y queda guardado en el registro.";
+  }
+  for (const [id, k] of [["inf-recibe-nombre", "nombre"], ["inf-recibe-placa", "placa"]])
+    $(id).addEventListener("input", () => {
+      (st.recibe ||= { nombre: "", placa: "" })[k] = $(id).value;
+      sync();
+    });
+  $("inf-recibe-same").addEventListener("click", () => {
+    st.recibe = st.agencia === "Particular" ? { nombre: st.propietario || "", placa: "" } : { nombre: st.agente || "", placa: st.placa || "" };
+    renderRecibe();
+    sync();
+  });
+
+  // ---------- Pasos (v139): estado de cada uno, igual que en Pagos ----------
+  const stepOpen = new Map(); // paso → abierto (lo que toca el usuario manda)
+  function stepInfo() {
+    const police = st.agencia !== "Particular";
+    const ag = INF_AG[st.agencia] || INF_AG.FBI;
+    const v = infVerdict(st);
+    const pts = st.points.length;
+    const inspDone = st.tipo === "presupuesto" ? st.items.length > 0 : st.tipo === "nitro" ? st.res !== "si" || st.points.some((p) => p.t === "botella" || p.t === "inyeccion") : true;
+    const rec = st.recibe || {};
+    return {
+      1: [true, `${INF_TIPOS[st.tipo].icon} ${INF_TIPOS[st.tipo].label}`],
+      2: [!police || !!st.placa.trim(), police ? `${ag.name}${st.placa ? ` · placa ${st.placa}` : " · falta la placa del agente"} · ${st.motivo}` : `Particular · ${st.motivo}`],
+      3: [!!st.vehiculo.trim(), st.vehiculo.trim() ? `${st.vehiculo}${st.matricula ? ` · ${st.matricula}` : " · sin matrícula"} · ${infFotos(st).length ? `${infFotos(st).length} ${infFotos(st).length === 1 ? "foto" : "fotos"}` : "sin foto"}` : "Falta el vehículo"],
+      4: [inspDone, inspDone ? `${v.t}${pts ? ` · ${pts} ${pts === 1 ? "punto" : "puntos"}` : ""}` : st.tipo === "presupuesto" ? "Añade al menos un concepto" : "Marca en el esquema dónde está el nitro"],
+      5: [!!(rec.nombre || rec.placa), rec.nombre || rec.placa ? [rec.nombre, rec.placa ? `placa ${rec.placa}` : ""].filter(Boolean).join(" · ") : "Opcional · quién lo recoge"],
+    };
+  }
+  function renderSteps() {
+    const info = stepInfo();
+    const need = [1, 2, 3, 4];
+    const next = need.find((n) => !info[n][0]) || 0;
+    const prog = $("inf-prog");
+    prog.textContent = "";
+    root.querySelectorAll(".inf-step").forEach((s) => {
+      const n = +s.dataset.infStep;
+      const [done, sum] = info[n];
+      const opt = n === 5;
+      const now = n === next;
+      s.classList.toggle("is-done", done);
+      s.classList.toggle("is-now", now);
+      s.querySelector(".pgs-n").textContent = done ? "✓" : String(n);
+      s.querySelector("[data-sum]").textContent = sum;
+      const chip = s.querySelector("[data-chip]");
+      chip.textContent = done ? "HECHO" : now ? "AHORA" : opt ? "OPCIONAL" : "PENDIENTE";
+      chip.className = `pgs-chip ${done ? "d" : now ? "c" : "p"}`;
+      const open = stepOpen.has(n) ? stepOpen.get(n) : true;
+      s.querySelector(".pgs-body").hidden = !open;
+      s.querySelector(".pgs-head").setAttribute("aria-expanded", String(open));
+      const i = mk("i", done ? "d" : now ? "c" : "");
+      prog.appendChild(i);
+    });
+    // Qué falta para poder emitir.
+    const miss = [];
+    if (!info[3][0]) miss.push("el vehículo");
+    if (!info[2][0]) miss.push("la placa del agente");
+    const soft = [];
+    if (!info[4][0]) soft.push(st.tipo === "presupuesto" ? "ningún concepto" : "ningún punto marcado");
+    if (!infFotos(st).length) soft.push("sin foto");
+    if (!st.matricula.trim()) soft.push("sin matrícula");
+    const m = $("inf-miss");
+    m.className = "inf-miss " + (miss.length ? "bad" : soft.length ? "warn" : "ok");
+    m.textContent = miss.length ? `Para emitir falta: ${miss.join(" y ")}.` : soft.length ? `Se puede emitir, pero ojo: ${soft.join(" · ")}.` : "✅ Listo para emitir.";
+    $("inf-discord").disabled = !st.numero;
+    $("inf-discord").title = st.numero ? "Copia un mensaje con el número, el resultado y el enlace de verificación" : "Emite el informe para tener su número y poder copiar el mensaje";
+  }
+  root.querySelectorAll(".inf-step .pgs-head").forEach((h) =>
+    h.addEventListener("click", () => {
+      const n = +h.closest(".inf-step").dataset.infStep;
+      stepOpen.set(n, h.nextElementSibling.hidden);
+      renderSteps();
+    })
+  );
+  // Al abrir un informe ya hecho, se pliegan los pasos terminados (menos la inspección).
+  function foldDone() {
+    stepOpen.clear();
+    const info = stepInfo();
+    for (const n of [1, 2, 3, 5]) if (info[n][0] || n === 5) stepOpen.set(n, false);
   }
 
   // ---------- Eventos de los campos fijos ----------
@@ -1202,18 +1421,107 @@ function setupInformes() {
     sync();
   });
 
+  // ---------- Autocompletar (v139) ----------
+  // Matrícula → vehículo, color y propietario de un informe anterior (o el
+  // modelo de la compraventa). Placa del agente → su agencia y su nombre.
+  // Solo rellena lo que está vacío y dice de dónde lo sacó.
+  let cvPlates = null; // matrícula → modelo (compraventa)
+  async function loadCvPlates() {
+    if (cvPlates) return cvPlates;
+    cvPlates = new Map();
+    try {
+      const rows = await cvCloud.req("/rest/v1/cv_tx?select=plate,model&order=sort.desc&limit=1000", { auth: true });
+      for (const r of rows || []) {
+        const k = normalizeKeySimple(r.plate);
+        if (k && r.model && !cvPlates.has(k)) cvPlates.set(k, r.model);
+      }
+    } catch {
+      // sin compraventa: solo se usan los informes
+    }
+    return cvPlates;
+  }
+  const hint = (id, text) => {
+    const h = $(id);
+    h.hidden = !text;
+    h.textContent = text || "";
+  };
+  async function autoVehicle() {
+    const k = normalizeKeySimple(st.matricula);
+    if (k.length < 3) return hint("inf-auto-veh", "");
+    const prev = INF_CLOUD.list.find((r) => r.id !== st.id && normalizeKeySimple(r.matricula) === k);
+    const got = [];
+    let src = "";
+    if (prev) {
+      src = prev.numero || "un borrador anterior";
+      if (!st.vehiculo.trim() && prev.vehiculo) {
+        st.vehiculo = prev.vehiculo;
+        const d = infDetectBody(st.vehiculo);
+        st.body = prev.body && INF_BODIES[prev.body] ? prev.body : d.body;
+        st.bodySrc = prev.body && INF_BODIES[prev.body] ? "del informe anterior" : d.src;
+        got.push("vehículo");
+      }
+      if (!st.color && prev.color) {
+        st.color = prev.color;
+        got.push("color");
+      }
+      if (!st.propietario.trim() && prev.propietario) {
+        st.propietario = prev.propietario;
+        got.push("propietario");
+      }
+    } else if (!st.vehiculo.trim()) {
+      const model = (await loadCvPlates()).get(k);
+      if (model && normalizeKeySimple(st.matricula) === k) {
+        st.vehiculo = (typeof catFind === "function" && catFind(model)?.nombre) || model;
+        const d = infDetectBody(st.vehiculo);
+        st.body = d.body;
+        st.bodySrc = d.src;
+        src = "la compraventa";
+        got.push("vehículo");
+      }
+    }
+    if (got.length) {
+      if (st.tipo === "danos" || st.tipo === "presupuesto") st.gama = infGamaFor(st);
+      sync({ form: true });
+      hint("inf-auto-veh", `✨ Rellenado desde ${src}: ${got.join(", ")}. Revísalo por si ha cambiado.`);
+    } else hint("inf-auto-veh", prev ? `ℹ️ Esta matrícula ya salió en ${src}.` : "");
+  }
+  function autoAgent() {
+    const k = normalizeKeySimple(st.placa);
+    if (!k || st.agencia === "Particular") return hint("inf-auto-ag", "");
+    const prev = INF_CLOUD.list.find((r) => r.id !== st.id && normalizeKeySimple(r.placa) === k && r.agencia && r.agencia !== "Particular");
+    if (!prev) return hint("inf-auto-ag", "");
+    const got = [];
+    if (prev.agencia !== st.agencia && INF_AG[prev.agencia]) {
+      st.agencia = prev.agencia;
+      got.push(`agencia ${prev.agencia}`);
+    }
+    if (!st.agente.trim() && prev.agente) {
+      st.agente = prev.agente;
+      $("inf-agente-wrap").dataset.open = "1";
+      got.push("nombre del agente");
+    }
+    if (got.length) sync({ form: true });
+    hint("inf-auto-ag", got.length ? `✨ Placa conocida (${prev.numero || "borrador anterior"}): ${got.join(" y ")}.` : `ℹ️ Placa conocida: ya pidió ${prev.numero || "un informe"}.`);
+  }
+  $("inf-matricula").addEventListener("change", autoVehicle);
+  $("inf-placa").addEventListener("change", autoAgent);
+
   // Catalogo para el autocompletado
   const dl = $("inf-vehs");
   for (const v of catVehicles()) dl.appendChild(new Option(v.nombre, v.nombre));
 
   // ---------- Captura: pegar, soltar o elegir ----------
   const setCapture = async (file) => {
+    const cur = infFotos(st);
+    if (cur.length >= INF_MAX_FOTOS) return status(`Ya hay ${INF_MAX_FOTOS} fotos: quita una para añadir otra.`, false);
     try {
-      st.captura = await infCompressImage(file);
+      // La principal a buena calidad; las siguientes (más pequeñas en el informe), algo menos.
+      const data = await infCompressImage(file, cur.length ? 800 : 1100);
+      st.fotos = [...cur, data];
+      st.captura = st.fotos[0];
       renderVehicle();
-      renderPreview();
-      saveLocal();
-      status("✔ Captura añadida.");
+      sync();
+      status(`✔ Foto ${st.fotos.length} de ${INF_MAX_FOTOS} añadida.`);
     } catch (e) {
       status(`No se pudo usar la imagen: ${e.message}`, false);
     }
@@ -1226,13 +1534,9 @@ function setupInformes() {
     setCapture(item.getAsFile());
   });
   const pz = $("inf-paste");
-  pz.addEventListener("click", (ev) => {
-    if (ev.target.closest("#inf-photo-del")) return;
-    $("inf-file").click();
-  });
-  $("inf-file").addEventListener("change", () => {
-    const f = $("inf-file").files?.[0];
-    if (f) setCapture(f);
+  pz.addEventListener("click", () => $("inf-file").click());
+  $("inf-file").addEventListener("change", async () => {
+    for (const f of [...($("inf-file").files || [])]) await setCapture(f);
     $("inf-file").value = "";
   });
   pz.addEventListener("dragover", (ev) => {
@@ -1243,13 +1547,9 @@ function setupInformes() {
   pz.addEventListener("drop", (ev) => {
     ev.preventDefault();
     pz.classList.remove("drag");
-    const f = [...(ev.dataTransfer?.files || [])].find((x) => x.type.startsWith("image/"));
-    if (f) setCapture(f);
-  });
-  $("inf-photo-del").addEventListener("click", () => {
-    st.captura = "";
-    renderVehicle();
-    sync();
+    (async () => {
+      for (const f of [...(ev.dataTransfer?.files || [])].filter((x) => x.type.startsWith("image/"))) await setCapture(f);
+    })();
   });
 
   // ---------- Botones ----------
@@ -1295,13 +1595,13 @@ function setupInformes() {
       Object.assign(st, await infNextNumber());
       st.emitidoAt = new Date().toISOString();
     }
-    st.estado = "emitido";
+    if (st.estado !== "anulado") st.estado = "emitido";
     await infCloudSave(st);
     saveLocal();
     await refreshRegistry();
     renderForm();
     renderPreview();
-    status(`✔ Informe ${st.numero} emitido y guardado. Ya puedes descargarlo.`);
+    status(st.estado === "anulado" ? `✔ Cambios guardados. ${st.numero} sigue anulado.` : `✔ Informe ${st.numero} emitido y guardado. Ya puedes descargarlo.`);
   }));
   $("inf-new").addEventListener("click", () => {
     if (!confirm("¿Empezar un informe nuevo en blanco? Lo que no hayas guardado se pierde.")) return;
@@ -1310,8 +1610,19 @@ function setupInformes() {
     st.agencia = ag;
     tool = INF_TIPOS[st.tipo].tools[0];
     $("inf-agente-wrap").dataset.open = "";
+    stepOpen.clear();
+    hint("inf-auto-veh", "");
+    hint("inf-auto-ag", "");
     sync({ form: true });
     status("Informe nuevo.");
+  });
+  // Mensaje para entregar el informe por Discord.
+  $("inf-discord").addEventListener("click", async () => {
+    if (!st.numero) return status("Emite el informe primero: el mensaje lleva su número.", false);
+    const t = infDiscordText(st);
+    const ok = await copyText(t);
+    if (!ok) openCopyFallback(t);
+    else status("✔ Mensaje copiado. Pégalo en Discord y adjunta el PNG o el PDF.");
   });
 
   // ---------- Registro ----------
@@ -1341,7 +1652,17 @@ function setupInformes() {
     for (const r of INF_CLOUD.list) {
       if (r.placa && !seen.has(r.placa)) {
         seen.add(r.placa);
-        pl.appendChild(new Option(r.placa, `${r.agencia || ""}`));
+        pl.appendChild(new Option(`${r.agencia || ""}${r.agente ? ` · ${r.agente}` : ""}`, r.placa));
+      }
+    }
+    const ml = $("inf-mats");
+    ml.textContent = "";
+    const seenM = new Set();
+    for (const r of INF_CLOUD.list) {
+      const k = normalizeKeySimple(r.matricula);
+      if (k && !seenM.has(k)) {
+        seenM.add(k);
+        ml.appendChild(new Option(`${r.vehiculo || ""}${r.propietario ? ` · ${r.propietario}` : ""}`, r.matricula));
       }
     }
     renderRegistry();
@@ -1353,7 +1674,7 @@ function setupInformes() {
     const d = { ...infNewState(row.datos.tipo || "nitro"), ...row.datos };
     if (mode === "dup") {
       const fresh = infNewState(d.tipo);
-      Object.assign(d, { id: fresh.id, codigo: fresh.codigo, numero: "", anio: null, correlativo: null, estado: "borrador", emitidoAt: null, fecha: fresh.fecha, hora: fresh.hora, ts: fresh.ts, points: [], captura: "", concl: "", conclEdited: false, inspector: fresh.inspector });
+      Object.assign(d, { id: fresh.id, codigo: fresh.codigo, numero: "", anio: null, correlativo: null, estado: "borrador", emitidoAt: null, fecha: fresh.fecha, hora: fresh.hora, ts: fresh.ts, points: [], captura: "", fotos: [], recibe: { nombre: "", placa: "" }, anuladoAt: null, anuladoMotivo: "", concl: "", conclEdited: false, inspector: fresh.inspector });
     }
     return d;
   }
@@ -1365,7 +1686,8 @@ function setupInformes() {
     const q = normalizeKeySimple($("inf-reg-q").value);
     const fa = $("inf-reg-ag").value;
     const ft = $("inf-reg-tipo").value;
-    const rows = INF_CLOUD.list.filter((r) => (!fa || r.agencia === fa) && (!ft || r.tipo === ft) && (!q || normalizeKeySimple(`${r.numero} ${r.vehiculo} ${r.matricula} ${r.placa} ${r.codigo} ${r.propietario || ""}`).includes(q)));
+    const fe = $("inf-reg-est").value;
+    const rows = INF_CLOUD.list.filter((r) => (!fa || r.agencia === fa) && (!ft || r.tipo === ft) && (!fe || (r.estado || "borrador") === fe) && (!q || normalizeKeySimple(`${r.numero} ${r.vehiculo} ${r.matricula} ${r.placa} ${r.codigo} ${r.propietario || ""} ${r.agente || ""} ${r.recibe?.nombre || ""} ${r.recibe?.placa || ""}`).includes(q)));
     $("inf-reg-empty").hidden = rows.length > 0;
     $("inf-reg-empty").textContent = INF_CLOUD.ok === false ? "Falta pegar el SQL 12_informes.sql en Supabase." : INF_CLOUD.list.length ? "Ningún informe con ese filtro." : "Todavía no hay informes guardados.";
     for (const r of rows) {
@@ -1375,7 +1697,9 @@ function setupInformes() {
       const res = String(r.resultado || "");
       const cls = /NO DETECTADO|SIN |APTO$|^APTO/.test(res) && !/NO APTO/.test(res) ? "pg" : /DETECTADO|ROBO|GRAVES|NO APTO/.test(res) ? "pr" : /MODERADOS|LEVES|RASTROS/.test(res) ? "pa" : "pb";
       const ag = INF_AG[r.agencia] || INF_AG.FBI;
-      tr.innerHTML = `<td><b>${infEsc(r.numero || "Borrador")}</b>${r.estado !== "emitido" ? ' <em class="inf-draft">borrador</em>' : ""}</td><td>${infEsc(when)}</td><td>${INF_TIPOS[r.tipo]?.icon || ""} ${infEsc(INF_TIPOS[r.tipo]?.label || r.tipo)}</td><td><span class="inf-agl"><img src="${ag.logo}" alt="">${infEsc(r.agencia || "")}${r.placa ? ` · ${infEsc(r.placa)}` : ""}</span></td><td>${infEsc(r.vehiculo || "")}</td><td class="mono">${infEsc(r.matricula || "")}</td><td><span class="inf-pill ${cls}">${infEsc(res)}</span></td><td class="inf-acts"></td>`;
+      tr.innerHTML = `<td><b>${infEsc(r.numero || "Borrador")}</b>${r.estado === "anulado" ? ' <em class="inf-void">anulado</em>' : r.estado !== "emitido" ? ' <em class="inf-draft">borrador</em>' : ""}</td><td>${infEsc(when)}</td><td>${INF_TIPOS[r.tipo]?.icon || ""} ${infEsc(INF_TIPOS[r.tipo]?.label || r.tipo)}</td><td><span class="inf-agl"><img src="${ag.logo}" alt="">${infEsc(r.agencia || "")}${r.placa ? ` · ${infEsc(r.placa)}` : ""}</span></td><td>${infEsc(r.vehiculo || "")}</td><td class="mono">${infEsc(r.matricula || "")}</td><td><span class="inf-pill ${cls}">${infEsc(res)}</span></td><td class="inf-acts"></td>`;
+      if (r.estado === "anulado") tr.classList.add("is-void");
+      if (r.recibe?.nombre || r.recibe?.placa) tr.title = `Recibió: ${[r.recibe.nombre, r.recibe.placa ? `placa ${r.recibe.placa}` : ""].filter(Boolean).join(" · ")}`;
       const acts = tr.querySelector(".inf-acts");
       const act = (label, fn, title = "") => {
         const b = mk("button", "ghost small", label);
@@ -1388,6 +1712,9 @@ function setupInformes() {
         st = await openFromCloud(r.id);
         tool = INF_TIPOS[st.tipo].tools[0];
         setView("new");
+        foldDone();
+        hint("inf-auto-veh", "");
+        hint("inf-auto-ag", "");
         sync({ form: true });
         status(`Abierto ${st.numero || "borrador"}.`);
       });
@@ -1396,10 +1723,39 @@ function setupInformes() {
         st = await openFromCloud(r.id, "dup");
         tool = INF_TIPOS[st.tipo].tools[0];
         setView("new");
+        stepOpen.clear();
         sync({ form: true });
-        status("Duplicado: mismo solicitante y vehículo, sin puntos ni captura.");
+        status("Duplicado: mismo solicitante y vehículo, sin puntos ni fotos.");
       }, "Nuevo informe con el mismo solicitante y vehículo");
-      if (r.estado !== "emitido")
+      // Anular / restaurar (v139): el informe sigue en el registro, con sello de ANULADO.
+      const setEstado = async (estado, motivo = "") => {
+        const d = await openFromCloud(r.id);
+        d.estado = estado;
+        d.anuladoAt = estado === "anulado" ? new Date().toISOString() : null;
+        d.anuladoMotivo = estado === "anulado" ? motivo : "";
+        await infCloudSave(d);
+        if (st.id === d.id) {
+          st = d;
+          renderForm();
+          renderPreview();
+          saveLocal();
+        }
+        await refreshRegistry();
+      };
+      if (r.estado === "emitido")
+        act("🚫 Anular", async () => {
+          const motivo = prompt(`Anular ${r.numero}.\n\nEl informe se queda en el registro con el sello de ANULADO y su QR dirá que ya no es válido.\n\nMotivo (opcional):`, "");
+          if (motivo === null) return;
+          await setEstado("anulado", motivo.trim().slice(0, 120));
+          status(`⛔ ${r.numero} anulado.`);
+        }, "Invalidar el informe sin borrarlo");
+      if (r.estado === "anulado")
+        act("↩ Restaurar", async () => {
+          if (!confirm(`¿Volver a dar por válido ${r.numero}?`)) return;
+          await setEstado("emitido");
+          status(`✔ ${r.numero} vuelve a estar emitido.`);
+        }, "Quitar la anulación");
+      if (r.estado !== "emitido" && r.estado !== "anulado")
         act("🗑", async () => {
           if (!confirm("¿Borrar este borrador del registro?")) return;
           await cvCloud.req(`/rest/v1/informes?id=eq.${encodeURIComponent(r.id)}`, { method: "DELETE", auth: true });
@@ -1408,7 +1764,7 @@ function setupInformes() {
       body.appendChild(tr);
     }
   }
-  for (const id of ["inf-reg-q", "inf-reg-ag", "inf-reg-tipo"]) $(id).addEventListener(id === "inf-reg-q" ? "input" : "change", renderRegistry);
+  for (const id of ["inf-reg-q", "inf-reg-ag", "inf-reg-tipo", "inf-reg-est"]) $(id).addEventListener(id === "inf-reg-q" ? "input" : "change", renderRegistry);
   for (const [k, t] of Object.entries(INF_TIPOS)) $("inf-reg-tipo").appendChild(new Option(t.label, k));
   $("inf-verify").addEventListener("click", async () => {
     const code = prompt("Código de verificación que aparece en el informe (AM-XXXX-XXXX):", "");
@@ -1417,7 +1773,7 @@ function setupInformes() {
     try {
       const rows = await cvCloud.req(`/rest/v1/informes?select=numero,estado,tipo,agencia,placa,vehiculo,matricula,resultado,emitido_at&codigo=eq.${encodeURIComponent(c)}`, { auth: true });
       const r = rows?.[0];
-      alert(r ? `✔ AUTÉNTICO\n\n${r.numero || "Borrador"} · ${INF_TIPOS[r.tipo]?.label || r.tipo}\n${r.vehiculo || ""} ${r.matricula ? `(${r.matricula})` : ""}\nSolicitado por ${r.agencia || ""}${r.placa ? ` · placa ${r.placa}` : ""}\nResultado: ${r.resultado || ""}${r.estado !== "emitido" ? "\n\n⚠ Está como borrador (no emitido)." : ""}` : `✖ No hay ningún informe con el código ${c}.\nPuede ser falso o estar mal escrito.`);
+      alert(r ? `${r.estado === "anulado" ? "⛔ ANULADO" : "✔ AUTÉNTICO"}\n\n${r.numero || "Borrador"} · ${INF_TIPOS[r.tipo]?.label || r.tipo}\n${r.vehiculo || ""} ${r.matricula ? `(${r.matricula})` : ""}\nSolicitado por ${r.agencia || ""}${r.placa ? ` · placa ${r.placa}` : ""}\nResultado: ${r.resultado || ""}${r.estado === "anulado" ? "\n\n⛔ Está ANULADO: ya no es válido." : r.estado !== "emitido" ? "\n\n⚠ Está como borrador (no emitido)." : ""}` : `✖ No hay ningún informe con el código ${c}.\nPuede ser falso o estar mal escrito.`);
     } catch (e) {
       alert(`No se pudo comprobar: ${e.message || e}`);
     }

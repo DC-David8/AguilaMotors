@@ -251,6 +251,16 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 139 · 15 de noviembre de 2026
+
+- **Informes por pasos** (`js/informes.js`), igual que Pagos: **1 Tipo → 2 Solicitante → 3 Vehículo → 4 Inspección → 5 Entrega**, cada uno con su estado (hecho, ahora, pendiente, opcional) y, debajo, **qué falta para poder emitir**.
+- **Autocompletar**: al escribir una matrícula que ya tuvo un informe se rellenan modelo, color, propietario y carrocería; al escribir una placa de agente ya usada, su agencia y su nombre. También sugiere las matrículas del Compraventa.
+- **Plantillas de conclusión**: tres textos por tipo de informe, que se insertan con un toque y se pueden retocar.
+- **Hasta 3 fotos** por informe (pegar, arrastrar o elegir). La primera va grande y las otras dos en miniatura, sin salir de la página única.
+- **Quién recibe**: nombre y placa de quien recoge el informe o el vehículo, en la casilla «Devuelto a» de la cadena de custodia.
+- **Mensaje de entrega para Discord**: botón que copia el resumen del informe (número, vehículo, resultado y enlace de verificación) listo para pegar en el ticket.
+- **Anular / restaurar**: un informe emitido se puede anular con su motivo. Sigue en el registro (con filtro por estado), sale con el sello «ANULADO» y no cuenta en el Panel. Para que la página del QR diga «DOCUMENTO ANULADO» hay que ejecutar `bot-facturas/16_informes_anulados.sql` en Supabase; sin él, el QR de un informe anulado dice «documento no válido».
+
 ### Versión 138 · 15 de noviembre de 2026
 
 - **Gestión de empleados es una sección más** (`#tab-emp`), como Caja o Pagos, en vez de una ventana encima de la sección en la que estabas. Se entra desde **Empleados** en el menú (solo Jefes); el botón de Pagos y el paso «Anunciar» llevan a ella. Se recarga cada vez que entras. Las ventanas pequeñas (despedir, readmitir) siguen siendo ventanas.

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=138" />
+  <link rel="stylesheet" href="styles.css?v=139" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=138" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=139" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -397,10 +397,22 @@
       <div data-inf-pane="new">
         <div class="inf-grid">
           <div class="inf-form">
-            <section class="card inf-card"><h4><i>1</i>Tipo de informe</h4><div class="inf-types" id="inf-types"></div></section>
-
-            <section class="card inf-card"><h4><i>2</i>Solicitante</h4>
-              <div class="inf-ags" id="inf-ags"></div>
+            <p class="inf-void-note" id="inf-void-note" hidden></p>
+            <div class="pgs-prog" id="inf-prog" aria-hidden="true"></div>
+            <section class="pgs-step inf-step" data-inf-step="1">
+              <button type="button" class="pgs-head" aria-expanded="true">
+                <span class="pgs-n">1</span><span class="pgs-t">Tipo de informe</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+              </button>
+              <div class="pgs-body inf-step-body">
+                <div class="inf-types" id="inf-types"></div>
+              </div>
+            </section>
+            <section class="pgs-step inf-step" data-inf-step="2">
+              <button type="button" class="pgs-head" aria-expanded="true">
+                <span class="pgs-n">2</span><span class="pgs-t">Solicitante</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+              </button>
+              <div class="pgs-body inf-step-body">
+                <div class="inf-ags" id="inf-ags"></div>
               <div class="inf-row">
                 <label class="inf-field" id="inf-placa-wrap"><span>Placa del agente</span><input id="inf-placa" class="text-input" list="inf-placas" placeholder="p. ej. 0412" autocomplete="off"></label>
                 <label class="inf-field"><span>Motivo</span><select id="inf-motivo" class="text-input"></select></label>
@@ -408,22 +420,28 @@
               <button type="button" class="inf-link" id="inf-agente-add">+ Añadir nombre del agente (opcional)</button>
               <label class="inf-field" id="inf-agente-wrap" hidden><span>Nombre del agente (opcional)</span><input id="inf-agente" class="text-input" placeholder="Solo si te lo dan"></label>
               <datalist id="inf-placas"></datalist>
+                <p class="inf-auto" id="inf-auto-ag" hidden></p>
+              </div>
             </section>
-
-            <section class="card inf-card"><h4><i>3</i>Vehículo</h4>
-              <div class="inf-vrow">
-                <div class="inf-paste" id="inf-paste" title="Pega con Ctrl+V, arrastra una imagen o haz clic">
-                  <img alt="" hidden>
-                  <span class="inf-paste-txt">📋 Pega la captura con <b>Ctrl+V</b><br>o arrástrala aquí · o haz clic</span>
-                  <button type="button" class="inf-photo-del" id="inf-photo-del" title="Quitar captura">✕</button>
-                  <input type="file" id="inf-file" accept="image/*" hidden>
+            <section class="pgs-step inf-step" data-inf-step="3">
+              <button type="button" class="pgs-head" aria-expanded="true">
+                <span class="pgs-n">3</span><span class="pgs-t">Vehículo</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+              </button>
+              <div class="pgs-body inf-step-body">
+                <div class="inf-vrow">
+                <div class="inf-photos">
+                  <div class="inf-thumbs" id="inf-thumbs"></div>
+                  <div class="inf-paste" id="inf-paste" title="Pega con Ctrl+V, arrastra una imagen o haz clic">
+                    <span class="inf-paste-txt" id="inf-paste-txt">📋 Pega la captura con <b>Ctrl+V</b><br>o arrástrala aquí · o haz clic</span>
+                    <input type="file" id="inf-file" accept="image/*" multiple hidden>
+                  </div>
                 </div>
                 <div class="inf-vfields">
                   <label class="inf-field"><span>Vehículo</span><input id="inf-vehiculo" class="text-input" list="inf-vehs" placeholder="Nombre o modelo" autocomplete="off"></label>
-                  <label class="inf-field"><span>Matrícula</span><input id="inf-matricula" class="text-input mono" placeholder="46TRK812" autocomplete="off"></label>
+                  <label class="inf-field"><span>Matrícula</span><input id="inf-matricula" class="text-input mono" list="inf-mats" placeholder="46TRK812" autocomplete="off"></label>
                   <label class="inf-field"><span>Color</span><span class="inf-color"><i id="inf-color-sw"></i><select id="inf-color" class="text-input"></select></span><input id="inf-color-otro" class="text-input" placeholder="Escribe el color" hidden></label>
                   <label class="inf-field"><span>Propietario</span><input id="inf-propietario" class="text-input" placeholder="Nombre del propietario" autocomplete="off"></label>
-                  <datalist id="inf-vehs"></datalist>
+                  <datalist id="inf-vehs"></datalist><datalist id="inf-mats"></datalist>
                 </div>
               </div>
               <div class="inf-badges" id="inf-badges"></div>
@@ -431,10 +449,15 @@
               <div class="inf-bodies" id="inf-bodies"></div>
               <p class="inf-lbl">Vista del esquema (lateral para bajos y escape, multivista para daños, despiece para la inyección)</p>
               <div class="inf-bodies inf-views" id="inf-views"></div>
+                <p class="inf-auto" id="inf-auto-veh" hidden></p>
+              </div>
             </section>
-
-            <section class="card inf-card"><h4><i>4</i>Inspección</h4>
-              <div class="inf-insp">
+            <section class="pgs-step inf-step" data-inf-step="4">
+              <button type="button" class="pgs-head" aria-expanded="true">
+                <span class="pgs-n">4</span><span class="pgs-t">Inspección</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+              </button>
+              <div class="pgs-body inf-step-body">
+                <div class="inf-insp">
                 <div>
                   <div class="inf-scheme" id="inf-scheme"></div>
                   <div class="inf-tools" id="inf-tools"></div>
@@ -443,8 +466,23 @@
                 <div class="inf-extra" id="inf-extra"></div>
               </div>
               <p class="inf-hint" id="inf-concl-hint"></p>
+              <div class="inf-tpls" id="inf-tpls"></div>
               <textarea id="inf-concl" class="text-input inf-concl" rows="4"></textarea>
               <button type="button" class="inf-link" id="inf-concl-auto" hidden>↺ Volver a la conclusión automática</button>
+              </div>
+            </section>
+            <section class="pgs-step inf-step" data-inf-step="5">
+              <button type="button" class="pgs-head" aria-expanded="true">
+                <span class="pgs-n">5</span><span class="pgs-t">Entrega</span><span class="pgs-sum" data-sum></span><span class="pgs-chip" data-chip></span>
+              </button>
+              <div class="pgs-body inf-step-body">
+                <p class="pgs-p" id="inf-recibe-help">Quién recoge el vehículo o el informe. Es opcional: sale en «Devuelto a» y queda guardado en el registro.</p>
+                <div class="inf-row">
+                  <label class="inf-field"><span>Nombre de quien recibe</span><input id="inf-recibe-nombre" class="text-input" placeholder="Nombre y apellido" autocomplete="off"></label>
+                  <label class="inf-field" id="inf-recibe-placa-wrap"><span>Placa de quien recibe</span><input id="inf-recibe-placa" class="text-input" list="inf-placas" placeholder="p. ej. 0412" autocomplete="off"></label>
+                </div>
+                <button type="button" class="inf-link" id="inf-recibe-same">= El mismo agente que lo solicita</button>
+              </div>
             </section>
           </div>
 
@@ -457,6 +495,8 @@
                 <button type="button" id="inf-pdf">⬇ Descargar PDF</button>
                 <button type="button" id="inf-draft" class="ghost">💾 Guardar borrador</button>
                 <button type="button" id="inf-new" class="ghost">📄 Nuevo en blanco</button>
+                <button type="button" id="inf-discord" class="ghost inf-wide">📋 Copiar mensaje para Discord</button>
+                <p class="inf-miss" id="inf-miss"></p>
                 <button type="button" id="inf-emit" class="inf-emit">✔ Emitir y guardar en el registro</button>
               </div>
               <p class="inf-status" id="inf-status" role="status"></p>
@@ -471,6 +511,7 @@
             <input id="inf-reg-q" class="text-input" placeholder="🔍 Buscar por nº, vehículo, matrícula, placa o código…">
             <select id="inf-reg-ag" class="text-input"><option value="">Todas las agencias</option><option>FBI</option><option>LSPD</option><option>LSSD</option><option>Particular</option></select>
             <select id="inf-reg-tipo" class="text-input"><option value="">Todos los tipos</option></select>
+            <select id="inf-reg-est" class="text-input"><option value="">Todos los estados</option><option value="emitido">Emitidos</option><option value="borrador">Borradores</option><option value="anulado">Anulados</option></select>
             <button type="button" id="inf-verify" class="ghost">🔎 Verificar código</button>
           </div>
           <div class="table-wrap inf-reg-wrap"><table class="inf-reg-table"><thead><tr><th>Nº</th><th>Fecha</th><th>Tipo</th><th>Solicitante</th><th>Vehículo</th><th>Matrícula</th><th>Resultado</th><th></th></tr></thead><tbody id="inf-reg"></tbody></table></div>
@@ -919,7 +960,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 138 - Aguila Motors</footer>
+    <footer class="app-version">Versión 139 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -1122,29 +1163,29 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=138"></script>
+  <script src="catalogo/vehiculos.js?v=139"></script>
   <!-- Código de la página (v125: antes todo en app.js). El orden importa; main.js el último. -->
-  <script src="js/base.js?v=138"></script>
-  <script src="js/productos.js?v=138"></script>
-  <script src="js/empleados-datos.js?v=138"></script>
-  <script src="js/datos-compartidos.js?v=138"></script>
-  <script src="js/caja.js?v=138"></script>
-  <script src="js/facturas.js?v=138"></script>
-  <script src="js/pagos.js?v=138"></script>
-  <script src="js/pagos-pasos.js?v=138"></script>
-  <script src="js/empleados.js?v=138"></script>
-  <script src="js/sorteo.js?v=138"></script>
-  <script src="js/movil.js?v=138"></script>
-  <script src="js/nube.js?v=138"></script>
-  <script src="js/inactividad.js?v=138"></script>
-  <script src="js/sesion.js?v=138"></script>
-  <script src="js/compraventa.js?v=138"></script>
-  <script src="js/discord-log.js?v=138"></script>
-  <script src="js/kits.js?v=138"></script>
-  <script src="js/catalogo.js?v=138"></script>
-  <script src="informes/qrcode.js?v=138"></script>
-  <script src="js/informes.js?v=138"></script>
-  <script src="js/panel.js?v=138"></script>
-  <script src="js/main.js?v=138"></script>
+  <script src="js/base.js?v=139"></script>
+  <script src="js/productos.js?v=139"></script>
+  <script src="js/empleados-datos.js?v=139"></script>
+  <script src="js/datos-compartidos.js?v=139"></script>
+  <script src="js/caja.js?v=139"></script>
+  <script src="js/facturas.js?v=139"></script>
+  <script src="js/pagos.js?v=139"></script>
+  <script src="js/pagos-pasos.js?v=139"></script>
+  <script src="js/empleados.js?v=139"></script>
+  <script src="js/sorteo.js?v=139"></script>
+  <script src="js/movil.js?v=139"></script>
+  <script src="js/nube.js?v=139"></script>
+  <script src="js/inactividad.js?v=139"></script>
+  <script src="js/sesion.js?v=139"></script>
+  <script src="js/compraventa.js?v=139"></script>
+  <script src="js/discord-log.js?v=139"></script>
+  <script src="js/kits.js?v=139"></script>
+  <script src="js/catalogo.js?v=139"></script>
+  <script src="informes/qrcode.js?v=139"></script>
+  <script src="js/informes.js?v=139"></script>
+  <script src="js/panel.js?v=139"></script>
+  <script src="js/main.js?v=139"></script>
 </body>
 </html>

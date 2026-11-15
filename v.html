@@ -9,7 +9,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}*{box-sizing:border-box
 .card{width:100%;max-width:520px;background:linear-gradient(180deg,#1b1611,#121212);border:1px solid #3a2a18;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px #000a}
 .hero{padding:26px 22px 20px;text-align:center;position:relative}
 .ok .hero{background:linear-gradient(180deg,#0f2e1c,#121212)}.bad .hero{background:linear-gradient(180deg,#3a1214,#121212)}
-.ring{width:92px;height:92px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;font-size:48px;font-weight:900}
+.ring{width:92px;height:92px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;font-size:48px;font-weight:900;line-height:1}
 .ok .ring{border:4px solid var(--ok);color:var(--ok);box-shadow:0 0 30px #2fbf6a66}.bad .ring{border:4px solid var(--bad);color:var(--bad);box-shadow:0 0 30px #e5484d66}
 .hero h1{margin:0;font-size:26px;letter-spacing:.08em}.ok h1{color:var(--ok)}.bad h1{color:var(--bad)}
 .hero p{margin:6px 0 0;color:#bbb;font-size:13.5px}
@@ -103,8 +103,11 @@ async function run() {
   const ag = d.agencia || "Particular";
   const sol = ag === "Particular" ? "Cliente particular" : `${esc(ag)}${d.placa ? ` · placa ${esc(d.placa)}` : ""}`;
   const insp = d.inspector || "Esteban Dido";
-  card.className = "card ok";
-  card.innerHTML = `<div class="hero"><div class="ring">✔</div><h1>DOCUMENTO VÁLIDO</h1><p>Este informe es auténtico y fue emitido por Aguila Motors.</p><div class="code">${esc(d.codigo)}</div></div>
+  // v139: informe anulado (auténtico, pero ya sin validez).
+  const nulo = d.estado === "anulado";
+  const nuloInfo = nulo ? [d.anulado_at ? `Anulado el ${fmt(Date.parse(d.anulado_at), "America/Guatemala")} (Guatemala)` : "", d.anulado_motivo ? `Motivo: ${esc(d.anulado_motivo)}` : ""].filter(Boolean).join(" · ") : "";
+  card.className = nulo ? "card bad" : "card ok";
+  card.innerHTML = `<div class="hero"><div class="ring">${nulo ? "⛔" : "✔"}</div><h1>${nulo ? "DOCUMENTO ANULADO" : "DOCUMENTO VÁLIDO"}</h1><p>${nulo ? `Este informe lo emitió Aguila Motors, pero fue <b>anulado</b> y ya no tiene validez.${nuloInfo ? `<br>${nuloInfo}` : ""}` : "Este informe es auténtico y fue emitido por Aguila Motors."}</p><div class="code">${esc(d.codigo)}</div></div>
 <div class="grid"><div><span>Nº DE INSPECCIÓN</span><b>${esc(d.numero || "—")}</b></div><div><span>TIPO</span><b>${esc(TIPOS[d.tipo] || d.tipo)}</b></div>
 <div><span>SOLICITADO POR</span><b class="ag"><img src="${LOGOS[ag] || LOGOS.Particular}" alt="">${sol}</b></div><div><span>RESULTADO</span><b>${chip(d.resultado)}</b></div>
 <div><span>VEHÍCULO</span><b>${esc(d.vehiculo || "—")}</b></div><div><span>MATRÍCULA</span><b>${esc(d.matricula || "—")}</b></div>
