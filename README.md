@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 144 · 15 de noviembre de 2026
+
+- **Informes · el pie ya no se monta sobre la última línea**: con la cadena de custodia más alta (nombre, placa y firma) el informe no cabía y la firma del pie pisaba el aviso de abajo. El ajuste a una página ahora mide el alto real (`infMountReport`), tiene un tercer nivel de compactado (`.rp.tightest`) y, si hace falta, la foto cede los píxeles que faltan.
+
 ### Versión 143 · 15 de noviembre de 2026
 
 - **Informes · mensaje de entrega para Discord**: se quita «Documento de rol, sin validez real» (ese aviso ya está en la página de verificación, que es la que puede ver un tercero).

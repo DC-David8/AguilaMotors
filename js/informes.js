@@ -618,8 +618,28 @@ function infMountReport(host, st) {
       if (rest > 10 && n > 0) body.style.gap = `${8 + Math.min(18, Math.floor(rest / n))}px`;
     }
   }
-  if (page && page.scrollHeight > page.clientHeight + 1) page.classList.add("tight");
-  if (page && page.scrollHeight > page.clientHeight + 1) page.classList.add("tighter");
+  // Lo que le falta de alto a la pagina. Se mide con el alto en automatico:
+  // con el alto fijo, las secciones se encogen unas sobre otras y el desborde
+  // no se nota (v144: el pie se montaba sobre la ultima linea).
+  const over = () => {
+    if (!page) return 0;
+    page.style.height = "auto";
+    const h = page.offsetHeight;
+    page.style.height = "";
+    return Math.max(h, page.scrollHeight) - page.clientHeight;
+  };
+  if (over() > 1) page.classList.add("tight");
+  if (over() > 1) page.classList.add("tighter");
+  if (over() > 1) page.classList.add("tightest");
+  // Si aun asi no cabe, la foto (y luego el esquema) ceden los pixeles que faltan.
+  for (let k = 0; k < 4 && over() > 1; k += 1) {
+    const need = over() + 2;
+    const im = page.querySelector(".rp-photo img, .rp-nophoto");
+    const sch = page.querySelector(".rp-sch");
+    if (im && im.offsetHeight > 90) im.style.height = `${Math.max(90, im.offsetHeight - need)}px`;
+    else if (sch && !sch.dataset.min) { sch.dataset.min = "1"; sch.style.minHeight = "70px"; }
+    else break;
+  }
   return page;
 }
 

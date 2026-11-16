@@ -2594,3 +2594,14 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .rp-fstamp.s-lspd em { color: #1c3a8c; }
 .rp-fstamp.s-lssd em { color: #266034; }
 .rp-ini { position: absolute; right: 14px; bottom: 9px; font-family: "Great Vibes", cursive; font-size: 27px; line-height: 1; color: #1a2a55; text-decoration: none; transform: rotate(-6deg); white-space: nowrap; pointer-events: none; }
+
+/* v144 · Ultimo ajuste para que el informe quepa en una pagina */
+.rp.tightest .rp-body { gap: 4px; padding-top: 8px; }
+.rp.tightest .cust { grid-auto-rows: minmax(62px, auto); }
+.rp.tightest .cust div { padding: 4px 10px 5px; }
+.rp.tightest .rp-recibe { font-size: 10px; line-height: 1.15; }
+.rp.tightest .rp-cal { font-size: 34px; }
+.rp.tightest .rp-stamp { width: 108px; height: 108px; }
+.rp.tightest .rp-qr { width: 86px; height: 86px; }
+.rp.tightest .rp-ini { font-size: 23px; bottom: 6px; }
+.rp .cust em.rp-recibe:last-of-type { margin-bottom: 4px; }
