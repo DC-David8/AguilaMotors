@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 143 · 15 de noviembre de 2026
+
+- **Informes · mensaje de entrega para Discord**: se quita «Documento de rol, sin validez real» (ese aviso ya está en la página de verificación, que es la que puede ver un tercero).
+
 ### Versión 142 · 15 de noviembre de 2026
 
 - **Informes · mensaje de entrega para Discord**: la fecha sale primero en hora de **España** y luego en la de **Guatemala**, cada una con su bandera; y la verificación es un enlace «Haz clic aquí para verificar el documento» en vez de la dirección completa.
