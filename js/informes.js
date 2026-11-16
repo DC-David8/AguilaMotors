@@ -271,7 +271,8 @@ function infDiscordText(st) {
   const rec = st.recibe?.nombre || st.recibe?.placa ? `\n> 🤝 **Recibe:** ${[st.recibe.nombre, st.recibe.placa ? `placa ${st.recibe.placa}` : ""].filter(Boolean).join(" · ")}` : "";
   const nulo = st.estado === "anulado" ? `\n\n⛔ **INFORME ANULADO**${st.anuladoMotivo ? ` — ${st.anuladoMotivo}` : ""}` : "";
   const gt = infDateIn(st, "America/Guatemala");
-  const txt = `# 🛡️ ${INF_TIPOS[st.tipo].title} · ${st.numero || "BORRADOR"}\n-# 🦅 Aguila Motors · ${gt.date} ${gt.time} (Guatemala)\n\n> 🚗 **Vehículo:** ${st.vehiculo || "—"}${st.matricula ? ` · \`${st.matricula}\`` : ""}\n> 🏛️ **Solicitado por:** ${quien}\n> 📋 **Motivo:** ${st.motivo}\n> ${dot} **Resultado:** **${v.t}**${v.s ? ` — ${v.s}` : ""}${rec}${nulo}\n\n🔐 **Verificación:** \`${st.codigo}\` · <${INF_VERIFY_URL}${st.codigo}>\n-# 📎 Se adjunta el informe. Documento de rol, sin validez real.\n-# — Ing. ${st.inspector} · Jefe Aguila`;
+  const es = infDateIn(st, "Europe/Madrid");
+  const txt = `# 🛡️ ${INF_TIPOS[st.tipo].title} · ${st.numero || "BORRADOR"}\n-# 🦅 Aguila Motors · 🇪🇸 ${es.date} ${es.time} (España) · 🇬🇹 ${gt.date} ${gt.time} (Guatemala)\n\n> 🚗 **Vehículo:** ${st.vehiculo || "—"}${st.matricula ? ` · \`${st.matricula}\`` : ""}\n> 🏛️ **Solicitado por:** ${quien}\n> 📋 **Motivo:** ${st.motivo}\n> ${dot} **Resultado:** **${v.t}**${v.s ? ` — ${v.s}` : ""}${rec}${nulo}\n\n🔐 **Verificación:** \`${st.codigo}\` · [Haz clic aquí para verificar el documento](<${INF_VERIFY_URL}${st.codigo}>)\n-# 📎 Se adjunta el informe. Documento de rol, sin validez real.\n-# — Ing. ${st.inspector} · Jefe Aguila`;
   return typeof dcAguila === "function" ? dcAguila(txt) : txt;
 }
 

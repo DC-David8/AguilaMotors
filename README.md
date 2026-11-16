@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 142 · 15 de noviembre de 2026
+
+- **Informes · mensaje de entrega para Discord**: la fecha sale primero en hora de **España** y luego en la de **Guatemala**, cada una con su bandera; y la verificación es un enlace «Haz clic aquí para verificar el documento» en vez de la dirección completa.
+
 ### Versión 141 · 15 de noviembre de 2026
 
 - **Informes · sello de «Recibido» con fecha y hora**: el sello de FBI, LSPD y LSSD lleva ya escritas la fecha y la hora de recepción (hora de España): las de emisión del informe; en un borrador, las del informe. Sellos nuevos sin los huecos en blanco (`informes/sello_*_fh.png`).
