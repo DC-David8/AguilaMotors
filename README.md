@@ -251,6 +251,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 145 · 17 de noviembre de 2026
+
+- **Empleados · semana en vivo** (`js/en-vivo.js`): sin entrar en Pagos, el listado muestra lo que lleva facturado cada empleado en la semana en curso, calculado con las facturas del canal (`discord_log`), igual que el Panel del Jefe. Arriba, una barra «En vivo» con el total, las facturas, cuántos van bajo el mínimo y la hora de la última actualización; se refresca sola cada 2 minutos mientras se mira y con ↻. Cada fila lleva su cifra en color (rojo bajo el mínimo, verde con el mínimo, amarillo ⬆️ con la meta de ascenso) y hay un orden nuevo «💵 Esta semana». No incluye kits: si Pagos tiene cargada esa misma semana, manda la cifra de Pagos (con kits). Solo para quien tiene acceso de Jefatura.
+- **Ficha · rangos como botones**: en la escalera de rangos, un clic en cualquier rango sube o baja directamente a ese rango (pide confirmación y avisa si son varios rangos de golpe). Se quitan los botones «Subir a» / «Bajar a». La ficha muestra también lo que le falta para la meta.
+
 ### Versión 144 · 15 de noviembre de 2026
 
 - **Informes · el pie ya no se monta sobre la última línea**: con la cadena de custodia más alta (nombre, placa y firma) el informe no cabía y la firma del pie pisaba el aviso de abajo. El ajuste a una página ahora mide el alto real (`infMountReport`), tiene un tercer nivel de compactado (`.rp.tightest`) y, si hace falta, la foto cede los píxeles que faltan.

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=144" />
+  <link rel="stylesheet" href="styles.css?v=145" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=144" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=145" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -549,6 +549,7 @@
       <!-- Listado + ficha -->
       <section class="emp-pane" data-emp-pane="list">
         <div id="emp-list-view">
+          <div class="emp-live" id="emp-live" hidden></div>
           <div class="emp-kpis" id="emp-kpis"></div>
           <div class="emp-bar">
             <input id="emp-search" class="text-input" type="text" placeholder="🔍 Buscar por nombre o rango…" />
@@ -556,6 +557,7 @@
               <button type="button" class="emp-chip is-on" data-sort="rank">Por rango</button>
               <button type="button" class="emp-chip" data-sort="az">A–Z</button>
               <button type="button" class="emp-chip" data-sort="strikes">Más strikes</button>
+              <button type="button" class="emp-chip" data-sort="week" id="emp-sort-week" hidden>💵 Esta semana</button>
               <button type="button" class="emp-chip" data-sort="seniority">Antigüedad</button>
               <button type="button" class="emp-chip" id="emp-date-toggle">📅 Fechas</button>
             </div>
@@ -960,7 +962,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 144 - Aguila Motors</footer>
+    <footer class="app-version">Versión 145 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -1163,29 +1165,30 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=144"></script>
+  <script src="catalogo/vehiculos.js?v=145"></script>
   <!-- Código de la página (v125: antes todo en app.js). El orden importa; main.js el último. -->
-  <script src="js/base.js?v=144"></script>
-  <script src="js/productos.js?v=144"></script>
-  <script src="js/empleados-datos.js?v=144"></script>
-  <script src="js/datos-compartidos.js?v=144"></script>
-  <script src="js/caja.js?v=144"></script>
-  <script src="js/facturas.js?v=144"></script>
-  <script src="js/pagos.js?v=144"></script>
-  <script src="js/pagos-pasos.js?v=144"></script>
-  <script src="js/empleados.js?v=144"></script>
-  <script src="js/sorteo.js?v=144"></script>
-  <script src="js/movil.js?v=144"></script>
-  <script src="js/nube.js?v=144"></script>
-  <script src="js/inactividad.js?v=144"></script>
-  <script src="js/sesion.js?v=144"></script>
-  <script src="js/compraventa.js?v=144"></script>
-  <script src="js/discord-log.js?v=144"></script>
-  <script src="js/kits.js?v=144"></script>
-  <script src="js/catalogo.js?v=144"></script>
-  <script src="informes/qrcode.js?v=144"></script>
-  <script src="js/informes.js?v=144"></script>
-  <script src="js/panel.js?v=144"></script>
-  <script src="js/main.js?v=144"></script>
+  <script src="js/base.js?v=145"></script>
+  <script src="js/productos.js?v=145"></script>
+  <script src="js/empleados-datos.js?v=145"></script>
+  <script src="js/datos-compartidos.js?v=145"></script>
+  <script src="js/caja.js?v=145"></script>
+  <script src="js/facturas.js?v=145"></script>
+  <script src="js/pagos.js?v=145"></script>
+  <script src="js/pagos-pasos.js?v=145"></script>
+  <script src="js/empleados.js?v=145"></script>
+  <script src="js/sorteo.js?v=145"></script>
+  <script src="js/movil.js?v=145"></script>
+  <script src="js/nube.js?v=145"></script>
+  <script src="js/inactividad.js?v=145"></script>
+  <script src="js/sesion.js?v=145"></script>
+  <script src="js/compraventa.js?v=145"></script>
+  <script src="js/discord-log.js?v=145"></script>
+  <script src="js/kits.js?v=145"></script>
+  <script src="js/catalogo.js?v=145"></script>
+  <script src="informes/qrcode.js?v=145"></script>
+  <script src="js/informes.js?v=145"></script>
+  <script src="js/panel.js?v=145"></script>
+  <script src="js/en-vivo.js?v=145"></script>
+  <script src="js/main.js?v=145"></script>
 </body>
 </html>

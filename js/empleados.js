@@ -333,6 +333,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     if (sortBy === "seniority") out = out.slice().sort((x, y) => (x.altaAt || "9999") .localeCompare(y.altaAt || "9999") || byRankThenName(x, y));
     else if (sortBy === "az") out = out.slice().sort((x, y) => fullName(x).localeCompare(fullName(y), "es", { sensitivity: "base" }));
     else if (sortBy === "strikes") out = out.slice().sort((x, y) => strikesOf(y) - strikesOf(x) || byRankThenName(x, y));
+    else if (sortBy === "week") out = out.slice().sort((x, y) => (liveGrossOf(fullName(y))?.v || 0) - (liveGrossOf(fullName(x))?.v || 0) || byRankThenName(x, y));
     if (filter === "inact") out = out.slice().sort((x, y) => (inactOf(y)?.days || 0) - (inactOf(x)?.days || 0));
     return out;
   }
@@ -356,6 +357,52 @@ function setupEmployeesAdminModal({ onChanged }) {
     }
   }
 
+  // 💵 Semana en curso (v145): lo que lleva facturado cada uno, en vivo.
+  const isTopRank = (e) => isAguilaRank(e);
+  function weekState(e, v) {
+    const li = EMP_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(e.rank));
+    const goal = li >= 0 ? RANK_RULES.up[EMP_LADDER[li]] || (EMP_LADDER[li] === "Subjefe" ? RANK_RULES.candidate : 0) : 0;
+    if (isEmployeeNoPay(fullName(e)) || isTopRank(e)) return { cls: "np", goal };
+    if (goal && v >= goal) return { cls: "up", goal };
+    return { cls: v >= RANK_RULES.min ? "ok" : "low", goal };
+  }
+  function weekChip(e) {
+    const g = liveGrossOf(fullName(e));
+    if (!g || (isTopRank(e) && !g.v)) return null;
+    const st = weekState(e, g.v);
+    const c = mk("span", `emp-wk ${st.cls}`, `${st.cls === "up" ? "⬆️" : "💵"} ${fmtMoney(g.v)}`);
+    const why = st.cls === "np" ? "" : g.v < RANK_RULES.min ? ` · le faltan ${fmtMoney(RANK_RULES.min - g.v)} para el mínimo` : st.goal && g.v < st.goal ? ` · mínimo cubierto, le faltan ${fmtMoney(st.goal - g.v)} para la meta` : st.goal ? " · meta de ascenso alcanzada" : " · mínimo cubierto";
+    c.title = `Esta semana${g.src === "live" ? " (en vivo, sin kits)" : g.src === "pagos" ? " (Pagos, con kits)" : ""}: ${fmtMoney(g.v)}${why}`;
+    return c;
+  }
+  function renderLive() {
+    const bar = byId("emp-live");
+    const sortChip = byId("emp-sort-week");
+    if (sortChip) sortChip.hidden = !hasAccess();
+    if (!bar) return;
+    bar.hidden = !hasAccess();
+    if (bar.hidden) return;
+    bar.textContent = "";
+    bar.appendChild(mk("span", "emp-live-dot" + (LIVE.busy ? " busy" : "")));
+    const txt = mk("span", "emp-live-txt");
+    if (LIVE.map) {
+      const paying = employees.filter((e) => !isEmployeeNoPay(fullName(e)) && !isTopRank(e));
+      const under = paying.filter((e) => (liveGrossOf(fullName(e))?.v || 0) < RANK_RULES.min).length;
+      txt.append(mk("b", "", "En vivo"), ` · semana del ${liveWeekLabel()} · `, mk("b", "", fmtMoney(LIVE.total)), ` en ${LIVE.facturas} ${LIVE.facturas === 1 ? "factura" : "facturas"}`);
+      if (paying.length) txt.append(" · ", mk("span", under ? "emp-live-low" : "emp-live-ok", under ? `${under} bajo el mínimo` : "todos con el mínimo"));
+      txt.appendChild(mk("small", "", ` · actualizado ${liveAgo()} · sin kits`));
+    } else txt.textContent = LIVE.err ? `En vivo: no se pudo cargar (${LIVE.err})` : "En vivo: cargando lo facturado esta semana…";
+    const rf = mk("button", "ghost emp-live-rf", "↻");
+    rf.type = "button";
+    rf.title = "Actualizar ahora";
+    rf.disabled = !!LIVE.busy;
+    rf.addEventListener("click", () => {
+      liveLoad(true);
+      renderLive();
+    });
+    bar.append(txt, rf);
+  }
+
   function renderList() {
     byId("emp-tab-n-list").textContent = String(employees.length);
     const sN = hasAccess() ? employees.filter((e) => strikesOf(e) > 0).length : 0;
@@ -367,6 +414,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     fichaView.hidden = !inFicha;
     if (inFicha) return renderFicha();
     fichaId = null;
+    renderLive();
     renderKpis();
     const list = byId("emp-list");
     list.textContent = "";
@@ -398,6 +446,8 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (hasAccess()) row.append(strikeChip(strikesOf(e)));
       const ic = hasAccess() ? inactChip(e) : null;
       if (ic) flags.prepend(ic);
+      const wk = hasAccess() ? weekChip(e) : null;
+      if (wk) flags.prepend(wk);
       if (hasAccess() && eow.ids.has(String(e.id))) {
         const t = mk("span", "emp-eow", "🏆 Empleado de la Semana");
         t.title = `Empleado de la Semana (semana del ${eow.week})`;
@@ -525,38 +575,41 @@ function setupEmployeesAdminModal({ onChanged }) {
     const rango = box("Rango", "emp-rango");
     const li = EMP_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(e.rank));
     const ladder = mk("div", "emp-ladder");
+    // v145: los rangos son botones: un clic y pasa directamente a ese rango.
+    const canMove = canEdit() && li >= 0 && !isSelf(e);
     EMP_LADDER.forEach((r, k) => {
       if (k) ladder.appendChild(mk("span", "emp-ladder-sep", "›"));
-      ladder.appendChild(mk("span", `pg-badge ${empRankCls(r)}${k === li ? " cur" : ""}`, rankLabel(r)));
+      const cls = `pg-badge ${empRankCls(r)}${k === li ? " cur" : ""}`;
+      if (!canMove || k === li) {
+        ladder.appendChild(mk("span", cls, rankLabel(r)));
+        return;
+      }
+      const b = mk("button", `${cls} emp-ladder-btn ${k > li ? "up" : "down"}`, rankLabel(r));
+      b.type = "button";
+      b.title = `${k > li ? "Subir" : "Bajar"} a ${rankLabel(r)}`;
+      b.addEventListener("click", () => moveRank(e, r, b));
+      ladder.appendChild(b);
     });
     if (li < 0) rango.appendChild(mk("p", "muted emp-small", e.rank ? `${rankLabel(e.rank)}: rango fuera de la escalera (lo cambias en «Editar datos»).` : "Sin rango."));
-    else rango.appendChild(ladder);
-    const gross = PAGOS_WEEK_GROSS?.get(normalizeKeySimple(full));
+    else {
+      rango.appendChild(ladder);
+      if (canMove) rango.appendChild(mk("p", "muted emp-small emp-ladder-hint", "Toca un rango para subirlo o bajarlo directamente a ese rango."));
+    }
+    const wg = hasAccess() ? liveGrossOf(full) : null;
+    const gross = wg ? wg.v : null;
     if (gross != null && li >= 0) {
       const goal = RANK_RULES.up[EMP_LADDER[li]] || (EMP_LADDER[li] === "Subjefe" ? RANK_RULES.candidate : 0);
-      rango.appendChild(kv("Esta semana", `${fmtMoney(gross)} facturados · mínimo ${fmtMoney(RANK_RULES.min)} ${gross >= RANK_RULES.min ? "✔" : "✖"}`, gross >= RANK_RULES.min ? "" : "emp-no"));
+      const src = wg.src === "live" ? `En vivo · ${liveWeekLabel()}` : wg.src === "pagos" ? "Esta semana · Pagos" : "Semana cargada en Pagos";
+      rango.appendChild(kv(src, `${fmtMoney(gross)} facturados · mínimo ${fmtMoney(RANK_RULES.min)} ${gross >= RANK_RULES.min ? "✔" : "✖"}`, gross >= RANK_RULES.min ? "" : "emp-no"));
       if (goal) {
         const bar = mk("div", "emp-prog");
         const fill = mk("i");
         fill.style.width = `${Math.min(100, Math.round((gross / goal) * 100))}%`;
         bar.appendChild(fill);
-        rango.append(bar, mk("p", "muted emp-small", EMP_LADDER[li] === "Subjefe" ? `Candidato a ${rankLabel("Jefe")} con ${fmtMoney(goal)}` : `Meta para ${rankLabel(EMP_LADDER[li + 1])}: ${fmtMoney(goal)}`));
+        rango.append(bar, mk("p", "muted emp-small", EMP_LADDER[li] === "Subjefe" ? `Candidato a ${rankLabel("Jefe")} con ${fmtMoney(goal)}` : `Meta para ${rankLabel(EMP_LADDER[li + 1])}: ${fmtMoney(goal)}${gross < goal ? ` · le faltan ${fmtMoney(goal - gross)}` : " · ✔ alcanzada"}`));
       }
-    } else if (li >= 0) rango.appendChild(mk("p", "muted emp-small", "Carga la semana en Pagos para ver lo que lleva facturado."));
-    if (canEdit() && li >= 0 && !isSelf(e)) {
-      const ra = mk("div", "emp-acts");
-      if (EMP_LADDER[li + 1]) {
-        const up = btn(`⬆️ Subir a ${rankLabel(EMP_LADDER[li + 1])}`);
-        up.addEventListener("click", () => moveRank(e, EMP_LADDER[li + 1], up));
-        ra.appendChild(up);
-      }
-      if (li > 0) {
-        const down = btn(`⬇️ Bajar a ${rankLabel(EMP_LADDER[li - 1])}`);
-        down.addEventListener("click", () => moveRank(e, EMP_LADDER[li - 1], down));
-        ra.appendChild(down);
-      }
-      rango.appendChild(ra);
-    }
+      if (wg.src === "live") rango.appendChild(mk("p", "muted emp-small", `Con las facturas del canal, sin kits · actualizado ${liveAgo()}.`));
+    } else if (li >= 0 && hasAccess()) rango.appendChild(mk("p", "muted emp-small", LIVE.err ? "No se pudo cargar lo facturado esta semana." : "Cargando lo facturado esta semana…"));
     card.appendChild(rango);
 
     // Facturacion de las ultimas semanas cerradas (+ la actual si Pagos la tiene)
@@ -746,7 +799,10 @@ function setupEmployeesAdminModal({ onChanged }) {
 
   async function moveRank(e, to, b) {
     const up = rankOrder(to) > rankOrder(e.rank);
-    if (!confirm(`¿${up ? "Subir" : "Bajar"} a ${fullName(e)} de ${rankLabel(e.rank)} a ${rankLabel(to)}?`)) return;
+    const ia = EMP_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(e.rank));
+    const ib = EMP_LADDER.findIndex((x) => normalizeKeySimple(x) === normalizeKeySimple(to));
+    const jump = ia >= 0 && ib >= 0 ? Math.abs(ib - ia) : 1;
+    if (!confirm(`¿${up ? "Subir" : "Bajar"} a ${fullName(e)} de ${rankLabel(e.rank)} a ${rankLabel(to)}?${jump > 1 ? `\n\n(Son ${jump} rangos de golpe.)` : ""}`)) return;
     b.disabled = true;
     try {
       if (empCloudOn()) empCloudRequireSession();
@@ -1442,10 +1498,27 @@ function setupEmployeesAdminModal({ onChanged }) {
     let wasOn = section.classList.contains("is-active");
     new MutationObserver(() => {
       const on = section.classList.contains("is-active");
-      if (on && !wasOn) refresh();
+      if (on && !wasOn) {
+        refresh();
+        liveLoad();
+      }
       wasOn = on;
     }).observe(section, { attributes: true, attributeFilter: ["class"] });
   }
+  // v145: semana en vivo. Se pinta al llegar los datos y se refresca sola
+  // cada 2 minutos mientras la sección está a la vista.
+  document.addEventListener("aguila-live", () => {
+    if (tab !== "list" || editing) return;
+    if (section && !section.classList.contains("is-active")) return;
+    renderList();
+  });
+  setInterval(() => {
+    if (!hasAccess() || document.hidden || tab !== "list") return;
+    if (section && !section.classList.contains("is-active")) return;
+    liveLoad();
+  }, 30000);
+  if (!section || section.classList.contains("is-active")) liveLoad();
+
   // v137: abrir directamente en «Para Discord» con una semana (desde Pagos → Anunciar).
   modal.addEventListener("aguila-open-discord", (ev) => {
     const iso = ev.detail?.week || "";
