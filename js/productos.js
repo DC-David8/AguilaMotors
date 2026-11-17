@@ -886,7 +886,7 @@ let STRIKE_HIST = []; // semanas cerradas (tabla pagos_semanas), la mas reciente
 
 async function loadStrikeHist() {
   try {
-    const r = await cvCloud.req("/rest/v1/pagos_semanas?select=semana,desde,hasta,datos,cerrada_por,created_at&order=semana.desc&limit=30");
+    const r = await cvCloud.req("/rest/v1/pagos_semanas?select=semana,desde,hasta,datos,cerrada_por,created_at&order=semana.desc&limit=60");
     STRIKE_HIST = Array.isArray(r) ? r : [];
   } catch {
     STRIKE_HIST = [];

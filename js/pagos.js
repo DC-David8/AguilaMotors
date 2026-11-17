@@ -222,6 +222,7 @@ function setupContabilidad() {
           fact: r ? r.fact : 0,
           kits: r ? r.kits : 0,
           kitsMoney: r ? r.kits * kitPrice : 0,
+          nfact: Object.entries(state.invNByIssuerPaid || {}).reduce((a, [k, n]) => a + (normalizeKeySimple(k) === normalizeKeySimple(name) ? n : 0), 0),
           payout: r && !noPay ? r.payout + (winners.has(r) ? WEEK_BONUS : 0) : 0,
           bonus: r && winners.has(r) && !noPay ? WEEK_BONUS : 0,
           noPay,
@@ -868,6 +869,7 @@ function setupContabilidad() {
     state.kitsSales = [];
     state.invByIssuer = {};
     state.invByIssuerPaid = {};
+    state.invNByIssuerPaid = {};
     state.invByIssuerPending = {};
     state.kitsBySeller = {};
     state.kitsSelfBySeller = {};
@@ -886,6 +888,7 @@ function setupContabilidad() {
     state.kitsSales = out.kitsSales;
     state.invByIssuer = out.invByIssuer;
     state.invByIssuerPaid = out.invByIssuerPaid;
+    state.invNByIssuerPaid = out.invNByIssuerPaid || {};
     state.invByIssuerPending = out.invByIssuerPending;
     state.kitsBySeller = out.kitsBySeller;
     state.kitsSelfBySeller = out.kitsSelfBySeller || {};

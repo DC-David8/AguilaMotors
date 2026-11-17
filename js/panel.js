@@ -89,9 +89,15 @@ async function jpWeek(sun) {
     const k = normalizeKeySimple(who);
     invBy.set(k, (invBy.get(k) || 0) + (Number(tot) || 0));
   }
+  const invN = new Map();
+  for (const [who, n] of Object.entries(res.invNByIssuerPaid || {})) {
+    const k = normalizeKeySimple(who);
+    invN.set(k, (invN.get(k) || 0) + (Number(n) || 0));
+  }
   const w = {
     sun,
     invBy,
+    invN,
     closed: !!closed,
     facturado: closed ? Number(closed.datos.total) || 0 : Number(res.invSummary?.total) || 0,
     facturas: closed ? Number(closed.datos.facturas) || 0 : Number(res.invSummary?.count) || 0,

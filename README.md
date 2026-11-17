@@ -251,6 +251,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 147 · 17 de noviembre de 2026
+
+- **Ficha · «Su historia en el taller»** (sustituye a «Facturación · últimas semanas»), a todo el ancho de la ficha: una barra por semana con facturas (naranja) y kits (azul), en rojo las semanas bajo el mínimo, la semana en curso con borde discontinuo y, encima, las marcas de lo que pasó: ⬆️ ascenso, ⬇️ descenso (del historial), ⚠️ strike y 🏆 Empleado de la Semana. Bajo cada semana, los kits vendidos.
+- Selector **8 semanas / 12 semanas / Todo** (en el móvil empieza en 8). Al pasar el ratón o tocar una barra: total, facturas (con su número), kits con su importe y los eventos de esa semana.
+- Resumen: media por semana (facturas + kits), mejor semana, kits vendidos y tiempo en el taller con sus ascensos, descensos y strikes.
+- Pagos guarda también el número de facturas de cada persona al cerrar (`nfact`), y se cargan hasta 60 semanas cerradas (antes 30).
+
 ### Versión 146 · 17 de noviembre de 2026
 
 - **Ficha · facturas y kits por separado**: en «Facturación · últimas semanas» cada barra se divide en facturas (naranja) y kits (azul), y bajo cada semana sale cuántos kits vendió (🧰). Al pasar el ratón, el desglose en dinero. La media incluye los kits por semana.

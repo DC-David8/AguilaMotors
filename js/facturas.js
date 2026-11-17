@@ -241,10 +241,14 @@ function processText(rawText) {
   const invByIssuer = {};
   const invByIssuerPaid = {};
   const invByIssuerPending = {};
+  const invNByIssuerPaid = {}; // v147: numero de facturas cobradas por persona
   for (const inv of invValues) {
     if (!inv.issuer || inv.amount == null) continue;
     invByIssuer[inv.issuer] = (invByIssuer[inv.issuer] || 0) + inv.amount;
-    if (inv.paid_at) invByIssuerPaid[inv.issuer] = (invByIssuerPaid[inv.issuer] || 0) + inv.amount;
+    if (inv.paid_at) {
+      invByIssuerPaid[inv.issuer] = (invByIssuerPaid[inv.issuer] || 0) + inv.amount;
+      invNByIssuerPaid[inv.issuer] = (invNByIssuerPaid[inv.issuer] || 0) + 1;
+    }
     else invByIssuerPending[inv.issuer] = (invByIssuerPending[inv.issuer] || 0) + inv.amount;
   }
 
@@ -267,6 +271,7 @@ function processText(rawText) {
     invSummary,
     invByIssuer,
     invByIssuerPaid,
+    invNByIssuerPaid,
     invByIssuerPending,
     kitsSales,
     kitsSummary,
