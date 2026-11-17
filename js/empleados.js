@@ -464,6 +464,17 @@ function setupEmployeesAdminModal({ onChanged }) {
     }
   }
 
+  // v146: facturas del canal de semanas cerradas antiguas (para separar los kits).
+  const khPending = new Set();
+  function kitsHistLoad(suns, forId) {
+    const todo = suns.filter((x) => !khPending.has(x) && !JP.weeks.has(x));
+    if (!todo.length) return;
+    todo.forEach((x) => khPending.add(x));
+    Promise.allSettled(todo.map((x) => jpWeek(x))).then(() => {
+      if (fichaId === forId && !editing && tab === "list") renderFicha();
+    });
+  }
+
   // ---------- Ficha ----------
   function box(title, cls = "") {
     const b = mk("div", "emp-box " + cls);
@@ -615,14 +626,47 @@ function setupEmployeesAdminModal({ onChanged }) {
     // Facturacion de las ultimas semanas cerradas (+ la actual si Pagos la tiene)
     if (hasAccess()) {
       const fac = box("Facturación · últimas semanas", "emp-fac");
+      // v146: cada barra separa facturas y kits. Semanas cerradas desde v146:
+      // lo guardado en Pagos. Las anteriores: facturas del canal de esa semana
+      // y el resto, kits (aprox., al precio de kit actual).
+      const key = normalizeKeySimple(full);
+      const kp = getKitPrice() || 0;
+      const need = [];
       const pts = [];
       for (const w of STRIKE_HIST) {
         const r = strikeRowIn(w, e.id, full);
-        if (r) pts.push({ label: dm(w.semana), v: Number(r.gross || 0) });
+        if (r) {
+          const g = Number(r.gross || 0);
+          const p = { label: dm(w.semana), v: g, fact: g, kq: null, km: 0, est: false };
+          if (r.kits != null) {
+            p.kq = Number(r.kits) || 0;
+            p.km = r.kitsMoney != null ? Number(r.kitsMoney) || 0 : p.kq * kp;
+            p.fact = r.fact != null ? Number(r.fact) || 0 : Math.max(0, g - p.km);
+          } else {
+            const jw = JP.weeks.get(String(w.semana));
+            if (jw?.invBy) {
+              p.fact = Math.min(g, jw.invBy.get(key) || 0);
+              p.km = g - p.fact;
+              p.kq = kp ? Math.round(p.km / kp) : 0;
+              p.est = true;
+            } else need.push(String(w.semana));
+          }
+          pts.push(p);
+        }
         if (pts.length >= 6) break;
       }
       pts.reverse();
-      if (gross != null) pts.push({ label: "Esta", v: gross, now: true });
+      if (wg) {
+        const p = { label: "Esta", v: wg.v, fact: wg.v, kq: null, km: 0, now: true };
+        const pk = PAGOS_WEEK_KITS?.get(key);
+        if (wg.src !== "live" && pk) {
+          p.kq = pk.qty || 0;
+          p.km = pk.money || 0;
+          p.fact = Math.max(0, wg.v - p.km);
+        }
+        pts.push(p);
+      }
+      if (need.length) kitsHistLoad(need, String(e.id));
       if (!pts.length) fac.appendChild(mk("p", "muted emp-small", "Todavía no hay semanas cerradas con esta persona."));
       else {
         const max = Math.max(RANK_RULES.min * 1.25, ...pts.map((p) => p.v));
@@ -635,18 +679,35 @@ function setupEmployeesAdminModal({ onChanged }) {
         for (const p of pts) {
           const c = mk("div", "emp-col" + (p.v < RANK_RULES.min ? " lo" : "") + (p.now ? " now" : ""));
           c.style.height = `${Math.max(2, (p.v / max) * 100)}%`;
-          c.title = `${p.label}: ${fmtMoney(p.v)}`;
+          if (p.km > 0 && p.v > 0) {
+            const k = mk("i", "k");
+            k.style.height = `${(p.km / p.v) * 100}%`;
+            c.appendChild(k);
+          }
+          c.appendChild(mk("i", "f"));
+          const kTxt = p.kq == null ? (p.now ? "kits sin pegar en Pagos" : "kits: calculando…") : `${p.est ? "≈ " : ""}${p.kq} ${p.kq === 1 ? "kit" : "kits"} (${fmtMoney(p.km)})`;
+          c.title = `${p.label}: ${fmtMoney(p.v)}\n· Facturas: ${fmtMoney(p.fact)}\n· ${kTxt}`;
           c.appendChild(mk("em", "", p.v >= 1000 ? `${Math.round(p.v / 1000)}k` : String(p.v)));
           chart.appendChild(c);
-          labels.appendChild(mk("span", "", p.label));
+          const x = mk("span", "");
+          x.append(mk("b", "", p.label), mk("small", "emp-kits-n" + (p.kq ? " on" : ""), p.kq == null ? (p.now ? "🧰 —" : "🧰 …") : `🧰 ${p.est ? "≈" : ""}${p.kq}`));
+          labels.appendChild(x);
         }
         fac.append(chart, labels);
+        const leg = mk("p", "muted emp-small emp-chart-leg");
+        leg.append(mk("i", "lf"), " Facturas  ", mk("i", "lk"), " Kits");
+        fac.appendChild(leg);
         const closed = pts.filter((p) => !p.now);
         if (closed.length) {
           const avg = Math.round(closed.reduce((s, p) => s + p.v, 0) / closed.length);
           const best = Math.max(...closed.map((p) => p.v));
-          fac.appendChild(mk("p", "muted emp-small", `Media: ${fmtMoney(avg)} · Mejor semana: ${fmtMoney(best)} · Línea = mínimo ${fmtMoney(RANK_RULES.min)}`));
+          const kk = closed.filter((p) => p.kq != null);
+          const kAvg = kk.length ? Math.round(kk.reduce((s, p) => s + p.kq, 0) / kk.length) : null;
+          fac.appendChild(mk("p", "muted emp-small", `Media: ${fmtMoney(avg)}${kAvg != null ? ` · ${kAvg} kits/semana` : ""} · Mejor semana: ${fmtMoney(best)} · Línea = mínimo ${fmtMoney(RANK_RULES.min)}`));
         }
+        const cur = pts.find((p) => p.now);
+        if (cur && cur.kq == null) fac.appendChild(mk("p", "muted emp-small", "Esta semana: los kits se ven cuando los pegas en Pagos (la cifra en vivo solo cuenta facturas)."));
+        if (pts.some((p) => p.est)) fac.appendChild(mk("p", "muted emp-small", "≈ Semanas cerradas antes de la v146: kits calculados con las facturas del canal y el precio de kit actual."));
       }
       card.appendChild(fac);
 

@@ -251,6 +251,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 146 · 17 de noviembre de 2026
+
+- **Ficha · facturas y kits por separado**: en «Facturación · últimas semanas» cada barra se divide en facturas (naranja) y kits (azul), y bajo cada semana sale cuántos kits vendió (🧰). Al pasar el ratón, el desglose en dinero. La media incluye los kits por semana.
+- Pagos guarda ahora en cada semana cerrada las facturas, los kits y su importe por persona (`fact`, `kits`, `kitsMoney` en `pagos_semanas.datos.rows`). Las semanas cerradas antes se reconstruyen con las facturas del canal de esa semana: el resto son kits, al precio de kit actual (salen con «≈»).
+- Semana en curso: los kits aparecen cuando se pegan en Pagos; hasta entonces la cifra en vivo cuenta solo facturas.
+
 ### Versión 145 · 17 de noviembre de 2026
 
 - **Empleados · semana en vivo** (`js/en-vivo.js`): sin entrar en Pagos, el listado muestra lo que lleva facturado cada empleado en la semana en curso, calculado con las facturas del canal (`discord_log`), igual que el Panel del Jefe. Arriba, una barra «En vivo» con el total, las facturas, cuántos van bajo el mínimo y la hora de la última actualización; se refresca sola cada 2 minutos mientras se mira y con ↻. Cada fila lleva su cifra en color (rojo bajo el mínimo, verde con el mínimo, amarillo ⬆️ con la meta de ascenso) y hay un orden nuevo «💵 Esta semana». No incluye kits: si Pagos tiene cargada esa misma semana, manda la cifra de Pagos (con kits). Solo para quien tiene acceso de Jefatura.

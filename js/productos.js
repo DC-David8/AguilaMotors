@@ -975,6 +975,7 @@ const strikeValueFor = (h, want, motivo) => (want === h.auto ? null : { s: want,
 
 // Lo facturado esta semana por persona (lo deja Pagos al cargar las facturas).
 let PAGOS_WEEK_GROSS = null;
+let PAGOS_WEEK_KITS = null; // v146: kits por persona de la semana cargada en Pagos ({qty, money})
 
 // Colores por rango (mismos que en Pagos) e iniciales para el avatar.
 const EMP_RANK_CLS = { "jefe aguila": "r-aguila", jefe: "r-jefe", "mano derecha": "r-jefe", subjefe: "r-subjefe", mecanico: "r-mecanico", chalan: "r-chalan", experimentado: "r-exp" };

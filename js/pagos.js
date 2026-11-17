@@ -137,6 +137,7 @@ function setupContabilidad() {
     byId("pg-total-label").textContent = paying ? `TOTAL A PAGAR · ${paying} ${paying === 1 ? "empleado" : "empleados"}` : "TOTAL A PAGAR";
 
     PAGOS_WEEK_GROSS = new Map(rows.map((r) => [normalizeKeySimple(r.name), r.total]));
+    PAGOS_WEEK_KITS = new Map(rows.map((r) => [normalizeKeySimple(r.name), { qty: r.kits, money: r.kits * kitPrice }]));
     renderPromos(rows, employees);
     list.textContent = "";
     if (!rows.length) {
@@ -218,6 +219,9 @@ function setupContabilidad() {
           name,
           rank: e.rank || "",
           gross: r ? r.total : 0,
+          fact: r ? r.fact : 0,
+          kits: r ? r.kits : 0,
+          kitsMoney: r ? r.kits * kitPrice : 0,
           payout: r && !noPay ? r.payout + (winners.has(r) ? WEEK_BONUS : 0) : 0,
           bonus: r && winners.has(r) && !noPay ? WEEK_BONUS : 0,
           noPay,

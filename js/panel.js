@@ -83,8 +83,15 @@ async function jpWeek(sun) {
     if (when > c.last) c.last = when;
     clients.set(k, c);
   }
+  // v146: facturas del canal por persona (para separar facturas y kits).
+  const invBy = new Map();
+  for (const [who, tot] of Object.entries(res.invByIssuerPaid || {})) {
+    const k = normalizeKeySimple(who);
+    invBy.set(k, (invBy.get(k) || 0) + (Number(tot) || 0));
+  }
   const w = {
     sun,
+    invBy,
     closed: !!closed,
     facturado: closed ? Number(closed.datos.total) || 0 : Number(res.invSummary?.total) || 0,
     facturas: closed ? Number(closed.datos.facturas) || 0 : Number(res.invSummary?.count) || 0,

@@ -2628,3 +2628,19 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .emp-ladder .pg-badge.emp-ladder-btn.down:hover::before { content: "⬇ "; }
 .emp-ladder .pg-badge.emp-ladder-btn:disabled { opacity: .3; cursor: wait; }
 .emp-ladder-hint { margin-top: 4px; }
+
+/* v146 · Facturas y kits en la gráfica de la ficha */
+.emp-col { display: flex; flex-direction: column; background: none !important; overflow: visible; }
+.emp-col > i { display: block; width: 100%; }
+.emp-col > i.f { flex: 1; border-radius: inherit; background: linear-gradient(180deg, #ffb15c, #c86a00); }
+.emp-col > i.k { flex: none; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #6fd3ff, #1f7fb8); }
+.emp-col > i.k + i.f { border-radius: 0; }
+.emp-col.lo > i.f { background: linear-gradient(180deg, #ff7a6a, #7a2a20); }
+.emp-chart-x span { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.emp-chart-x span b { font-weight: 400; }
+.emp-kits-n { font-size: 0.66rem; color: #6d5d4f; }
+.emp-kits-n.on { color: #6fd3ff; font-weight: 700; }
+.emp-chart-leg { display: flex; align-items: center; gap: 4px; white-space: pre; }
+.emp-chart-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.emp-chart-leg i.lf { background: #f08a1c; }
+.emp-chart-leg i.lk { background: #3aa6dd; }
