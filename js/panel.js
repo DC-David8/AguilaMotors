@@ -53,8 +53,29 @@ async function jpWeek(sun) {
   const closed = STRIKE_HIST.find((w) => String(w.semana) === sun && w.datos?.rows);
   const emps = EMP_CLOUD.list;
   let people;
+  // v148: facturas del canal por persona (para separar facturas y kits).
+  const invBy = new Map();
+  for (const [who, tot] of Object.entries(res.invByIssuerPaid || {})) {
+    const k = normalizeKeySimple(who);
+    invBy.set(k, (invBy.get(k) || 0) + (Number(tot) || 0));
+  }
+  const kp = getKitPrice() || 0;
   if (closed) {
-    people = closed.datos.rows.map((r) => ({ id: r.id, name: r.name, rank: r.rank, gross: Number(r.gross) || 0, payout: Number(r.payout) || 0, noPay: !!r.noPay }));
+    people = closed.datos.rows.map((r) => {
+      const gross = Number(r.gross) || 0;
+      const p = { id: r.id, name: r.name, rank: r.rank, gross, payout: Number(r.payout) || 0, noPay: !!r.noPay };
+      if (r.kits != null) {
+        p.kq = Number(r.kits) || 0;
+        p.km = r.kitsMoney != null ? Number(r.kitsMoney) || 0 : p.kq * kp;
+        p.fact = r.fact != null ? Number(r.fact) || 0 : Math.max(0, gross - p.km);
+      } else {
+        p.fact = Math.min(gross, invBy.get(normalizeKeySimple(r.name)) || 0);
+        p.km = gross - p.fact;
+        p.kq = kp ? Math.round(p.km / kp) : 0;
+        p.est = true;
+      }
+      return p;
+    });
   } else {
     const byKey = new Map(emps.map((e) => [normalizeKeySimple(fullName(e)), e]));
     const map = new Map(emps.map((e) => [normalizeKeySimple(fullName(e)), { id: e.id, name: fullName(e), rank: e.rank, gross: 0 }]));
@@ -64,6 +85,27 @@ async function jpWeek(sun) {
       const p = map.get(k) || { id: null, name: who, rank: "", gross: 0, extern: !e };
       p.gross += Number(tot) || 0;
       map.set(k, p);
+    }
+    // Si Pagos tiene cargada esta misma semana, se suman sus kits.
+    const pk = payWeekKey() === sun && pagosKitsLoaded() ? PAGOS_WEEK_KITS : null;
+    for (const p of map.values()) {
+      p.fact = p.gross;
+      const k = pk?.get(normalizeKeySimple(p.name));
+      if (pk) {
+        p.kq = k?.qty || 0;
+        p.km = k?.money || 0;
+        p.gross += p.km;
+      } else {
+        p.kq = null;
+        p.km = 0;
+      }
+    }
+    if (pk) {
+      for (const [k, v] of pk) {
+        if (map.has(k) || !(v.qty > 0)) continue;
+        const e = byKey.get(k);
+        map.set(k, { id: e?.id ?? null, name: e ? fullName(e) : k, rank: e?.rank || "", gross: v.money, fact: 0, kq: v.qty, km: v.money, extern: !e });
+      }
     }
     people = [...map.values()].map((p) => {
       const noPay = isEmployeeNoPay(p.name);
@@ -83,23 +125,47 @@ async function jpWeek(sun) {
     if (when > c.last) c.last = when;
     clients.set(k, c);
   }
-  // v146: facturas del canal por persona (para separar facturas y kits).
-  const invBy = new Map();
-  for (const [who, tot] of Object.entries(res.invByIssuerPaid || {})) {
-    const k = normalizeKeySimple(who);
-    invBy.set(k, (invBy.get(k) || 0) + (Number(tot) || 0));
-  }
   const invN = new Map();
   for (const [who, n] of Object.entries(res.invNByIssuerPaid || {})) {
     const k = normalizeKeySimple(who);
     invN.set(k, (invN.get(k) || 0) + (Number(n) || 0));
+  }
+  const invTotal = Number(res.invSummary?.total) || 0;
+  let facturado = closed ? Number(closed.datos.total) || 0 : invTotal;
+  let kitsMoney = 0;
+  let kitsQty = null;
+  let kitsEst = false;
+  if (closed) {
+    const rowsK = closed.datos.rows.filter((r) => r.kits != null);
+    if (closed.datos.kitsTotal != null) {
+      kitsMoney = Number(closed.datos.kitsTotal) || 0;
+      kitsQty = Number(closed.datos.kits) || 0;
+    } else if (rowsK.length) {
+      kitsMoney = rowsK.reduce((a, r) => a + (r.kitsMoney != null ? Number(r.kitsMoney) || 0 : (Number(r.kits) || 0) * kp), 0);
+      kitsQty = rowsK.reduce((a, r) => a + (Number(r.kits) || 0), 0);
+    } else {
+      kitsMoney = Math.max(0, facturado - invTotal);
+      kitsQty = kp ? Math.round(kitsMoney / kp) : 0;
+      kitsEst = true;
+    }
+  } else {
+    const pk = people.filter((p) => p.kq != null);
+    if (pk.length) {
+      kitsMoney = pk.reduce((a, p) => a + (p.km || 0), 0);
+      kitsQty = pk.reduce((a, p) => a + (p.kq || 0), 0);
+      facturado += kitsMoney;
+    }
   }
   const w = {
     sun,
     invBy,
     invN,
     closed: !!closed,
-    facturado: closed ? Number(closed.datos.total) || 0 : Number(res.invSummary?.total) || 0,
+    facturado,
+    fact: Math.max(0, facturado - kitsMoney),
+    kitsMoney,
+    kitsQty,
+    kitsEst,
     facturas: closed ? Number(closed.datos.facturas) || 0 : Number(res.invSummary?.count) || 0,
     nominas: people.reduce((a, p) => a + (p.payout || 0), 0),
     people,
@@ -258,8 +324,9 @@ function setupPanelJefe() {
   function render(weeks, inf, plant, cv) {
     const w = weeks[7], p = weeks[6];
     // ---- Cifras de la semana
-    const avg = w.facturas ? Math.round(w.facturado / w.facturas) : 0;
-    kpi($("jp-k1"), "💰", "Facturado por el taller", money(w.facturado), delta(w.facturado, p.facturado), `${w.facturas} facturas${avg ? ` · ticket medio ${money(avg)}` : ""}`);
+    const avg = w.facturas ? Math.round(w.fact / w.facturas) : 0;
+    const kSub = w.kitsQty == null ? " · kits sin pegar en Pagos" : ` · 🧰 ${w.kitsEst ? "≈" : ""}${w.kitsQty} kits (${money(w.kitsMoney)})`;
+    kpi($("jp-k1"), "💰", "Facturado por el taller", money(w.facturado), delta(w.facturado, p.facturado), `${w.facturas} facturas (${money(w.fact)})${avg ? ` · ticket medio ${money(avg)}` : ""}${kSub}`);
     const cobran = w.people.filter((x) => x.payout > 0).length;
     kpi($("jp-k2"), "👥", `Nóminas${w.closed ? "" : " (estimadas)"}`, money(w.nominas), delta(w.nominas, p.nominas, false), `${cobran} ${cobran === 1 ? "empleado cobra" : "empleados cobran"} · incluye el bono de ${money(WEEK_BONUS)}`);
     const pct = w.facturado > 0 ? Math.round((w.taller / w.facturado) * 100) : 0;
@@ -303,7 +370,7 @@ function setupPanelJefe() {
 
   function renderChart(weeks) {
     const box = $("jp-chart");
-    const W = 720, H = 230, top = 22, base = 186, left = 44;
+    const W = 720, H = 246, top = 22, base = 186, left = 44;
     const max = Math.max(1, ...weeks.map((w) => Math.max(w.facturado, w.nominas)));
     const step = 10 ** Math.floor(Math.log10(max));
     const nice = Math.ceil(max / step / 2) * step * 2 || 1;
@@ -319,10 +386,18 @@ function setupPanelJefe() {
       const x = left + i * col + col / 2;
       const sel = i === weeks.length - 1;
       const est = !w.closed;
-      g += `<rect x="${x - 24}" y="${y(w.facturado)}" width="22" height="${base - y(w.facturado)}" rx="4" fill="${sel ? "#f97d02" : "#a5560a"}" ${est ? 'fill-opacity=".55" stroke="#f97d02" stroke-dasharray="3 2"' : ""}><title>Facturado ${money(w.facturado)}${est ? " (estimado, sin kits)" : ""}</title></rect>`;
+      const op = est ? ' fill-opacity=".6"' : "";
+      // v148: la barra de lo facturado se divide en facturas (naranja) y kits (azul).
+      const kTxt = w.kitsQty == null ? "kits sin pegar en Pagos" : `${w.kitsEst ? "≈ " : ""}${w.kitsQty} kits · ${money(w.kitsMoney)}`;
+      const tip = `<title>Semana del ${jpDM(w.sun)}${est ? " (sin cerrar)" : ""}\nFacturado: ${money(w.facturado)}\n· Facturas: ${money(w.fact)} (${w.facturas})\n· Kits: ${kTxt}</title>`;
+      g += `<g>${tip}<rect x="${x - 24}" y="${y(w.fact)}" width="22" height="${base - y(w.fact)}" rx="${w.kitsMoney > 0 ? 0 : 4}" fill="${sel ? "#f97d02" : "#c46a10"}"${op}/>`;
+      if (w.kitsMoney > 0) g += `<rect x="${x - 24}" y="${y(w.facturado)}" width="22" height="${y(w.fact) - y(w.facturado)}" fill="${sel ? "#4cb8ee" : "#2f8fc4"}"${op}/>`;
+      if (est) g += `<rect x="${x - 24}" y="${y(w.facturado)}" width="22" height="${base - y(w.facturado)}" rx="3" fill="none" stroke="#f97d02" stroke-dasharray="3 2"/>`;
+      g += `</g>`;
       g += `<rect x="${x + 2}" y="${y(w.nominas)}" width="22" height="${base - y(w.nominas)}" rx="4" fill="#6b5440" ${est ? 'fill-opacity=".55"' : ""}><title>Nóminas ${money(w.nominas)}</title></rect>`;
       line += `${i ? "L" : "M"}${x},${y(w.taller)} `;
       g += `<text x="${x}" y="${base + 16}" fill="${sel ? "#ffb35c" : "#a89a8c"}" font-size="10.5" text-anchor="middle" font-weight="${sel ? 700 : 400}">${jpDM(w.sun)}${est ? "*" : ""}</text>`;
+      g += `<text x="${x}" y="${base + 31}" fill="${w.kitsQty ? "#4cb8ee" : "#6d5d4f"}" font-size="10" text-anchor="middle" font-weight="700">🧰 ${w.kitsQty == null ? "—" : `${w.kitsEst ? "≈" : ""}${w.kitsQty}`}</text>`;
       if (sel) g += `<text x="${x - 13}" y="${y(w.facturado) - 6}" fill="#ffb35c" font-size="10.5" text-anchor="middle" font-weight="700">${kShort(w.facturado)}</text>`;
     });
     g += `<path d="${line}" fill="none" stroke="#8adbb5" stroke-width="2"/>`;
@@ -330,8 +405,13 @@ function setupPanelJefe() {
       const x = left + i * col + col / 2;
       g += `<circle cx="${x}" cy="${y(w.taller)}" r="3.5" fill="#8adbb5"><title>Para el taller ${money(w.taller)}</title></circle>`;
     });
-    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Facturado y nóminas de las últimas 8 semanas">${g}</svg>`;
-    $("jp-chart-note").hidden = weeks.every((w) => w.closed);
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Facturas, kits y nóminas de las últimas 8 semanas">${g}</svg>`;
+    const note = $("jp-chart-note");
+    const notes = [];
+    if (!weeks.every((w) => w.closed)) notes.push("* Semana sin cerrar en Pagos: estimada con las facturas del canal; los kits salen al pegarlos en Pagos.");
+    if (weeks.some((w) => w.kitsEst)) notes.push("≈ Semanas cerradas antes de la v146: kits = facturado − facturas del canal, al precio de kit actual.");
+    note.textContent = notes.join(" ");
+    note.hidden = !notes.length;
   }
 
   function renderAlerts(w) {
@@ -396,11 +476,20 @@ function setupPanelJefe() {
       const e = emp.get(normalizeKeySimple(x.name));
       const ix = e ? inactOf(e) : null;
       if (ix && ix.level) head.appendChild(mk("span", `emp-inact l${ix.level}`, `💤 ${ix.more ? `+${INACT_VENTANA}` : ix.days} d`));
+      // v148: facturas (naranja) y kits (azul) en la misma barra.
       const bar = mk("div", "jp-bar");
-      const fill = mk("span");
-      fill.style.width = `${Math.round((x.gross / max) * 100)}%`;
+      const fact = x.fact != null ? x.fact : x.gross;
+      const fill = mk("span", "f");
+      fill.style.width = `${(fact / max) * 100}%`;
       bar.appendChild(fill);
-      l.append(head, bar);
+      if (x.km > 0) {
+        const kf = mk("span", "k");
+        kf.style.width = `${(x.km / max) * 100}%`;
+        bar.appendChild(kf);
+      }
+      const det = mk("small", "jp-split");
+      det.append(mk("span", "jf", `${money(fact)} facturas`), " · ", mk("span", x.kq ? "jk" : "muted", x.kq == null ? "kits sin pegar en Pagos" : `🧰 ${x.est ? "≈" : ""}${x.kq} ${x.kq === 1 ? "kit" : "kits"}${x.km ? ` (${money(x.km)})` : ""}`));
+      l.append(head, bar, det);
       const rgt = mk("div", "jp-num");
       rgt.appendChild(mk("b", "", money(x.gross)));
       const pv = prev.get(normalizeKeySimple(x.name));

@@ -519,7 +519,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     if (wg && !all.some((p) => p.sun === nowSun)) {
       const p = { sun: nowSun, label: "Esta", v: wg.v, fact: wg.v, kq: null, km: 0, n: null, now: true, ev: [] };
       const pk = PAGOS_WEEK_KITS?.get(key);
-      if (wg.src !== "live" && pk) {
+      if (wg.src !== "live" && pk && pagosKitsLoaded()) {
         p.kq = pk.qty || 0;
         p.km = pk.money || 0;
         p.fact = Math.max(0, wg.v - p.km);

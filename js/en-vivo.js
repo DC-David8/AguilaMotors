@@ -51,3 +51,9 @@ const liveAgo = () => {
   const m = Math.floor((Date.now() - LIVE.at) / 60000);
   return m < 1 ? "ahora mismo" : `hace ${m} min`;
 };
+
+// v148: ¿Pagos tiene kits pegados para la semana cargada? (si no, se muestran
+// como «sin pegar» en vez de 0).
+function pagosKitsLoaded() {
+  return !!PAGOS_WEEK_KITS && [...PAGOS_WEEK_KITS.values()].some((v) => (v?.qty || 0) > 0);
+}

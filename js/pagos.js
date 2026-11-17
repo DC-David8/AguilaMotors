@@ -232,6 +232,8 @@ function setupContabilidad() {
       }),
       total: invSummary.total + kitsSummary.total,
       facturas: invSummary.count,
+      kits: kitsSummary.qty || 0,
+      kitsTotal: kitsSummary.total || 0,
     };
     const boss = AUTH.aguila && wk;
     const act = async (btn, fn) => {

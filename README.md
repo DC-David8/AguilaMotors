@@ -251,6 +251,14 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 148 · 17 de noviembre de 2026
+
+- **Panel del Jefe · facturas y kits por separado**:
+  - «Últimas 8 semanas»: la barra de lo facturado se divide en facturas (naranja) y kits (azul), con los kits de cada semana bajo la fecha (🧰). Al pasar el ratón, el desglose en dinero.
+  - Ranking de la semana: cada barra lleva su parte de facturas y su parte de kits, y debajo del nombre «$ X facturas · 🧰 N kits ($ Y)».
+  - La cifra «Facturado por el taller» indica también cuánto fue en facturas y cuántos kits.
+- Pagos guarda en cada semana cerrada el total de kits (`kits`, `kitsTotal`). Semanas cerradas antes de la v146: kits = facturado − facturas del canal (≈). Semana sin cerrar: los kits aparecen cuando se pegan en Pagos («sin pegar» mientras tanto, también en la ficha).
+
 ### Versión 147 · 17 de noviembre de 2026
 
 - **Ficha · «Su historia en el taller»** (sustituye a «Facturación · últimas semanas»), a todo el ancho de la ficha: una barra por semana con facturas (naranja) y kits (azul), en rojo las semanas bajo el mínimo, la semana en curso con borde discontinuo y, encima, las marcas de lo que pasó: ⬆️ ascenso, ⬇️ descenso (del historial), ⚠️ strike y 🏆 Empleado de la Semana. Bajo cada semana, los kits vendidos.
