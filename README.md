@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 155 · 18 de noviembre de 2026
+
+- **Empleados · fila más completa**: el hueco del centro muestra cómo va cada uno esta semana (cifra en color, frase corta —«faltan $ X al mínimo», «mín. ✔ · N % de la meta», «⬆️ meta alcanzada»— y barra hacia la meta con una marca en el mínimo). Quien no cobra sale en gris. A la derecha, los iconos de sus licencias (🚗 🏍️ 🚚 ✈️) y su licencia de nitro (👑/⚡ nº). En el móvil la barra va en su propia línea.
+
 ### Versión 154 · 18 de noviembre de 2026
 
 - **Roles automáticos · varios personajes**: si una cuenta de Discord tiene más de un personaje activo en el taller, o uno de ellos es el Jefe Aguila, el bot no le toca ningún rol (ni de rango, ni Mecánicos, ni strikes, ni Empleado de la Semana); tampoco quita roles al despedir a un personaje si la persona sigue con otro. La página dice a quién se ha saltado.

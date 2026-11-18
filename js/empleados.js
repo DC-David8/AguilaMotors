@@ -376,6 +376,38 @@ function setupEmployeesAdminModal({ onChanged }) {
     c.title = `Esta semana${g.src === "live" ? " (en vivo, sin kits)" : g.src === "pagos" ? " (Pagos, con kits)" : ""}: ${fmtMoney(g.v)}${why}`;
     return c;
   }
+  // Celda de la semana en la fila: cifra, barra hacia el mínimo y la meta.
+  function weekCell(e) {
+    const cell = mk("div", "emp-row-wk");
+    const g = liveGrossOf(fullName(e));
+    if (!g) return cell;
+    const st = weekState(e, g.v);
+    cell.classList.add(st.cls);
+    const top = mk("div", "emp-row-wk-t");
+    top.appendChild(mk("b", "", st.cls === "np" ? (g.v ? fmtMoney(g.v) : "—") : fmtMoney(g.v)));
+    let note;
+    if (st.cls === "np") note = g.v ? "facturado · no cobra" : "no cobra";
+    else if (g.v < RANK_RULES.min) note = `faltan ${fmtMoney(RANK_RULES.min - g.v)} al mínimo`;
+    else if (st.goal && g.v < st.goal) note = `mín. ✔ · ${Math.round((g.v / st.goal) * 100)} % de la meta`;
+    else if (st.goal) note = "⬆️ meta alcanzada";
+    else note = "mínimo ✔";
+    top.appendChild(mk("small", "", note));
+    cell.appendChild(top);
+    if (st.cls !== "np") {
+      const scale = Math.max(st.goal || RANK_RULES.min * 1.5, g.v, 1);
+      const bar = mk("div", "emp-row-wk-bar");
+      const fill = mk("i");
+      fill.style.width = `${Math.min(100, (g.v / scale) * 100)}%`;
+      const tick = mk("span", "min");
+      tick.style.left = `${(RANK_RULES.min / scale) * 100}%`;
+      tick.title = `Mínimo ${fmtMoney(RANK_RULES.min)}`;
+      bar.append(fill, tick);
+      cell.appendChild(bar);
+    }
+    cell.title = `Esta semana${g.src === "live" ? " (en vivo, sin kits)" : ""}: ${fmtMoney(g.v)} · mínimo ${fmtMoney(RANK_RULES.min)}${st.goal ? ` · meta ${fmtMoney(st.goal)}` : ""}`;
+    return cell;
+  }
+
   function renderLive() {
     const bar = byId("emp-live");
     const sortChip = byId("emp-sort-week");
@@ -449,10 +481,23 @@ function setupEmployeesAdminModal({ onChanged }) {
       );
       row.append(avatar(e), nm, badge(e.rank));
       if (hasAccess()) row.append(strikeChip(strikesOf(e)));
+      // v155: el hueco del centro muestra cómo va la semana (barra hacia el
+      // mínimo y la meta) y, a la derecha, licencias y nitro.
+      row.appendChild(hasAccess() ? weekCell(e) : mk("span", "emp-row-wk"));
       const ic = hasAccess() ? inactChip(e) : null;
       if (ic) flags.prepend(ic);
-      const wk = hasAccess() ? weekChip(e) : null;
-      if (wk) flags.prepend(wk);
+      const lic = EMP_CLOUD.hasLic ? licSet(e.licencia) : null;
+      if (lic) {
+        const lc = mk("span", "emp-row-lic" + (lic.size ? "" : " none"), lic.size ? LIC_TIPOS.filter(([t]) => lic.has(t)).map(([, i]) => i).join("") : "🪪 —");
+        lc.title = lic.size ? `Licencias: ${[...lic].join(", ")}` : "Sin licencias registradas";
+        flags.appendChild(lc);
+      }
+      const nl = hasAccess() && typeof NITRO !== "undefined" && NITRO.ok ? nitroOf(e.id) : null;
+      if (nl) {
+        const nc = mk("span", "emp-row-nitro", `${nl.principal ? "👑" : "⚡"} ${nl.n}`);
+        nc.title = `Licencia de nitro nº ${nl.n}`;
+        flags.appendChild(nc);
+      }
       if (hasAccess() && eow.ids.has(String(e.id))) {
         const t = mk("span", "emp-eow", "🏆 Empleado de la Semana");
         t.title = `Empleado de la Semana (semana del ${eow.week})`;
