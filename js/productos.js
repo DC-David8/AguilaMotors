@@ -339,7 +339,7 @@ const RANK_ROLE_IDS = {
   "Experimentado": "1263156546532151378",
   "Subjefe": "1263156546532151383",
   "Jefe": "1263156546532151385",
-  "Mano Derecha": "468137969417453578",
+  "Mano Derecha": "1263156546532151384",
 };
 const RANK_RULES_DEFAULT = { min: 40000, up: { "Chalán": 60000, "Mecánico": 120000, "Experimentado": 200000 }, candidate: 300000 };
 let RANK_RULES = JSON.parse(JSON.stringify(RANK_RULES_DEFAULT));

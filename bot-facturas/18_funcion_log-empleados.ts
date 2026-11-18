@@ -38,7 +38,7 @@ const ROLES_RANGO: Record<string, string> = {
   "experimentado": "1263156546532151378",
   "subjefe": "1263156546532151383",
   "jefe": "1263156546532151385",
-  "mano derecha": "468137969417453578",
+  "mano derecha": "1263156546532151384",
 };
 // El bot solo toca estos roles (nunca Jefatura ni ningún otro).
 const ROLES_GESTIONADOS = new Set([ROL_MECANICOS, ROL_EOW, ...Object.values(ROLES_STRIKE), ...Object.values(ROLES_RANGO)]);
