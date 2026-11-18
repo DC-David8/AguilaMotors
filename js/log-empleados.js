@@ -215,4 +215,5 @@ async function rolesCall(q) {
   return logEmpCall({ roles: q });
 }
 const rolesLine = (c) =>
-  c.sinDiscord ? `${c.nombre}: sin ID de Discord` : c.fueraDelServidor ? `${c.nombre}: no está en el servidor` : `${c.nombre}:${c.quitar?.length ? ` − ${c.quitar.join(", ")}` : ""}${c.poner?.length ? ` + ${c.poner.join(", ")}` : ""}`;
+  c.sinDiscord ? `${c.nombre}: sin ID de Discord` : c.fueraDelServidor ? `${c.nombre}: no está en el servidor` : `${c.nombre}${c.rango ? ` (${c.rango} en la página)` : ""}:${c.quitar?.length ? ` − ${c.quitar.join(", ")}` : ""}${c.poner?.length ? ` + ${c.poner.join(", ")}` : ""}`;
+const rolesSkipped = (j) => (j?.saltados?.length ? `\n\nNo se tocan (varios personajes con el mismo Discord): ${j.saltados.join(" · ")}.` : "");

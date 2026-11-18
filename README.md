@@ -251,6 +251,11 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 154 · 18 de noviembre de 2026
+
+- **Roles automáticos · varios personajes**: si una cuenta de Discord tiene más de un personaje activo en el taller, o uno de ellos es el Jefe Aguila, el bot no le toca ningún rol (ni de rango, ni Mecánicos, ni strikes, ni Empleado de la Semana); tampoco quita roles al despedir a un personaje si la persona sigue con otro. La página dice a quién se ha saltado.
+- La lista de «🔐 Roles» enseña el rango que tiene cada uno en la página junto a los roles que se ponen y quitan. Hay que volver a desplegar `log-empleados`.
+
 ### Versión 153 · 18 de noviembre de 2026
 
 - Corregido el ID del rol de **Mano Derecha** (`1263156546532151384`) en la página (mención en los movimientos) y en la función del bot (roles automáticos). Hay que volver a desplegar `log-empleados`.

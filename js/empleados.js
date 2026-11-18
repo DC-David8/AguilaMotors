@@ -1694,6 +1694,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       }
       const n = ch.filter((c) => c.poner?.length || c.quitar?.length).length;
       st.textContent = n ? `${n} ${n === 1 ? "persona" : "personas"} con roles por cambiar.` : "✔ Los roles de strikes y del Empleado de la Semana ya están al día.";
+      if (j.saltados?.length) st.textContent += ` Sin tocar (varios personajes): ${j.saltados.join(" · ")}.`;
       if (j.errores?.length) st.textContent += ` ⚠ ${j.errores[0]}`;
       ap.hidden = !n;
     } catch (err) {
@@ -1951,11 +1952,11 @@ function setupEmployeesAdminModal({ onChanged }) {
       const ch = (j.cambios || []).filter((c) => c.poner?.length || c.quitar?.length);
       const warn = (j.cambios || []).filter((c) => c.sinDiscord || c.fueraDelServidor).map(rolesLine);
       if (!ch.length) {
-        setStatus(`✔ Todos tienen el rol de su rango y el de Mecánicos.${warn.length ? ` ⚠ ${warn.join(" · ")}` : ""}${j.errores?.length ? ` ⚠ ${j.errores[0]}` : ""}`, true);
+        setStatus(`✔ Todos tienen el rol de su rango y el de Mecánicos.${j.saltados?.length ? ` (Sin tocar por tener varios personajes: ${j.saltados.join(" · ")}.)` : ""}${warn.length ? ` ⚠ ${warn.join(" · ")}` : ""}${j.errores?.length ? ` ⚠ ${j.errores[0]}` : ""}`, true);
         return;
       }
       const list = ch.map((c) => `• ${rolesLine(c)}`).join("\n");
-      if (!confirm(`El bot cambiaría estos roles en Discord:\n\n${list.slice(0, 1500)}${list.length > 1500 ? "\n…" : ""}\n\n¿Aplicar?`)) {
+      if (!confirm(`El bot pondría en Discord los roles según el rango que tiene cada uno en la página:\n\n${list.slice(0, 1500)}${list.length > 1500 ? "\n…" : ""}${rolesSkipped(j)}\n\n¿Aplicar?`)) {
         setStatus("Roles sin tocar.");
         return;
       }

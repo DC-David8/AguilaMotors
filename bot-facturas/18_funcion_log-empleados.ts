@@ -247,6 +247,26 @@ Deno.serve(async (req) => {
       return plan.get(k)!;
     };
     const esAguila = (e: Emp) => llave(e.rank) === "jefe aguila";
+    // Cuentas de Discord con varios personajes en el taller (o con el Jefe
+    // Aguila): el bot NO les toca ningún rol, se gestionan a mano.
+    const uidDe = (e: Emp) => String((e.despedido_at ? e.discord_previo : e.discord) || "").replace(/\D/g, "");
+    const porCuenta = new Map<string, Emp[]>();
+    for (const e of emps) {
+      const u = uidDe(e);
+      if (!u) continue;
+      if (!porCuenta.has(u)) porCuenta.set(u, []);
+      porCuenta.get(u)!.push(e);
+    }
+    const intocable = (e: Emp) => {
+      const u = uidDe(e);
+      const todos = (u && porCuenta.get(u)) || [e];
+      if (todos.some(esAguila)) return "jefe";
+      const activos = todos.filter((x) => !x.despedido_at);
+      if (activos.length > 1) return "varios";
+      if (e.despedido_at && activos.length) return "varios"; // sigue en el taller con otro personaje
+      return "";
+    };
+    const saltados = new Map<string, string>();
     const rangoDe = (e: Emp) => {
       const p = persona(e);
       const mio = ROLES_RANGO[llave(e.rank)];
@@ -258,13 +278,21 @@ Deno.serve(async (req) => {
       p.quiere.add(ROL_MECANICOS);
     };
     const lista = q?.todos === true ? emps : Array.isArray(q?.ids) ? emps.filter((e) => q.ids.map(String).includes(String(e.id))) : [];
-    for (const e of lista) if (!esAguila(e)) rangoDe(e);
+    for (const e of lista) {
+      const why = intocable(e);
+      if (why) saltados.set(uidDe(e) || String(e.id), why);
+      else rangoDe(e);
+    }
     if (q?.semanal) {
       // Solo se toca la parte que venga: strikes, Empleado de la Semana o las dos.
       const st = q.semanal.strikes;
       const eow = Array.isArray(q.semanal.eow) ? new Set(q.semanal.eow.map(String)) : null;
       for (const e of emps) {
         if (e.despedido_at || esAguila(e)) continue;
+        if (intocable(e)) {
+          saltados.set(uidDe(e) || String(e.id), intocable(e));
+          continue;
+        }
         const p = persona(e);
         if (st && typeof st === "object") {
           const n = Math.max(0, Math.min(3, Number(st[String(e.id)]) || 0));
@@ -293,7 +321,8 @@ Deno.serve(async (req) => {
       const poner = [...quiere].filter((r) => nombresRol.has(r) && !tiene.has(r));
       const quitar = [...fuera].filter((r) => !quiere.has(r) && tiene.has(r));
       if (!poner.length && !quitar.length) continue;
-      const c: any = { id: e.id, nombre, poner: poner.map(rn), quitar: quitar.map(rn), ok: true };
+      const rangoPagina = e.despedido_at ? "de baja" : limpio(nombres[e.rank] || RANGOS[llave(e.rank)]?.n || e.rank || "sin rango", 30);
+      const c: any = { id: e.id, nombre, rango: rangoPagina, poner: poner.map(rn), quitar: quitar.map(rn), ok: true };
       if (!dry) {
         for (const r of poner) {
           const x = await dc(`/guilds/${GUILD}/members/${uid}/roles/${r}`, { method: "PUT", headers: { "X-Audit-Log-Reason": "Aguila Motors (página del taller)" } });
@@ -309,6 +338,10 @@ Deno.serve(async (req) => {
       }
       res.cambios.push(c);
     }
+    // Quién se ha saltado por tener varios personajes (para que la página lo diga).
+    (res as any).saltados = [...saltados.entries()].filter(([, w]) => w === "varios").map(([u]) =>
+      (porCuenta.get(u) || []).filter((x) => !x.despedido_at).map((x) => limpio(`${x.name} ${x.surname}`)).join(" / "),
+    ).filter(Boolean);
     const usados = faltan.filter((id) => [...plan.values()].some((x) => x.quiere.has(id)));
     if (usados.length) res.errores.push(`Estos roles no existen en el servidor y se saltan: ${usados.map((id) => Object.entries(ROLES_RANGO).find(([, v]) => v === id)?.[0] || id).join(", ")} (${usados.join(", ")}). Revisa su ID.`);
     return res;
