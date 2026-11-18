@@ -186,6 +186,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         );
       empCloudRequireSession();
       await cvCloud.upsert("employees", rows, "id");
+      if (EMP_CLOUD.hasLic) logEmpPush(rows.map((r) => r.id));
       await refresh();
       await (onChanged?.());
       setStatus(`☁️ ${rows.length} empleados subidos. Ya están en línea para todos.`, true);
@@ -379,6 +380,8 @@ function setupEmployeesAdminModal({ onChanged }) {
     const bar = byId("emp-live");
     const sortChip = byId("emp-sort-week");
     if (sortChip) sortChip.hidden = !hasAccess();
+    const lb = byId("emp-logdc");
+    if (lb) lb.hidden = !(hasAccess() && EMP_CLOUD.hasLic);
     if (!bar) return;
     bar.hidden = !hasAccess();
     if (bar.hidden) return;
@@ -773,6 +776,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         kv("Comisión", pctText(e)),
         kv("Cobra nómina", noPay ? "No" : "Sí")
       );
+      if (EMP_CLOUD.hasLic) datos.appendChild(kv("Licencia", normalizeKeySimple(e.licencia) === "tiene" ? "✅ Tiene" : "⏳ Pendiente", normalizeKeySimple(e.licencia) === "tiene" ? "" : "emp-no"));
       if (EMP_CLOUD.hasDates || e.altaAt) {
         datos.append(
           kv("Ingreso al taller", e.altaAt ? `${empDate(e.altaAt)} · ${empSeniority(e.altaAt)}` : "⚠ Sin fecha", e.altaAt ? "" : "emp-no"),
@@ -933,6 +937,10 @@ function setupEmployeesAdminModal({ onChanged }) {
     npL.append(np, mk("span", "", "No cobra la nómina"));
     const grid = mk("div", "emp-edit-grid");
     grid.append(field("Nombre", nIn), field("Apellido", sIn), field("Rango", rSel), field("IBAN", iIn), field("ID de Discord", dIn));
+    const lSel = mk("select", "text-input");
+    lSel.append(new Option("⏳ Pendiente", "Pendiente"), new Option("✅ Tiene", "Tiene"));
+    lSel.value = normalizeKeySimple(e.licencia) === "tiene" ? "Tiene" : "Pendiente";
+    if (EMP_CLOUD.hasLic) grid.appendChild(field("🚗 Licencia", lSel));
     const aIn = mk("input", "text-input");
     aIn.type = "date";
     aIn.value = e.altaAt || "";
@@ -970,7 +978,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       try {
         if (empCloudOn()) {
           empCloudRequireSession();
-          await updateEmployee(e.id, { name, surname, rank: rSel.value, discord, iban: ib, noPay: np.checked, ...(EMP_CLOUD.hasDates ? { altaAt: aIn.value, contratadoAt: cIn.value } : {}) }, adminPass);
+          await updateEmployee(e.id, { name, surname, rank: rSel.value, discord, iban: ib, noPay: np.checked, ...(EMP_CLOUD.hasDates ? { altaAt: aIn.value, contratadoAt: cIn.value } : {}), ...(EMP_CLOUD.hasLic ? { licencia: lSel.value } : {}) }, adminPass);
         } else {
           await updateEmployee(e.id, { name, surname, rank: rSel.value }, adminPass);
           if (newFull !== full) {
@@ -1689,6 +1697,35 @@ function setupEmployeesAdminModal({ onChanged }) {
   });
 
   byId("emp-refresh").addEventListener("click", refresh);
+  // v149: log de empleados en Discord (lo publica el bot).
+  const logBtn = byId("emp-logdc");
+  const runLog = async (reordenar) => {
+    logBtn.disabled = true;
+    setStatus(reordenar ? "📋 Rehaciendo el log de Discord en orden… (puede tardar un minuto)" : "📋 Poniendo al día el log de Discord… (puede tardar un minuto)");
+    try {
+      const msg = await logEmpSyncAll(reordenar);
+      setStatus(msg, true);
+      const st = status;
+      if (st && !reordenar) {
+        const again = mk("button", "ghost emp-logdc-again", "↕ Rehacer en orden");
+        again.type = "button";
+        again.title = "Borra los mensajes del bot y los publica otra vez ordenados por rango (los nuevos se van quedando al final)";
+        again.addEventListener("click", () => {
+          if (confirm("¿Rehacer el log en orden?\n\nEl bot borra sus mensajes del canal y los vuelve a publicar ordenados por rango, con las bajas al final.")) runLog(true);
+        });
+        st.append(" ", again);
+      }
+    } catch (err) {
+      setStatus(`⚠ ${err.message || err}`);
+    } finally {
+      logBtn.disabled = false;
+    }
+  };
+  logBtn.addEventListener("click", () => {
+    if (!confirm("¿Poner al día el log de empleados en Discord?\n\n• Publica o corrige el mensaje de cada empleado (también las bajas).\n• Borra los mensajes viejos escritos a mano con la plantilla.\n• No menciona a nadie: no salta ninguna notificación.")) return;
+    runLog(false);
+  });
+
 
   searchInput.addEventListener("input", renderList);
 

@@ -251,6 +251,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 149 · 17 de noviembre de 2026
+
+- **Log de empleados en Discord** (`js/log-empleados.js`, SQL 17 y función `log-empleados`, paso 18): el bot del taller mantiene un mensaje por empleado en el canal del log, con el cuadrado del color de su rango, rango, IBAN, licencia, fecha de alta y estado. Al dar de alta, editar, cambiar de rango, despedir o readmitir, la página avisa al bot y él edita ese mismo mensaje. Las bajas quedan como «❌ Baja · tipo · fecha» con ⬛.
+- Botón **📋 Log de Discord** en Empleados: publica o corrige todos los mensajes y borra los viejos escritos a mano con la plantilla (necesita «Gestionar mensajes»); después ofrece «↕ Rehacer en orden» (por rango, bajas al final). Nunca menciona a nadie.
+- **Licencia** (Pendiente / Tiene) en la ficha y en «Editar datos».
+- El token del bot no sale de Supabase; la función solo responde a la Jefatura (`es_jefe`).
+
 ### Versión 148 · 17 de noviembre de 2026
 
 - **Panel del Jefe · facturas y kits por separado**:

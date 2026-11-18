@@ -129,11 +129,13 @@ const empCloudRow = (e) => ({
   discord: e.discord || "",
   iban: e.iban || "",
   no_pay: !!e.noPay,
+  ...(EMP_CLOUD.hasLic ? { licencia: e.licencia || "Pendiente" } : {}),
 });
 
 async function empCloudSave(e) {
   empCloudRequireSession();
   await cvCloud.upsert("employees", [empCloudRow(e)], "id");
+  if (EMP_CLOUD.hasLic) logEmpPush(e.id);
 }
 
 // Despedir: no se borra. Se guarda fecha, quien y motivo, y se le quita el
@@ -156,6 +158,7 @@ async function empCloudFire(e, reason) {
     despedido_motivo: reason || "",
   }], "id");
   empLog(e.id, "despido", `🚪 Despedido${reason ? `: ${reason}` : ""}`);
+  if (EMP_CLOUD.hasLic) logEmpPush(e.id);
 }
 
 // v130: con cambios (personaje nuevo tras un CK, otro IBAN u otro rango).
@@ -172,6 +175,7 @@ async function empCloudReadmit(f, ch = null) {
     despedido_por: null,
     despedido_motivo: null,
   }], "id");
+  if (EMP_CLOUD.hasLic) logEmpPush(f.id);
   const renamed = normalizeKeySimple(fullName(next)) !== normalizeKeySimple(fullName(f));
   empLog(f.id, "alta", `↩️ Readmitido${next.rank ? ` como ${rankLabel(next.rank)}` : ""}${ch?.newChar ? ` · personaje nuevo: ${fullName(next)} (antes ${fullName(f)})` : renamed ? ` · ahora ${fullName(next)} (antes ${fullName(f)})` : ""}`);
 }

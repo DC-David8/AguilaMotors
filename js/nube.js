@@ -193,10 +193,13 @@ async function empCloudLoad() {
         discordPrev: String(r.discord_previo || ""),
         altaAt: String(r.alta_at || "").slice(0, 10),
         contratadoAt: String(r.contratado_at || "").slice(0, 10),
+        licencia: String(r.licencia || ""),
       }))
       .filter((e) => e.name && e.surname);
     // Con el SQL 11 la tabla tiene la fecha de contratacion: se pueden guardar las dos fechas.
     EMP_CLOUD.hasDates = rows.some((r) => "contratado_at" in r);
+    // v149: con el SQL 17 hay licencia y log de Discord.
+    EMP_CLOUD.hasLic = rows.some((r) => "licencia" in r);
     // Los despedidos quedan en la tabla como registro, pero fuera de la plantilla.
     EMP_CLOUD.fired = all.filter((e) => e.firedAt).sort((x, y) => String(y.firedAt).localeCompare(String(x.firedAt)));
     EMP_CLOUD.list = all.filter((e) => !e.firedAt);

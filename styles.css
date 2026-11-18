@@ -2707,3 +2707,9 @@ button.eh-rng-b.on { background: #2a2119; color: #f6efe6; border-color: #5a4430;
 .jp-split { font-size: 11.5px; color: var(--muted); }
 .jp-split .jf { color: #f0a050; }
 .jp-split .jk { color: #6fd3ff; font-weight: 700; }
+
+/* v149 · Log de empleados en Discord */
+#emp-logdc { white-space: nowrap; }
+.emp-logdc-again { min-height: 0; padding: 3px 10px; font-size: 12px; margin-left: 6px; }
+.logemp-toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 9999; max-width: min(560px, calc(100vw - 32px)); padding: 10px 14px; border-radius: 12px; background: #2a1510; border: 1px solid #a8452a; color: #ffd9cc; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.logemp-toast[hidden] { display: none; }
