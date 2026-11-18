@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Función `log-empleados` · 17 de noviembre de 2026 (sin cambio de versión de la página)
+
+- El log de Discord ponía «Baja · sin motivo» a quien se despidió antes de que existieran los tipos de baja (motivo escrito a mano, p. ej. «CK (Fallecimiento del personaje)»). Ahora la función reconoce el tipo igual que la página (`parseBaja`): por el tipo elegido y, si no, por palabras (CK, fallecimiento, inactividad, renuncia…). Hay que volver a desplegar la función.
+
 ### Versión 150 · 17 de noviembre de 2026
 
 - **Ficha · 🪪 Licencias**: los cuatro tipos (🚗 Coche, 🏍️ Moto, 🚚 Camión, ✈️ Avión) se marcan con un toque y se guardan al momento; y la **imagen de la licencia**: pegar un recorte (Ctrl+V con la ficha abierta), arrastrar o subir un archivo, verla en grande, cambiarla o quitarla. Solo el Jefe Aguila las cambia; la Jefatura las ve.

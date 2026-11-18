@@ -39,6 +39,21 @@ function licencias(v: unknown) {
   const tiene = LICENCIAS.filter(([k]) => s.split(/[,;\s]+/).includes(k)).map(([, t]) => t);
   return tiene.length ? tiene.join(" · ") : "*Pendiente*";
 }
+// Tipo de baja: igual que la página (parseBaja). Primero el tipo elegido al
+// despedir; si el motivo es de antes de los tipos (texto libre), por palabras.
+function tipoBaja(motivo: string) {
+  const m = String(motivo || "").trim();
+  if (!m) return "sin motivo";
+  const t = BAJAS.find((x) => llave(m).startsWith(llave(x)));
+  if (t) return t;
+  const k = llave(m);
+  return /\bck\b|fallec|muri|muert/.test(k) ? "CK del personaje"
+    : /strike/.test(k) ? "3 strikes"
+    : /inactiv|no aparece|no viene|desaparec|ausen/.test(k) ? "Inactividad"
+    : /volunt|renunc|dimit|se va|se fue|deja el taller|por su cuenta|decision propia/.test(k) ? "Baja voluntaria"
+    : /expuls|conduct|sancion|norma|robo|toxic|falta de respeto|insult/.test(k) ? "Expulsión"
+    : "Otro";
+}
 const BAJAS = ["Baja voluntaria", "Inactividad", "3 strikes", "Expulsión", "CK del personaje", "Otro"];
 
 const llave = (s: string) =>
@@ -59,9 +74,9 @@ function texto(e: Emp, nombres: Record<string, string>) {
   const discord = String((baja ? e.discord_previo : e.discord) || "").replace(/\D/g, "");
   const nombre = limpio(`${e.name} ${e.surname}`, 60);
   const motivo = String(e.despedido_motivo || "");
-  const tipo = BAJAS.find((t) => llave(motivo).startsWith(llave(t))) || "Baja";
+  const tipo = tipoBaja(motivo);
   const estado = baja
-    ? `❌ **Baja** · ${tipo === "Baja" ? "sin motivo" : tipo} · __${fecha(e.despedido_at)}__`
+    ? `❌ **Baja** · ${tipo} · __${fecha(e.despedido_at)}__`
     : "✅ **Activo**";
   return [
     `### ${baja ? "⬛" : r?.c || "⬜"} ${nombre}${discord ? ` — <@${discord}>` : ""}`,
