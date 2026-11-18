@@ -920,6 +920,8 @@ function setupEmployeesAdminModal({ onChanged }) {
           kv("Contratación", e.contratadoAt ? empDate(e.contratadoAt) : EMP_CLOUD.hasDates ? "⚠ Sin fecha" : "—", e.contratadoAt || !EMP_CLOUD.hasDates ? "" : "emp-no")
         );
       }
+      const nl = hasAccess() && NITRO.ok ? nitroOf(e.id) : null;
+      if (nl) datos.appendChild(kv("⚡ Licencia de nitro", `Nº ${nl.n}${nl.principal ? " · Principal" : ""} · desde ${nitroDate(nl.asignada_at)}`));
       const ix = hasAccess() ? inactOf(e) : null;
       if (ix) datos.append(kv("Última factura", ix.last ? `${dlogDate(new Date(ix.last).toISOString())} · hace ${ix.days} ${ix.days === 1 ? "día" : "días"}` : inactText(ix), ix.level >= 2 ? "emp-no" : ""));
     }
@@ -1874,12 +1876,18 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (on && !wasOn) {
         refresh();
         liveLoad();
+        if (EMP_CLOUD.hasLic) nitroLoad();
       }
       wasOn = on;
     }).observe(section, { attributes: true, attributeFilter: ["class"] });
   }
   // v145: semana en vivo. Se pinta al llegar los datos y se refresca sola
   // cada 2 minutos mientras la sección está a la vista.
+  document.addEventListener("aguila-nitro", () => {
+    if (tab !== "list" || editing || !fichaId) return;
+    if (section && !section.classList.contains("is-active")) return;
+    renderFicha();
+  });
   document.addEventListener("aguila-live", () => {
     if (tab !== "list" || editing) return;
     if (section && !section.classList.contains("is-active")) return;

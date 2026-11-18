@@ -47,6 +47,7 @@ function logEmpPush(...ids) {
     const list = [...LOGEMP.queue];
     LOGEMP.queue.clear();
     if (!list.length) return;
+    if (typeof nitroTouch === "function") nitroTouch(list);
     try {
       LOGEMP.last = await logEmpCall({ ids: list });
     } catch (err) {

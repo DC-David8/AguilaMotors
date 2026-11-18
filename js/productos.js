@@ -1403,6 +1403,8 @@ async function setFixedProductOverride(originalName, patch, password) {
     const next = { ...cur, ...patch };
     await prodCloudUpsert({ id: key, tipo: "ajuste", nombre: originalName, precio: next.price ?? null, imagen: next.image || null, oculto: !!next.hidden });
     await prodCloudLoad();
+    // v151: si cambia el precio de la instalación de nitro, se actualizan las normas del canal.
+    if (key.includes("instalacion de nitro") && "price" in patch && typeof nitroPush === "function" && NITRO.ok) nitroPush().catch(() => {});
     return true;
   }
   if (!isAccessPassword(password)) {

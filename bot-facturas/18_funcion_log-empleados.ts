@@ -6,6 +6,9 @@
 // puesto (no hay que añadir nada). SUPABASE_URL, SUPABASE_ANON_KEY y
 // SUPABASE_SERVICE_ROLE_KEY los pone Supabase solo.
 //
+// Con { nitro: true } mantiene además los 4 mensajes del canal de licencias de
+// nitro (inversiones, asignación, normas e historial; tablas del paso 20).
+//
 // Qué hace: mantiene un mensaje por empleado en el canal del log. La página
 // la llama al dar de alta, editar, cambiar de rango, despedir o readmitir, y
 // con el botón «Sincronizar log de Discord». Solo la Jefatura puede usarla.
@@ -13,6 +16,8 @@
 
 const API = "https://discord.com/api/v10";
 const CANAL_LOG = "1263156547052244993"; // #log de empleados
+const CANAL_NITRO = "1562541884222738472"; // #licencias de nitro (paso 20)
+const ROL_JEFATURA = "1430927770938114230";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -130,12 +135,182 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 429 });
   };
 
+  // ---------------------------------------------------------------- NITRO ---
+  async function nitro() {
+    const res = { ok: true, publicados: 0, editados: 0, borrados: 0, sinPermiso: 0, errores: [] as string[] };
+    const get = (t: string) => sb(t).then(async (r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))));
+    let lic: Emp[], don: Emp[], movs: Emp[], msgs: Emp[];
+    try {
+      [lic, don, movs, msgs] = await Promise.all([
+        get("nitro_licencias?select=*&order=n.asc"),
+        get("nitro_donaciones?select=*&order=fecha.asc,id.asc"),
+        get("nitro_movs?select=*&order=fecha.asc,id.asc"),
+        get("nitro_msgs?select=*"),
+      ]);
+    } catch {
+      return { ...res, ok: false, error: "Faltan las tablas de nitro (ejecuta el SQL 20 en Supabase)." };
+    }
+    const byId = new Map(emps.map((e) => [String(e.id), e]));
+    const who = (id: unknown, nombre?: unknown) => {
+      const e = byId.get(String(id || ""));
+      const d = String((e?.despedido_at ? e?.discord_previo : e?.discord) || "").replace(/\D/g, "");
+      if (d) return `<@${d}>`;
+      return e ? limpio(`${e.name} ${e.surname}`) : limpio(nombre) || "—";
+    };
+    const rangoDe = (id: unknown) => {
+      const e = byId.get(String(id || ""));
+      if (!e) return "—";
+      return limpio(nombres[e.rank] || RANGOS[llave(e.rank)]?.n || e.rank || "—", 30);
+    };
+    const eur = (v: unknown) => `${Number(v || 0).toLocaleString("es-ES", { maximumFractionDigits: 2 })} €`;
+    const usd = (v: unknown) => `$${Math.round(Number(v || 0)).toLocaleString("es-ES")}`;
+    const hoy = fecha(new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }));
+    const SEP = "━━━━━━━━━━━━━━━━━━━━";
+    const total = don.reduce((a, d) => a + Number(d.importe || 0), 0);
+    const nLic = lic.length;
+    const asig = lic.filter((l) => l.employee_id).length;
+
+    // 1) Inversiones (las donaciones antiguas pasan a una línea si no cabe).
+    const donFull = (d: Emp, i: number) => [
+      `## 🧾 Donación nº ${i + 1}`,
+      `> 📅 **Fecha:** ${fecha(d.fecha)}`,
+      `> 💶 **Importe:** **${eur(d.importe)}**`,
+      `> 🎯 **Concepto:** ${d.licencias} ${Number(d.licencias) === 1 ? "licencia adicional" : "licencias adicionales"} de **Instalación de Nitro**`,
+      `> 👤 **Realizada por:** ${who(d.por_id)}${d.por_id ? ` · ${rangoDe(d.por_id)}` : ""}`,
+      `> 📊 **Coste por licencia:** ${eur(Number(d.importe || 0) / Math.max(1, Number(d.licencias) || 1))}`,
+    ].join("\n");
+    const donShort = (d: Emp, i: number) => `\`${fecha(d.fecha)}\` 🧾 nº ${i + 1} · **${eur(d.importe)}** · ${d.licencias} lic. · ${who(d.por_id)}`;
+    let inversiones = "";
+    for (let full = don.length; full >= 0; full--) {
+      const cut = don.length - full;
+      const parts = [
+        "# 💶 REGISTRO DE INVERSIONES · NITRO",
+        "-# Control interno · Aguila Motors 🦅",
+        "",
+        SEP,
+        ...(cut ? [don.slice(0, cut).map(donShort).join("\n"), ""] : []),
+        ...don.slice(cut).map((d, i) => donFull(d, cut + i)),
+        ...(don.length ? [] : ["*Todavía no hay donaciones.*"]),
+        "",
+        SEP,
+        `### 📈 Total invertido: **${eur(total)}** · Licencias del taller: **${nLic}**`,
+        "-# Se actualiza solo desde la página del taller.",
+      ];
+      inversiones = parts.join("\n");
+      if (inversiones.length <= 1950) break;
+    }
+
+    // 2) Asignación actual.
+    const bloque = lic.map((l) => {
+      const libre = !l.employee_id;
+      if (l.principal) return [`## 👑 Licencia ${l.n} · Principal`, `> 👤 **Titular:** ${libre ? "*Por asignar*" : who(l.employee_id)}`, `> 🏅 **Rango:** ${libre ? "—" : rangoDe(l.employee_id)}`, `> 📅 **Asignación:** ${l.asignada_at ? fecha(l.asignada_at) : "—"}`].join("\n");
+      return [
+        `## ${libre ? "⏳" : "⚡"} Licencia ${l.n}`,
+        `> 👤 **Empleado:** ${libre ? "*Por asignar*" : who(l.employee_id)}`,
+        `> 🏅 **Rango:** ${libre ? "—" : rangoDe(l.employee_id)}`,
+        `> 📅 **Asignación:** ${l.asignada_at ? fecha(l.asignada_at) : "—"}`,
+        "> 🔁 **Uso:** se da al personal **según la necesidad**",
+      ].join("\n");
+    });
+    let asignacion = ["# ⚡ LICENCIAS DE NITRO · ASIGNACIÓN ACTUAL", `-# Última actualización: ${hoy}`, "", SEP, bloque.join("\n\n"), "", SEP, `-# 🟢 Asignadas: ${asig} de ${nLic} · 🟡 Libres: ${nLic - asig}`].join("\n");
+    if (asignacion.length > 1990) asignacion = asignacion.replace(/\n> 🔁 \*\*Uso:\*\* se da al personal \*\*según la necesidad\*\*/g, "");
+
+    // 3) Normas (las escribe el Jefe Aguila en la página).
+    const precio = Number(body.precioNitro) > 0 ? usd(body.precioNitro) : "$35.000";
+    const normasTxt: string[] = Array.isArray(body.normas) && body.normas.length ? body.normas.map((x: unknown) => String(x).slice(0, 300)).slice(0, 12) : [
+      "🔒 La licencia es **personal**: no se presta ni se comparte.",
+      "🤫 Las instalaciones se hacen **solo en la trastienda**.",
+      "🧾 Toda instalación se **factura** como «Instalación de Nitro» ({precio}).",
+      "⛔ Mal uso, filtración o no facturar = **retirada de la licencia**.",
+      "🔁 La asigna y la retira el **Jefe Aguila**, solo a personal de confianza. Si el titular deja el taller, la licencia **vuelve a la {jefatura}**.",
+    ];
+    const normas = ["# 📜 NORMAS DE LA LICENCIA DE NITRO", ...normasTxt.map((x) => `> ${x.replace(/\{precio\}/g, precio).replace(/\{jefatura\}/g, `<@&${ROL_JEFATURA}>`).replace(/@(everyone|here)/g, "@\u200b$1")}`)].join("\n");
+
+    // 4) Historial (los últimos que quepan, máx. 25).
+    const linea = (m: Emp) => {
+      const f = `\`${fecha(m.fecha)}\``;
+      const t = limpio(m.texto, 120);
+      if (m.tipo === "compra") return `${f} ➕ Adquirida 1 licencia${t ? ` ${t}` : ""}`;
+      if (m.tipo === "donacion") return `${f} ➕ Compradas ${t || "licencias nuevas"}`;
+      if (m.tipo === "asigna") return `${f} ✅ Licencia ${m.n} asignada a ${who(m.employee_id, m.nombre)}`;
+      if (m.tipo === "retira") return `${f} ✖️ Licencia ${m.n} retirada a ${who(m.employee_id, m.nombre)}${t ? ` · ${t}` : ""}`;
+      if (m.tipo === "devuelta") return `${f} 🔁 Licencia ${m.n} devuelta · ${who(m.employee_id, m.nombre)}${t ? ` (${t})` : ""}`;
+      return `${f} ${t}`;
+    };
+    let lines = movs.map(linea).slice(-25);
+    const histOf = (ls: string[], more: boolean) => ["## 🗂️ HISTORIAL DE MOVIMIENTOS", ...(ls.length ? ls : ["*Sin movimientos.*"]), ...(more ? ["-# Últimos movimientos · el historial completo está en la página del taller."] : [])].join("\n");
+    let historial = histOf(lines, movs.length > lines.length);
+    while (historial.length > 1950 && lines.length > 1) {
+      lines = lines.slice(1);
+      historial = histOf(lines, true);
+    }
+
+    const textos: [string, string][] = [["inversiones", inversiones], ["asignacion", asignacion], ["normas", normas], ["historial", historial]];
+    const ids = new Map(msgs.map((m) => [String(m.clave), String(m.msg_id || "")]));
+    const guardar = (clave: string, id: string) =>
+      sb("nitro_msgs?on_conflict=clave", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" }, body: JSON.stringify([{ clave, msg_id: id }]) });
+
+    // Sincronizar: borra los mensajes escritos a mano y los del bot, y publica los 4 en orden.
+    if (body.limpiar === true) {
+      let antes = "";
+      for (let p = 0; p < 10; p++) {
+        const r = await dc(`/channels/${CANAL_NITRO}/messages?limit=100${antes ? `&before=${antes}` : ""}`);
+        if (!r.ok) {
+          res.errores.push(r.status === 403 ? "El bot no puede ver el canal de nitro (permisos Ver canal y Leer el historial)." : `Discord respondió ${r.status} al leer el canal de nitro.`);
+          break;
+        }
+        const list = await r.json();
+        if (!Array.isArray(list) || !list.length) break;
+        for (const m of list) {
+          const viejo = /REGISTRO DE INVERSIONES · NITRO|LICENCIAS DE NITRO · ASIGNACI|NORMAS DE LA LICENCIA DE NITRO|HISTORIAL DE MOVIMIENTOS/.test(m.content || "");
+          if (m.author?.id !== yo.id && !viejo) continue;
+          const d = await dc(`/channels/${CANAL_NITRO}/messages/${m.id}`, { method: "DELETE" });
+          if (d.ok || d.status === 404) res.borrados++;
+          else if (d.status === 403) res.sinPermiso++;
+          await sleep(350);
+        }
+        antes = list[list.length - 1].id;
+        if (list.length < 100) break;
+      }
+      ids.clear();
+    }
+    for (const [clave, content] of textos) {
+      const payload = JSON.stringify({ content, allowed_mentions: { parse: [] } });
+      const id = ids.get(clave);
+      if (id) {
+        const r = await dc(`/channels/${CANAL_NITRO}/messages/${id}`, { method: "PATCH", body: payload });
+        if (r.ok) {
+          res.editados++;
+          await sleep(250);
+          continue;
+        }
+        if (r.status !== 404) {
+          res.errores.push(`Discord respondió ${r.status} al editar «${clave}».`);
+          continue;
+        }
+      }
+      const r = await dc(`/channels/${CANAL_NITRO}/messages`, { method: "POST", body: payload });
+      if (!r.ok) {
+        res.errores.push(r.status === 403 ? "El bot no puede escribir en el canal de nitro (permiso Enviar mensajes)." : `Discord respondió ${r.status} al publicar «${clave}».`);
+        if (r.status === 403) break;
+        continue;
+      }
+      const m = await r.json();
+      await guardar(clave, m.id);
+      res.publicados++;
+      await sleep(400);
+    }
+    if (res.errores.length) res.ok = res.publicados + res.editados > 0;
+    return res;
+  }
+
   const emps: Emp[] = await sb(
     "employees?select=id,name,surname,rank,discord,discord_previo,iban,no_pay,alta_at,contratado_at,despedido_at,despedido_motivo,licencia,log_msg_id",
   ).then((r) => r.json());
   if (!Array.isArray(emps)) return json({ ok: false, error: "No se pudo leer la tabla de empleados (¿falta el SQL 17?)." }, 500);
 
   const yo = await dc("/users/@me").then((r) => r.json()).catch(() => ({}));
+  if (body.nitro === true) return json(await nitro());
   const out = { ok: true, publicados: 0, editados: 0, borrados: 0, sinPermiso: 0, errores: [] as string[] };
 
   // 2) Sincronizar todo: borra los mensajes viejos con la plantilla (los

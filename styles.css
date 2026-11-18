@@ -2735,3 +2735,46 @@ button.lic-chip:hover { border-color: #6b5440; color: #f6efe6; }
 .lic-viewer img { max-width: 100%; max-height: calc(100vh - 70px); object-fit: contain; border-radius: 8px; }
 .lic-viewer span { color: #a89a8c; font-size: 13px; }
 @media (max-width: 560px) { .lic-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* v151 · Licencias de nitro (Panel del Jefe) */
+.jp-nitro { margin-top: 14px; }
+.nitro-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nitro-head h3 { margin: 0; }
+.nitro-st { margin-left: auto; font-size: 12.5px; }
+.nitro-st.ok { color: var(--ok, #8adbb5); }
+.nitro-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 14px; }
+.nitro-k { background: #1a140f; border: 1px solid #2e241a; border-radius: 12px; padding: 9px 12px; font-size: 12px; color: var(--muted); }
+.nitro-k b { display: block; font-size: 21px; color: #f6efe6; }
+.nitro-k.ok b { color: #8adbb5; }
+.nitro-k.free b { color: #ffd257; }
+.nitro-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; }
+.jp-nitro h4 { margin: 0 0 9px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #ff9a3c; display: flex; align-items: center; gap: 8px; }
+.jp-nitro h4.nitro-h4b { margin-top: 16px; }
+.jp-nitro h4 button { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.nitro-lic { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid #2e241a; border-radius: 12px; background: #15110d; margin-bottom: 8px; }
+.nitro-lic.free { border-style: dashed; }
+.nitro-lic .n { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 17px; background: #2a2119; flex: none; }
+.nitro-lic.pr .n { background: linear-gradient(135deg, #f97d02, #ffcf7a); }
+.nitro-lic .w { flex: 1; min-width: 160px; }
+.nitro-lic .w b { font-size: 14.5px; }
+.nitro-lic .w small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.nitro-b { margin: 0 4px 0 6px; vertical-align: 1px; }
+.nitro-sel { min-width: 200px; max-width: 260px; padding: 6px 10px; }
+.nitro-red { color: #ff8a6a; border-color: rgba(255,110,80,.35); }
+.nitro-don { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.nitro-don b { min-width: 30px; color: #ff9a3c; }
+.nitro-don strong { margin-left: auto; }
+.nitro-form { display: grid; grid-template-columns: 1fr 1fr 1fr 1.4fr auto; gap: 8px; align-items: end; margin-top: 10px; padding: 10px; border: 1px dashed #4a3a2a; border-radius: 12px; }
+.nitro-form label span { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+.nitro-form .text-input { width: 100%; padding: 6px 9px; }
+.nitro-hist { font-size: 12.5px; line-height: 1.8; color: #d9cfc4; max-height: 260px; overflow: auto; }
+.nitro-hist code { background: #1e1f22; border-radius: 5px; padding: 1px 6px; color: #dbdee1; font-size: 11.5px; margin-right: 6px; }
+.nitro-rules { font-size: 12.8px; line-height: 1.6; color: #d9cfc4; }
+.nitro-rules b { color: #fff; }
+.nitro-ta { width: 100%; min-height: 150px; font-size: 12.5px; }
+.nitro-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .nitro-grid { grid-template-columns: 1fr; }
+  .nitro-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nitro-form { grid-template-columns: 1fr 1fr; }
+}

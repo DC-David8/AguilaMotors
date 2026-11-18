@@ -251,6 +251,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 151 · 18 de noviembre de 2026
+
+- **Panel del Jefe · ⚡ Licencias de nitro** (`js/nitro.js`, SQL 20): asignación actual (la nº 1, principal y fija), asignar, cambiar de titular y retirar (con motivo); registrar donaciones (fecha, importe en €, licencias compradas y quién la hace: crea las licencias nuevas «por asignar»); historial completo y normas editables (`{precio}` y `{jefatura}`). Solo el Jefe Aguila cambia; la Jefatura ve en la ficha «⚡ Licencia de nitro nº X».
+- El bot (función `log-empleados` con `{ nitro: true }`) mantiene 4 mensajes en el canal de licencias de nitro: inversiones, asignación actual, normas e historial (últimos 25). «📋 Sincronizar canal» borra los mensajes escritos a mano y publica los del bot en orden. Las donaciones antiguas se resumen en una línea si el mensaje no cabe en 2.000 caracteres.
+- Automático: si despiden al titular, la base de datos devuelve su licencia a «Por asignar» y lo apunta en el historial (trigger del SQL 20). Si cambia el rango o el nombre de un titular, o el precio de «Instalación de Nitro» en la lista de precios, el canal se actualiza solo.
+
 ### Función `log-empleados` · 17 de noviembre de 2026 (sin cambio de versión de la página)
 
 - El log de Discord ponía «Baja · sin motivo» a quien se despidió antes de que existieran los tipos de baja (motivo escrito a mano, p. ej. «CK (Fallecimiento del personaje)»). Ahora la función reconoce el tipo igual que la página (`parseBaja`): por el tipo elegido y, si no, por palabras (CK, fallecimiento, inactividad, renuncia…). Hay que volver a desplegar la función.
