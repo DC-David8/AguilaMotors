@@ -2778,3 +2778,16 @@ button.lic-chip:hover { border-color: #6b5440; color: #f6efe6; }
   .nitro-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nitro-form { grid-template-columns: 1fr 1fr; }
 }
+
+/* v152 · Publicar en Discord y roles */
+button.pg-pub-btn { background: #5865f2; border-color: #5865f2; color: #fff; font-weight: 800; }
+button.pg-pub-btn:hover { background: #4752c4; }
+.pg-pub-status { font-size: 12.5px; margin: 6px 0 0; }
+.pg-pub-status.ok { color: var(--ok, #8adbb5); }
+.emp-dc-roles { margin-top: 18px; border: 1px dashed #4a3a2a; border-radius: 12px; padding: 10px 14px; }
+.emp-dc-roles-list { display: flex; flex-direction: column; }
+.emp-dc-role { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.emp-dc-role b { min-width: 170px; }
+.emp-dc-role .add { color: #7fd49a; font-weight: 700; }
+.emp-dc-role .rem { color: #ff8a6a; font-weight: 700; }
+.logemp-toast.ok { background: #10241a; border-color: rgba(127,212,154,.45); color: #c9f2d8; }

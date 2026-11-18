@@ -382,6 +382,8 @@ function setupEmployeesAdminModal({ onChanged }) {
     if (sortChip) sortChip.hidden = !hasAccess();
     const lb = byId("emp-logdc");
     if (lb) lb.hidden = !(hasAccess() && EMP_CLOUD.hasLic);
+    const rb = byId("emp-roles");
+    if (rb) rb.hidden = !(canEdit() && EMP_CLOUD.hasLic);
     if (!bar) return;
     bar.hidden = !hasAccess();
     if (bar.hidden) return;
@@ -1524,12 +1526,18 @@ function setupEmployeesAdminModal({ onChanged }) {
   }
   const noDiscord = () => mk("span", "muted emp-small", "· sin Discord: saldrá solo el nombre");
   async function renderDiscordTab(force = false) {
+    try {
+      dcPubShow();
+    } catch (err) {
+      console.warn("[publicar]", err);
+    }
     const list = byId("emp-dc-list");
     if (!list) return;
     if (!dc.sun) dc.sun = ascDefaultWeek();
     const max = ascDefaultWeek();
     if (dc.sun > max) dc.sun = max;
     byId("emp-dc-week").textContent = `Semana del ${ascDM(dc.sun)} al ${ascDM(ascDay(dc.sun, 6))}`;
+    dcPubShow();
     byId("emp-dc-next").disabled = +dc.sun >= +max;
     const info = byId("emp-dc-info");
     const key = String(+dc.sun);
@@ -1657,6 +1665,81 @@ function setupEmployeesAdminModal({ onChanged }) {
     dcFrases();
     renderDiscordTab();
   });
+  // v152: el bot publica los dos mensajes de la semana y cambia los roles.
+  const dcWeek = () => isoOfDay(dc.sun);
+  // part: "" = las dos cosas · "eow" = solo Empleado de la Semana · "strikes" = solo strikes.
+  const dcRoles = (part, dry) => {
+    const sem = rolesSemanal();
+    return rolesCall({ dry, semanal: { ...(part !== "eow" ? { strikes: sem.strikes } : {}), ...(part !== "strikes" ? { eow: sem.eow } : {}) } });
+  };
+  async function rolesPreview() {
+    const box = byId("emp-dc-roles");
+    const list = byId("emp-dc-roles-list");
+    const st = byId("emp-dc-roles-st");
+    const ap = byId("emp-dc-roles-apply");
+    if (!box || box.hidden) return;
+    list.textContent = "";
+    ap.hidden = true;
+    st.textContent = "Mirando los roles en Discord…";
+    try {
+      const j = await dcRoles("", true);
+      const ch = (j.cambios || []).filter((c) => c.poner?.length || c.quitar?.length || c.sinDiscord || c.fueraDelServidor);
+      for (const c of ch) {
+        const row = mk("div", "emp-dc-role");
+        row.appendChild(mk("b", "", c.nombre));
+        if (c.sinDiscord || c.fueraDelServidor) row.appendChild(mk("span", "muted", c.sinDiscord ? "sin ID de Discord" : "no está en el servidor"));
+        for (const r of c.quitar || []) row.appendChild(mk("span", "rem", `− ${r}`));
+        for (const r of c.poner || []) row.appendChild(mk("span", "add", `+ ${r}`));
+        list.appendChild(row);
+      }
+      const n = ch.filter((c) => c.poner?.length || c.quitar?.length).length;
+      st.textContent = n ? `${n} ${n === 1 ? "persona" : "personas"} con roles por cambiar.` : "✔ Los roles de strikes y del Empleado de la Semana ya están al día.";
+      if (j.errores?.length) st.textContent += ` ⚠ ${j.errores[0]}`;
+      ap.hidden = !n;
+    } catch (err) {
+      st.textContent = `⚠ ${err.message || err}`;
+    }
+  }
+  byId("emp-dc-roles-check")?.addEventListener("click", rolesPreview);
+  byId("emp-dc-roles-apply")?.addEventListener("click", async () => {
+    const ap = byId("emp-dc-roles-apply");
+    ap.disabled = true;
+    try {
+      const j = await dcRoles("", false);
+      const n = (j.cambios || []).filter((c) => c.poner?.length || c.quitar?.length).length;
+      await rolesPreview();
+      byId("emp-dc-roles-st").textContent = `✔ Roles cambiados a ${n} ${n === 1 ? "persona" : "personas"}.${j.errores?.length ? ` ⚠ ${j.errores[0]}` : ""}`;
+    } catch (err) {
+      byId("emp-dc-roles-st").textContent = `⚠ ${err.message || err}`;
+    } finally {
+      ap.disabled = false;
+    }
+  });
+  const rolesAfter = (part) => async () => {
+    try {
+      const j = await dcRoles(part, false);
+      const n = (j.cambios || []).filter((c) => c.poner?.length || c.quitar?.length).length;
+      rolesPreview();
+      return n ? ` · roles cambiados a ${n} ${n === 1 ? "persona" : "personas"}` : "";
+    } catch (err) {
+      return ` · ⚠ roles: ${err.message || err}`;
+    }
+  };
+  byId("emp-dc-pub")?.addEventListener("click", () => pubRun(byId("emp-dc-pub"), byId("emp-dc-pub-st"), "movs", dcWeek(), dcText, rolesAfter("eow")));
+  byId("emp-dc-st-pub")?.addEventListener("click", () => pubRun(byId("emp-dc-st-pub"), byId("emp-dc-st-pub-st"), "strikes", dcWeek(), dcStText, rolesAfter("strikes")));
+  function dcPubShow() {
+    const on = hasAccess() && EMP_CLOUD.hasLic;
+    for (const id of ["emp-dc-pub", "emp-dc-st-pub"]) {
+      const b = byId(id);
+      if (b) b.hidden = !on;
+    }
+    const rb = byId("emp-dc-roles");
+    if (rb) rb.hidden = !on;
+    if (!on || !dc.sun) return;
+    pubPaint(byId("emp-dc-pub-st"), "movs", dcWeek());
+    pubPaint(byId("emp-dc-st-pub-st"), "strikes", dcWeek());
+  }
+
   byId("emp-dc-copy")?.addEventListener("click", async () => {
     const t = dcText();
     if (!t) return;
@@ -1858,6 +1941,33 @@ function setupEmployeesAdminModal({ onChanged }) {
       logBtn.disabled = false;
     }
   };
+  // v152: revisar y corregir los roles de rango y Mecánicos de toda la plantilla.
+  const rolesBtn = byId("emp-roles");
+  rolesBtn?.addEventListener("click", async () => {
+    rolesBtn.disabled = true;
+    setStatus("🔐 Mirando los roles de cada uno en Discord…");
+    try {
+      const j = await rolesCall({ todos: true, dry: true });
+      const ch = (j.cambios || []).filter((c) => c.poner?.length || c.quitar?.length);
+      const warn = (j.cambios || []).filter((c) => c.sinDiscord || c.fueraDelServidor).map(rolesLine);
+      if (!ch.length) {
+        setStatus(`✔ Todos tienen el rol de su rango y el de Mecánicos.${warn.length ? ` ⚠ ${warn.join(" · ")}` : ""}${j.errores?.length ? ` ⚠ ${j.errores[0]}` : ""}`, true);
+        return;
+      }
+      const list = ch.map((c) => `• ${rolesLine(c)}`).join("\n");
+      if (!confirm(`El bot cambiaría estos roles en Discord:\n\n${list.slice(0, 1500)}${list.length > 1500 ? "\n…" : ""}\n\n¿Aplicar?`)) {
+        setStatus("Roles sin tocar.");
+        return;
+      }
+      const r = await rolesCall({ todos: true });
+      const done = (r.cambios || []).filter((c) => (c.poner?.length || c.quitar?.length) && c.ok).length;
+      setStatus(`✔ Roles corregidos a ${done} ${done === 1 ? "persona" : "personas"}.${r.errores?.length ? ` ⚠ ${r.errores[0]}` : ""}`, !r.errores?.length);
+    } catch (err) {
+      setStatus(`⚠ ${err.message || err}`);
+    } finally {
+      rolesBtn.disabled = false;
+    }
+  });
   logBtn.addEventListener("click", () => {
     if (!confirm("¿Poner al día el log de empleados en Discord?\n\n• Publica o corrige el mensaje de cada empleado (también las bajas).\n• Borra los mensajes viejos escritos a mano con la plantilla.\n• No menciona a nadie: no salta ninguna notificación.")) return;
     runLog(false);

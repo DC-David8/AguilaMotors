@@ -251,6 +251,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 152 · 18 de noviembre de 2026
+
+- **📣 Publicar en Discord** (SQL 21 y función `log-empleados`): el bot publica el mensaje de **pagas** (Pagos, paso 5), el de **movimientos de personal** y el de **strikes** (Empleados → Para Discord, paso 7) en su canal. Si ya estaba publicado, lo corrige editando el mismo mensaje (sin volver a avisar). Los mensajes de más de 2.000 caracteres se parten en varios. Se siguen pudiendo copiar.
+- **Roles automáticos en Discord**: al cambiar el rango, el bot quita el rol del rango viejo y pone el nuevo (y Mecánicos); al despedir, quita el del rango, Mecánicos, strikes y Empleado de la Semana; al readmitir, los devuelve. Al publicar los movimientos pasa el rol de Empleado de la Semana al ganador de la última semana cerrada; al publicar los strikes, pone o quita los roles de 1.º/2.º/3.º strike según la racha actual. «🔎 Revisar roles» enseña antes qué cambiaría; «🔐 Roles» en Empleados revisa y corrige a toda la plantilla. Nunca toca Jefatura ni al Jefe Aguila.
+- Rol de Mano Derecha añadido (`468137969417453578`, pendiente de comprobar: no parece de este servidor).
+
 ### Versión 151 · 18 de noviembre de 2026
 
 - **Panel del Jefe · ⚡ Licencias de nitro** (`js/nitro.js`, SQL 20): asignación actual (la nº 1, principal y fija), asignar, cambiar de titular y retirar (con motivo); registrar donaciones (fecha, importe en €, licencias compradas y quién la hace: crea las licencias nuevas «por asignar»); historial completo y normas editables (`{precio}` y `{jefatura}`). Solo el Jefe Aguila cambia; la Jefatura ve en la ficha «⚡ Licencia de nitro nº X».

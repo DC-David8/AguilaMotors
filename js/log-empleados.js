@@ -50,6 +50,10 @@ function logEmpPush(...ids) {
     if (typeof nitroTouch === "function") nitroTouch(list);
     try {
       LOGEMP.last = await logEmpCall({ ids: list });
+      const rc = (LOGEMP.last?.roles || []).filter((c) => c.poner?.length || c.quitar?.length);
+      if (rc.length) toastLogEmp(`🔐 Discord: ${rc.map((c) => `${c.nombre}${c.quitar.length ? ` − ${c.quitar.join(", ")}` : ""}${c.poner.length ? ` + ${c.poner.join(", ")}` : ""}`).join(" · ")}`, true);
+      const re = (LOGEMP.last?.errores || []).filter((x) => /roles/i.test(x));
+      if (re.length) toastLogEmp(`⚠ ${re[0]}`);
     } catch (err) {
       console.warn("[log-empleados]", err);
       if (!LOGEMP.missing) toastLogEmp(`⚠ No se pudo actualizar el log de Discord: ${err.message || err}`);
@@ -57,7 +61,7 @@ function logEmpPush(...ids) {
   }, 2000);
 }
 
-function toastLogEmp(text) {
+function toastLogEmp(text, ok = false) {
   let t = document.getElementById("logemp-toast");
   if (!t) {
     t = document.createElement("div");
@@ -66,6 +70,7 @@ function toastLogEmp(text) {
     document.body.appendChild(t);
   }
   t.textContent = text;
+  t.classList.toggle("ok", !!ok);
   t.hidden = false;
   clearTimeout(t._h);
   t._h = setTimeout(() => (t.hidden = true), 7000);
@@ -142,3 +147,72 @@ function licViewer(src) {
   });
   document.body.appendChild(ov);
 }
+
+// ---------------------------------------------------------------------------
+// v152 · Publicar los mensajes de la semana y roles automáticos.
+// ---------------------------------------------------------------------------
+const PUB_CANAL_TXT = { pagas: "canal de pagas", movs: "canal de ascensos y descensos", strikes: "canal de strikes" };
+async function pubDiscord(clave, semana, content) {
+  return logEmpCall({ publicar: { clave, semana, content, por: AUTH.name || "" } });
+}
+async function pubInfo(clave, semana) {
+  try {
+    const rows = await cvCloud.req(`/rest/v1/pub_msgs?select=at,por,msg_ids&semana=eq.${semana}&clave=eq.${clave}`, { auth: true });
+    return rows?.[0] || null;
+  } catch {
+    return null;
+  }
+}
+const pubWhen = (iso) => {
+  const d = new Date(iso);
+  const same = d.toDateString() === new Date().toDateString();
+  return `${same ? "hoy" : d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" })} a las ${d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
+};
+// Pinta en un <span> si ese mensaje ya está publicado.
+async function pubPaint(el, clave, semana) {
+  if (!el || !semana) return;
+  const info = await pubInfo(clave, semana);
+  el.textContent = info ? `✔ Publicado ${pubWhen(info.at)}${info.por ? ` por ${info.por}` : ""} · «Publicar» corrige el mismo mensaje` : "";
+  el.classList.toggle("ok", !!info);
+}
+// Botón «📣 Publicar en Discord» genérico.
+async function pubRun(btn, statusEl, clave, semana, getText, after) {
+  const text = getText();
+  if (!text) return alert("No hay nada que publicar.");
+  const info = await pubInfo(clave, semana);
+  if (!confirm(info ? `Este mensaje ya está publicado (${pubWhen(info.at)}).\n\n¿Corregirlo con lo que ves ahora? Se edita el mismo mensaje (no avisa otra vez a nadie).` : `¿Publicar en el ${PUB_CANAL_TXT[clave]}?\n\nLo publica el bot del taller, con las menciones y etiquetas que ves en el mensaje.`)) return;
+  btn.disabled = true;
+  if (statusEl) statusEl.textContent = "Publicando…";
+  try {
+    const j = await pubDiscord(clave, semana, text);
+    let extra = "";
+    if (after) extra = (await after()) || "";
+    if (statusEl) {
+      statusEl.textContent = `✔ ${j.editado ? "Corregido" : "Publicado"} en Discord${j.mensajes > 1 ? ` (${j.mensajes} mensajes, no cabía en uno)` : ""}${extra}`;
+      statusEl.classList.add("ok");
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = `⚠ ${err.message || err}`;
+      statusEl.classList.remove("ok");
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+// Roles de la semana: strikes actuales de cada uno y Empleado de la Semana de la última semana cerrada.
+function rolesSemanal() {
+  const strikes = {};
+  for (const e of EMP_CLOUD.list) {
+    const n = Math.min(STRIKE_MAX, strikesBefore(e.id, fullName(e)));
+    strikes[String(e.id)] = isEmployeeNoPay(fullName(e)) ? 0 : n;
+  }
+  const last = STRIKE_HIST[0];
+  const eow = (last?.datos?.rows || []).filter((r) => Number(r.bonus) > 0 && r.id != null).map((r) => String(r.id));
+  return { strikes, eow, semana: last ? String(last.semana) : "" };
+}
+async function rolesCall(q) {
+  return logEmpCall({ roles: q });
+}
+const rolesLine = (c) =>
+  c.sinDiscord ? `${c.nombre}: sin ID de Discord` : c.fueraDelServidor ? `${c.nombre}: no está en el servidor` : `${c.nombre}:${c.quitar?.length ? ` − ${c.quitar.join(", ")}` : ""}${c.poner?.length ? ` + ${c.poner.join(", ")}` : ""}`;

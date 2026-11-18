@@ -1094,6 +1094,29 @@ function setupEmployeesModal(state, refreshPagos) {
     }
   });
 
+  // v152: el bot publica el mensaje de pagas en el canal de pagas (o corrige el mismo).
+  const pubBtn = byId("pg-pub-discord");
+  const pubSt = byId("pg-pub-status");
+  const pubWeek = () => byId("dlog-from")?.value || "";
+  const pubShow = () => {
+    if (!pubBtn) return;
+    pubBtn.hidden = !(hasAccess() && EMP_CLOUD.hasLic && typeof pubRun === "function");
+    if (!pubBtn.hidden) pubPaint(pubSt, "pagas", pubWeek());
+  };
+  pubBtn?.addEventListener("click", async () => {
+    try {
+      await buildTotalsRows();
+    } catch {
+      return alert("No se pudieron cargar los empleados.");
+    }
+    const rows = totalsRows.filter((r) => !r.noPay);
+    if (!rows.length) return alert("No hay nadie que cobre esta semana.");
+    if (!pubWeek()) return alert("Elige la semana en el paso 1.");
+    pubRun(pubBtn, pubSt, "pagas", pubWeek(), () => discordPayText(rows));
+  });
+  document.addEventListener("aguila-pagos", pubShow);
+  document.addEventListener("aguila-auth", pubShow);
+
   // v138: Gestión de empleados es una sección más; este botón solo la abre.
   function openAdminModal() {
     openEmployeesSection();
