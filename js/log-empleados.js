@@ -82,3 +82,62 @@ async function logEmpSyncAll(reordenar = false) {
   if (j.errores?.length) msg += ` ⚠ ${j.errores.slice(0, 2).join(" ")}`;
   return msg;
 }
+
+// ---------------------------------------------------------------------------
+// v150 · Licencias: tipos marcados (employees.licencia = "Coche,Moto,…") e
+// imagen de la licencia (tabla privada emp_licencias, SQL 19).
+// ---------------------------------------------------------------------------
+const LIC_TIPOS = [
+  ["Coche", "🚗"],
+  ["Moto", "🏍️"],
+  ["Camión", "🚚"],
+  ["Avión", "✈️"],
+];
+function licSet(v) {
+  const parts = String(v || "").split(/[,;]+/).map((x) => normalizeKeySimple(x));
+  return new Set(LIC_TIPOS.map(([t]) => t).filter((t) => parts.includes(normalizeKeySimple(t))));
+}
+const licValue = (set) => LIC_TIPOS.map(([t]) => t).filter((t) => set.has(t)).join(",");
+const licLegacy = (v) => normalizeKeySimple(v) === "tiene";
+
+const LIC_FOTO = { ok: null, cache: new Map() };
+async function licFotoGet(id) {
+  id = String(id);
+  if (LIC_FOTO.cache.has(id)) return LIC_FOTO.cache.get(id);
+  try {
+    const rows = (await cvCloud.req(`/rest/v1/emp_licencias?select=foto,updated_at,por&employee_id=eq.${encodeURIComponent(id)}`, { auth: true })) || [];
+    LIC_FOTO.ok = true;
+    const v = rows[0] || null;
+    LIC_FOTO.cache.set(id, v);
+    return v;
+  } catch (err) {
+    if (/PGRST205|42P01|does not exist|404/.test(String(err?.message || err))) LIC_FOTO.ok = false;
+    throw err;
+  }
+}
+async function licFotoSave(id, foto) {
+  const row = { employee_id: String(id), foto, updated_at: new Date().toISOString(), por: AUTH.name || "" };
+  await cvCloud.upsert("emp_licencias", [row], "employee_id");
+  LIC_FOTO.cache.set(String(id), row);
+}
+async function licFotoDel(id) {
+  await cvCloud.del("emp_licencias", `employee_id=eq.${encodeURIComponent(String(id))}`);
+  LIC_FOTO.cache.set(String(id), null);
+}
+function licViewer(src) {
+  const ov = document.createElement("div");
+  ov.className = "lic-viewer";
+  const img = document.createElement("img");
+  img.src = src;
+  img.alt = "Licencia";
+  ov.appendChild(img);
+  ov.appendChild(Object.assign(document.createElement("span"), { textContent: "Toca para cerrar" }));
+  ov.addEventListener("click", () => ov.remove());
+  document.addEventListener("keydown", function esc(ev) {
+    if (ev.key === "Escape") {
+      ov.remove();
+      document.removeEventListener("keydown", esc);
+    }
+  });
+  document.body.appendChild(ov);
+}

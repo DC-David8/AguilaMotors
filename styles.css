@@ -2713,3 +2713,25 @@ button.eh-rng-b.on { background: #2a2119; color: #f6efe6; border-color: #5a4430;
 .emp-logdc-again { min-height: 0; padding: 3px 10px; font-size: 12px; margin-left: 6px; }
 .logemp-toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 9999; max-width: min(560px, calc(100vw - 32px)); padding: 10px 14px; border-radius: 12px; background: #2a1510; border: 1px solid #a8452a; color: #ffd9cc; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 .logemp-toast[hidden] { display: none; }
+
+/* v150 · Licencias en la ficha */
+.lic-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.lic-chip { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 6px 8px; border-radius: 12px; border: 1px solid #3a2e22; background: #15110d; color: var(--muted); font: 600 13px/1.2 inherit; font-family: inherit; text-transform: none; letter-spacing: 0; min-height: 0; box-shadow: none; position: relative; }
+button.lic-chip { cursor: pointer; }
+button.lic-chip:hover { border-color: #6b5440; color: #f6efe6; }
+.lic-chip i { font-style: normal; font-size: 22px; filter: grayscale(1); opacity: .55; }
+.lic-chip b { position: absolute; top: 5px; right: 8px; font-size: 12px; color: #7fd49a; }
+.lic-chip.on { border-color: rgba(127,212,154,.55); background: rgba(60,180,100,.1); color: #f6efe6; }
+.lic-chip.on i { filter: none; opacity: 1; }
+.lic-photo { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.lic-img { display: block; max-width: 100%; max-height: 260px; object-fit: contain; border-radius: 10px; border: 1px solid #3a2e22; background: #0d0a08; cursor: zoom-in; align-self: flex-start; }
+.lic-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 22px 12px; border: 2px dashed #4a3a2a; border-radius: 12px; text-align: center; color: var(--muted); font-size: 12.5px; cursor: text; outline: none; }
+.lic-drop b { color: #f6efe6; font-size: 14px; }
+.lic-drop.small { padding: 10px 12px; }
+.lic-drop.small b { font-size: 13px; }
+.lic-drop:focus, .lic-drop.over { border-color: #f97d02; background: rgba(249,125,2,.07); }
+.lic-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.lic-viewer { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.88); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; cursor: zoom-out; }
+.lic-viewer img { max-width: 100%; max-height: calc(100vh - 70px); object-fit: contain; border-radius: 8px; }
+.lic-viewer span { color: #a89a8c; font-size: 13px; }
+@media (max-width: 560px) { .lic-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -129,7 +129,7 @@ const empCloudRow = (e) => ({
   discord: e.discord || "",
   iban: e.iban || "",
   no_pay: !!e.noPay,
-  ...(EMP_CLOUD.hasLic ? { licencia: e.licencia || "Pendiente" } : {}),
+  ...(EMP_CLOUD.hasLic ? { licencia: e.licencia ?? "" } : {}),
 });
 
 async function empCloudSave(e) {

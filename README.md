@@ -251,6 +251,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 150 · 17 de noviembre de 2026
+
+- **Ficha · 🪪 Licencias**: los cuatro tipos (🚗 Coche, 🏍️ Moto, 🚚 Camión, ✈️ Avión) se marcan con un toque y se guardan al momento; y la **imagen de la licencia**: pegar un recorte (Ctrl+V con la ficha abierta), arrastrar o subir un archivo, verla en grande, cambiarla o quitarla. Solo el Jefe Aguila las cambia; la Jefatura las ve.
+- La imagen va en una tabla privada (`emp_licencias`, SQL 19), no en una carpeta pública. Se comprime a 1400 px.
+- El log de Discord pone «🪪 **Licencias:** 🚗 Coche · 🏍️ Moto…» (hay que volver a desplegar la función `log-empleados`). Se quita el selector «Licencia» de «Editar datos».
+
 ### Versión 149 · 17 de noviembre de 2026
 
 - **Log de empleados en Discord** (`js/log-empleados.js`, SQL 17 y función `log-empleados`, paso 18): el bot del taller mantiene un mensaje por empleado en el canal del log, con el cuadrado del color de su rango, rango, IBAN, licencia, fecha de alta y estado. Al dar de alta, editar, cambiar de rango, despedir o readmitir, la página avisa al bot y él edita ese mismo mensaje. Las bajas quedan como «❌ Baja · tipo · fecha» con ⬛.

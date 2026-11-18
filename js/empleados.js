@@ -692,7 +692,144 @@ function setupEmployeesAdminModal({ onChanged }) {
     return r;
   }
 
+  // v150: 🪪 Licencias de la ficha: los cuatro tipos (un toque los marca y se
+  // guarda al momento) y la imagen de la licencia (pegar, arrastrar o subir).
+  function licBox(e) {
+    const b = box("🪪 Licencias", "emp-lic");
+    const id = String(e.id);
+    const can = canEdit();
+    const chips = mk("div", "lic-chips");
+    const have = licSet(e.licencia);
+    for (const [t, ic] of LIC_TIPOS) {
+      const c = mk(can ? "button" : "span", "lic-chip" + (have.has(t) ? " on" : ""));
+      c.append(mk("i", "", ic), mk("span", "", t), mk("b", "", have.has(t) ? "✔" : ""));
+      if (can) {
+        c.type = "button";
+        c.title = have.has(t) ? `Quitar la licencia de ${t}` : `Marcar que tiene licencia de ${t}`;
+        c.addEventListener("click", async () => {
+          const cur = EMP_CLOUD.list.find((x) => String(x.id) === id) || e;
+          const next = licSet(cur.licencia);
+          next.has(t) ? next.delete(t) : next.add(t);
+          chips.querySelectorAll("button").forEach((x) => (x.disabled = true));
+          try {
+            empCloudRequireSession();
+            const v = licValue(next);
+            await updateEmployee(e.id, { licencia: v }, adminPass);
+            e.licencia = v;
+            cur.licencia = v;
+            renderFicha();
+          } catch (err) {
+            alert(`No se pudo guardar: ${err.message || err}`);
+            chips.querySelectorAll("button").forEach((x) => (x.disabled = false));
+          }
+        });
+      }
+      chips.appendChild(c);
+    }
+    b.appendChild(chips);
+    if (licLegacy(e.licencia)) b.appendChild(mk("p", "muted emp-small", "Estaba como «Tiene» sin detalle: marca qué licencias son."));
+    else if (!have.size) b.appendChild(mk("p", "muted emp-small", can ? "Sin licencias registradas: toca las que tenga." : "Sin licencias registradas."));
+
+    const ph = mk("div", "lic-photo");
+    b.appendChild(ph);
+    const paint = (row, msg) => {
+      ph.textContent = "";
+      if (LIC_FOTO.ok === false) {
+        ph.appendChild(mk("p", "muted emp-small", "Para guardar la imagen de la licencia, ejecuta en Supabase el SQL 19_licencias.sql."));
+        return;
+      }
+      if (row?.foto) {
+        const img = mk("img", "lic-img");
+        img.src = row.foto;
+        img.alt = `Licencia de ${fullName(e)}`;
+        img.title = "Ver en grande";
+        img.addEventListener("click", () => licViewer(row.foto));
+        ph.appendChild(img);
+        const at = row.updated_at ? new Date(row.updated_at) : null;
+        ph.appendChild(mk("p", "muted emp-small", `Subida${at ? ` el ${at.toLocaleDateString("es-ES")}` : ""}${row.por ? ` por ${row.por}` : ""} · toca la imagen para verla en grande.`));
+      } else if (!can) ph.appendChild(mk("p", "muted emp-small", "Sin imagen de la licencia."));
+      if (!can) return;
+      const drop = mk("div", "lic-drop" + (row?.foto ? " small" : ""));
+      drop.tabIndex = 0;
+      drop.append(mk("b", "", row?.foto ? "Cambiar imagen" : "📋 Pega aquí el recorte de la licencia"), mk("span", "", "Ctrl+V · arrastra una imagen · o elige un archivo"));
+      const file = mk("input");
+      file.type = "file";
+      file.accept = "image/*";
+      file.hidden = true;
+      const pick = btn("📁 Subir imagen");
+      pick.addEventListener("click", () => file.click());
+      const acts = mk("div", "lic-acts");
+      acts.appendChild(pick);
+      if (row?.foto) {
+        const del = btn("🗑 Quitar imagen");
+        del.addEventListener("click", async () => {
+          if (!confirm(`¿Quitar la imagen de la licencia de ${fullName(e)}?`)) return;
+          try {
+            await licFotoDel(id);
+            paint(null);
+          } catch (err) {
+            alert(`No se pudo quitar: ${err.message || err}`);
+          }
+        });
+        acts.appendChild(del);
+      }
+      if (msg) acts.appendChild(mk("span", "muted emp-small", msg));
+      ph.append(drop, acts, file);
+      const take = async (f) => {
+        if (!f || !/^image\//.test(f.type)) return alert("Eso no es una imagen.");
+        paint(row, "Guardando…");
+        try {
+          const data = await infCompressImage(f, 1400);
+          await licFotoSave(id, data);
+          paint(LIC_FOTO.cache.get(id), "✔ Imagen guardada");
+        } catch (err) {
+          paint(row);
+          alert(`No se pudo guardar la imagen: ${err.message || err}`);
+        }
+      };
+      file.addEventListener("change", () => take(file.files?.[0]));
+      drop.addEventListener("dragover", (ev) => {
+        ev.preventDefault();
+        drop.classList.add("over");
+      });
+      drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+      drop.addEventListener("drop", (ev) => {
+        ev.preventDefault();
+        drop.classList.remove("over");
+        take(ev.dataTransfer?.files?.[0]);
+      });
+      drop.addEventListener("click", () => drop.focus());
+      licPaste = (ev) => {
+        const it = [...(ev.clipboardData?.items || [])].find((x) => x.type.startsWith("image/"));
+        if (!it) return;
+        ev.preventDefault();
+        take(it.getAsFile());
+      };
+    };
+    paint(LIC_FOTO.cache.get(id));
+    if (!LIC_FOTO.cache.has(id) && LIC_FOTO.ok !== false) {
+      ph.appendChild(mk("p", "muted emp-small", "Cargando la imagen…"));
+      licFotoGet(id).then((row) => {
+        if (b.isConnected) paint(row);
+      }).catch(() => {
+        if (b.isConnected) paint(null);
+      });
+    }
+    return b;
+  }
+  // Ctrl+V con la ficha abierta pega la imagen de la licencia (si no se está
+  // escribiendo en un campo).
+  let licPaste = null;
+  document.addEventListener("paste", (ev) => {
+    if (!licPaste || !fichaId || editing) return;
+    if (!document.querySelector(".emp-lic .lic-drop")) return;
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type !== "file") return;
+    licPaste(ev);
+  });
+
   function renderFicha() {
+    licPaste = null;
     const view = byId("emp-ficha-view");
     const e = employees.find((x) => String(x.id) === fichaId);
     if (!e) return;
@@ -776,7 +913,7 @@ function setupEmployeesAdminModal({ onChanged }) {
         kv("Comisión", pctText(e)),
         kv("Cobra nómina", noPay ? "No" : "Sí")
       );
-      if (EMP_CLOUD.hasLic) datos.appendChild(kv("Licencia", normalizeKeySimple(e.licencia) === "tiene" ? "✅ Tiene" : "⏳ Pendiente", normalizeKeySimple(e.licencia) === "tiene" ? "" : "emp-no"));
+
       if (EMP_CLOUD.hasDates || e.altaAt) {
         datos.append(
           kv("Ingreso al taller", e.altaAt ? `${empDate(e.altaAt)} · ${empSeniority(e.altaAt)}` : "⚠ Sin fecha", e.altaAt ? "" : "emp-no"),
@@ -787,6 +924,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       if (ix) datos.append(kv("Última factura", ix.last ? `${dlogDate(new Date(ix.last).toISOString())} · hace ${ix.days} ${ix.days === 1 ? "día" : "días"}` : inactText(ix), ix.level >= 2 ? "emp-no" : ""));
     }
     card.appendChild(datos);
+    if (EMP_CLOUD.hasLic && hasAccess()) card.appendChild(licBox(e));
 
     // Rango
     const rango = box("Rango", "emp-rango");
@@ -937,10 +1075,7 @@ function setupEmployeesAdminModal({ onChanged }) {
     npL.append(np, mk("span", "", "No cobra la nómina"));
     const grid = mk("div", "emp-edit-grid");
     grid.append(field("Nombre", nIn), field("Apellido", sIn), field("Rango", rSel), field("IBAN", iIn), field("ID de Discord", dIn));
-    const lSel = mk("select", "text-input");
-    lSel.append(new Option("⏳ Pendiente", "Pendiente"), new Option("✅ Tiene", "Tiene"));
-    lSel.value = normalizeKeySimple(e.licencia) === "tiene" ? "Tiene" : "Pendiente";
-    if (EMP_CLOUD.hasLic) grid.appendChild(field("🚗 Licencia", lSel));
+
     const aIn = mk("input", "text-input");
     aIn.type = "date";
     aIn.value = e.altaAt || "";
@@ -978,7 +1113,7 @@ function setupEmployeesAdminModal({ onChanged }) {
       try {
         if (empCloudOn()) {
           empCloudRequireSession();
-          await updateEmployee(e.id, { name, surname, rank: rSel.value, discord, iban: ib, noPay: np.checked, ...(EMP_CLOUD.hasDates ? { altaAt: aIn.value, contratadoAt: cIn.value } : {}), ...(EMP_CLOUD.hasLic ? { licencia: lSel.value } : {}) }, adminPass);
+          await updateEmployee(e.id, { name, surname, rank: rSel.value, discord, iban: ib, noPay: np.checked, ...(EMP_CLOUD.hasDates ? { altaAt: aIn.value, contratadoAt: cIn.value } : {}) }, adminPass);
         } else {
           await updateEmployee(e.id, { name, surname, rank: rSel.value }, adminPass);
           if (newFull !== full) {

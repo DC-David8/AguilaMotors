@@ -32,6 +32,13 @@ const RANGOS: Record<string, { c: string; n: string; o: number }> = {
   "mano derecha": { c: "🟥", n: "Mano Derecha", o: 6 },
   "jefe aguila": { c: "🟨", n: "Jefe Aguila", o: 7 },
 };
+const LICENCIAS: [string, string][] = [["coche", "🚗 Coche"], ["moto", "🏍️ Moto"], ["camion", "🚚 Camión"], ["avion", "✈️ Avión"]];
+function licencias(v: unknown) {
+  const s = llave(String(v || ""));
+  if (s === "tiene") return "*Tiene* ✅";
+  const tiene = LICENCIAS.filter(([k]) => s.split(/[,;\s]+/).includes(k)).map(([, t]) => t);
+  return tiene.length ? tiene.join(" · ") : "*Pendiente*";
+}
 const BAJAS = ["Baja voluntaria", "Inactividad", "3 strikes", "Expulsión", "CK del personaje", "Otro"];
 
 const llave = (s: string) =>
@@ -51,7 +58,6 @@ function texto(e: Emp, nombres: Record<string, string>) {
   const baja = !!e.despedido_at;
   const discord = String((baja ? e.discord_previo : e.discord) || "").replace(/\D/g, "");
   const nombre = limpio(`${e.name} ${e.surname}`, 60);
-  const lic = llave(e.licencia) === "tiene" ? "*Tiene* ✅" : "*Pendiente*";
   const motivo = String(e.despedido_motivo || "");
   const tipo = BAJAS.find((t) => llave(motivo).startsWith(llave(t))) || "Baja";
   const estado = baja
@@ -61,7 +67,7 @@ function texto(e: Emp, nombres: Record<string, string>) {
     `### ${baja ? "⬛" : r?.c || "⬜"} ${nombre}${discord ? ` — <@${discord}>` : ""}`,
     `> 🔧 **Rango:** *${rango}*`,
     `> 💳 **IBAN:** ${e.no_pay ? "*No cobra*" : e.iban ? `\`${limpio(e.iban, 12)}\`` : "*Falta*"}`,
-    `> 🚗 **Licencia:** ${lic}`,
+    `> 🪪 **Licencias:** ${licencias(e.licencia)}`,
     `> 📅 **Alta:** __${fecha(e.alta_at || e.contratado_at)}__`,
     `> 📌 **Estado:** ${estado}`,
   ].join("\n");
