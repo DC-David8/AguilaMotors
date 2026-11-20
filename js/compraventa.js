@@ -163,6 +163,32 @@ function cvParseLog(text) {
 // ("PANTO 3Y5A" + "0F1"), al volver a pegar el log se reconoce y se corrige.
 const cvSig = (t) => [t.mediator, t.owner, t.buyer, t.price, `${t.model} ${t.plate}`].map((x) => normalizeKeySimple(String(x))).join("|");
 
+// ¿Dos horas del log a 2 minutos o menos? (mismo mensaje leído con otra hora)
+function cvNearTs(a, b) {
+  const da = cvDateOf(a);
+  const db = cvDateOf(b);
+  return !!(da && db && Math.abs(da - db) <= 2 * 60000);
+}
+// Movimientos repetidos ya guardados: misma firma (coche, personas y precio) a
+// 2 min o menos. Se queda el más reciente (la hora propia del mensaje).
+function cvDupes(tx) {
+  const out = [];
+  const bySig = new Map();
+  for (const t of tx) {
+    const k = cvSig(t);
+    if (!bySig.has(k)) bySig.set(k, []);
+    bySig.get(k).push(t);
+  }
+  for (const list of bySig.values()) {
+    if (list.length < 2) continue;
+    const sorted = list.slice().sort((a, b) => (a.sort || "").localeCompare(b.sort || ""));
+    for (let i = 1; i < sorted.length; i++) {
+      if (cvNearTs(sorted[i - 1].ts, sorted[i].ts)) out.push({ drop: sorted[i - 1], keep: sorted[i] });
+    }
+  }
+  return out;
+}
+
 // Mezcla sin duplicar: pegar el mismo log dos veces no repite nada.
 function cvMerge(data, incoming) {
   const used = new Set();
@@ -172,6 +198,9 @@ function cvMerge(data, incoming) {
   for (const t of incoming) {
     const sig = cvSig(t);
     let match = data.tx.find((e, i) => !used.has(i) && cvSig(e) === sig && (e.ts || "") === (t.ts || ""));
+    // v161: el mismo mensaje copiado otra vez puede traer la hora de la cabecera
+    // del grupo de Discord (1-2 min antes): se toma como el mismo movimiento.
+    if (!match && t.ts) match = data.tx.find((e, i) => !used.has(i) && cvSig(e) === sig && e.ts && cvNearTs(e.ts, t.ts));
     if (!match && t.ts) {
       match = data.tx.find((e, i) => !used.has(i) && cvSig(e) === sig && !e.ts);
       if (match) {
@@ -925,8 +954,45 @@ function setupCompraventa() {
     return c;
   }
 
+  // v161: aviso de movimientos repetidos y botón para quitarlos.
+  function renderDupes() {
+    const box = $("cv-dupes");
+    if (!box) return;
+    const list = AUTH.aguila ? cvDupes(source().tx) : [];
+    box.hidden = !list.length;
+    box.textContent = "";
+    if (!list.length) return;
+    const t = el("div", "cv-dupes-t");
+    t.append(el("b", "", `⚠ ${list.length} ${list.length === 1 ? "movimiento repetido" : "movimientos repetidos"}`), ` — el mismo coche, personas y precio con 1-2 minutos de diferencia: es el mismo mensaje del log procesado dos veces.`);
+    box.appendChild(t);
+    const ul = el("div", "cv-dupes-l");
+    for (const d of list.slice(0, 8)) ul.appendChild(el("div", "", `${d.drop.model.toUpperCase()} ${d.drop.plate} · ${fmtMoney(d.drop.price)} · ${d.drop.ts} y ${d.keep.ts} → se queda el de las ${String(d.keep.ts).slice(-5)}`));
+    if (list.length > 8) ul.appendChild(el("div", "muted", `… y ${list.length - 8} más`));
+    box.appendChild(ul);
+    const b = el("button", "", `🧹 Quitar ${list.length === 1 ? "el repetido" : `los ${list.length} repetidos`}`);
+    b.type = "button";
+    b.addEventListener("click", () =>
+      guarded(async () => {
+        if (!confirm(`¿Quitar ${list.length === 1 ? "el movimiento repetido" : `los ${list.length} movimientos repetidos`}?\n\nSe borra solo la copia (la de la hora anterior); el movimiento se queda una vez.`)) return;
+        if (online()) {
+          for (const d of list) if (d.drop.uid) await cvCloud.del("cv_tx", `uid=eq.${encodeURIComponent(d.drop.uid)}`);
+          await loadCloud();
+        } else {
+          const data = cvLoadLocal();
+          const drop = new Set(list.map((d) => `${cvSig(d.drop)}|${d.drop.ts}`));
+          data.tx = data.tx.filter((x) => !drop.has(`${cvSig(x)}|${x.ts}`));
+          cvSaveLocal(data);
+          render();
+        }
+        setStatus(`🧹 ${list.length === 1 ? "Quitado 1 movimiento repetido" : `Quitados ${list.length} movimientos repetidos`}.`);
+      }),
+    );
+    box.appendChild(b);
+  }
+
   function render() {
     renderBar();
+    renderDupes();
     try {
       track?.render();
     } catch (err) {

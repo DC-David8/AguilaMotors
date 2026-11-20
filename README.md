@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 161 · 19 de noviembre de 2026
+
+- **Compraventa · movimientos repetidos**: al procesar el log, un movimiento con el mismo coche, personas y precio que otro ya guardado a 2 minutos o menos se toma como el mismo (en Discord, los mensajes seguidos pueden copiarse con la hora de la cabecera del grupo, un minuto antes). Para los que ya estaban repetidos, aviso arriba del Compraventa con la lista y botón «🧹 Quitar los repetidos» (se queda el de la hora más reciente).
+
 ### Versión 160 · 19 de noviembre de 2026
 
 - **Compraventa · traspasos**: solo es traspaso cuando el coche entra **y** sale a $ 0. Si entra a $ 0 (por ejemplo, un coche propio pasado a la empresa) y se vende con dinero, es una venta normal con coste $ 0 (más los gastos que se apunten): cuenta en el resumen, en las ganancias y en las comisiones. Ya no se excluyen esos coches del almacén ni de los avisos de parados.
