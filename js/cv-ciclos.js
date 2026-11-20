@@ -469,6 +469,136 @@ function setupCvTracking({ source, rerender, el }) {
     body.appendChild(gb);
   }
 
+  // ---------- 🧾 Comisiones históricas (pago aparte, una sola vez) ----------
+  // Ventas anteriores al domingo en que empezó la comisión automática: esas no
+  // las paga Pagos; aquí se calculan con las mismas reglas y se arma el mensaje.
+  function openHistorico() {
+    const all = cvCommissions(cycles).filter((x) => x.semana < CV_COM_START);
+    const emps = (typeof EMP_CLOUD !== "undefined" && EMP_CLOUD.list) || [];
+    const empOf = (n) => emps.find((e) => normalizeKeySimple(fullName(e)) === normalizeKeySimple(n || ""));
+    const per = new Map();
+    const outside = new Map();
+    const add = (n, amount, item) => {
+      if (!n || !(amount > 0)) return;
+      const e = empOf(n);
+      const target = e && !isEmployeeNoPay(fullName(e)) ? per : outside;
+      const k = e ? fullName(e) : n;
+      if (!target.has(k)) target.set(k, { name: k, e, amount: 0, cars: 0 });
+      const x = target.get(k);
+      x.amount += amount;
+      x.cars++;
+    };
+    for (const c of all) {
+      add(c.med_venta, c.com_venta, c);
+      add(c.med_compra, c.com_compra, c);
+    }
+    const people = [...per.values()].sort((a, b) => b.amount - a.amount);
+    const total = people.reduce((a, p) => a + p.amount, 0);
+    const $m = (n) => `$ ${Math.round(n || 0).toLocaleString("de-DE")}`;
+    const tag = (p) => {
+      const d = p.e ? getEmployeeDiscord(fullName(p.e)) : "";
+      return d ? `<@${d}>` : `**${p.name}**`;
+    };
+    const mention = (n) => {
+      const e = empOf(n);
+      const d = e ? getEmployeeDiscord(fullName(e)) : "";
+      return d && e && !isEmployeeNoPay(fullName(e)) ? `<@${d}>` : n;
+    };
+    const first = all.map((c) => c.semana).sort()[0];
+    const dmy = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "");
+    const startD = new Date(`${CV_COM_START}T12:00:00Z`);
+    const lastDay = new Date(startD - 86400000).toISOString().slice(0, 10);
+    const today = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const sold = cycles.filter((c) => c.sell && cvPayWeekOf(c.dSell) < CV_COM_START);
+    const loss = sold.filter((c) => c.estado === "vendido" && c.profit <= 0).length;
+    const tras = sold.filter((c) => c.estado === "traspaso").length;
+    const detail = all.map((c) => {
+      const p = [];
+      if (c.med_venta && c.com_venta > 0 && per.has(fullName(empOf(c.med_venta) || { name: c.med_venta, surname: "" }))) p.push(`Venta: ${mention(c.med_venta)} ${$m(c.com_venta)}`);
+      if (c.med_compra && c.com_compra > 0 && per.has(fullName(empOf(c.med_compra) || { name: c.med_compra, surname: "" }))) p.push(`Compra: ${mention(c.med_compra)} ${$m(c.com_compra)}`);
+      return p.length ? `> 🚙 **${c.modelo || c.plate}** \`${c.plate}\` · ganancia ${$m(c.ganancia)}\n> -# ${p.join(" · ")}` : "";
+    }).filter(Boolean);
+    const head = `# 🦅 COMISIONES DEL COMPRAVENTA · HISTÓRICO\n-# Ventas ${first ? `desde la semana del ${dmy(first)} ` : ""}hasta el ${dmy(lastDay)} · pagadas el ${today}\n\nComisión: **10 %** de la ganancia para quien medió la venta y **5 %** para quien medió la compra (ganancia = venta − compra − gastos). Sin comisión en ventas con pérdida ni en traspasos a $ 0.`;
+    const byPerson = `## 💰 Por empleado\n${people.map((p) => `> 💰 ${tag(p)} — **${$m(p.amount)}** · ${getEmployeeIban(p.name) ? `\`${getEmployeeIban(p.name)}\`` : "*IBAN pendiente*"} · ${p.cars} ${p.cars === 1 ? "coche" : "coches"}`).join("\n")}`;
+    const resumen = `## 🏦 Resumen\n> 👥 **${people.length}** ${people.length === 1 ? "empleado cobra" : "empleados cobran"}\n> 💵 **Total retirado de la caja: ${$m(total)}**`;
+    const firma = `-# — <@&${DC_JEFATURA_ID}> · 🦅 Aguila Motors`;
+    const msg = dcAguila([head, byPerson, `## 🚙 Detalle por coche\n${detail.join("\n")}`, resumen, firma].join("\n\n"));
+
+    // Ventana
+    let d = document.getElementById("cvt-hist-dlg");
+    if (!d) {
+      d = document.createElement("dialog");
+      d.id = "cvt-hist-dlg";
+      d.className = "cvt-dlg";
+      document.body.appendChild(d);
+    }
+    d.innerHTML = '<form method="dialog" class="modal-card"><header class="modal-head"><h3>🧾 Comisiones históricas del compraventa</h3><button value="cancel" class="ghost">Cerrar</button></header><div id="cvt-h-body"></div></form>';
+    const body = d.querySelector("#cvt-h-body");
+    body.appendChild(el("p", "muted cvt-small", `Ventas anteriores al ${dmy(CV_COM_START)} (desde esa semana la comisión la paga Pagos sola). ${all.length} ${all.length === 1 ? "venta con ganancia" : "ventas con ganancia"}${loss ? ` · ${loss} con pérdida (sin comisión)` : ""}${tras ? ` · ${tras} traspasos (no cuentan)` : ""}.`));
+    if (!all.length) {
+      body.appendChild(el("p", "", "No hay ventas con ganancia anteriores a esa fecha."));
+      d.showModal();
+      return;
+    }
+    const tb = el("table", "cvt-rank");
+    const hr = el("tr");
+    ["Empleado", "Coches", "Comisión"].forEach((x, i) => hr.appendChild(el("th", i ? "num" : "", x)));
+    tb.appendChild(hr);
+    for (const p of people) {
+      const tr = el("tr");
+      tr.append(el("td", "", p.name), el("td", "num", String(p.cars)), el("td", "num cvt-g", fmtMoney(p.amount)));
+      tb.appendChild(tr);
+    }
+    const tt = el("tr");
+    tt.append(el("td", "", "Total"), el("td"), el("td", "num", fmtMoney(total)));
+    tt.style.fontWeight = "800";
+    tb.appendChild(tt);
+    body.appendChild(tb);
+    if (outside.size) body.appendChild(el("p", "cvt-small", `⚠ No se pagan (no son empleados o no cobran): ${[...outside.values()].map((p) => `${p.name} (${fmtMoney(p.amount)})`).join(", ")}. Si alguno es un empleado con otro nombre en su ficha, corrígelo y vuelve a abrir esto.`));
+    // Mensaje (partido si no cabe en 2.000 caracteres)
+    const parts = [];
+    let cur = "";
+    for (const block of msg.split("\n\n")) {
+      for (const piece of block.length > 1950 ? block.split("\n") : [block]) {
+        const sep = block.length > 1950 ? "\n" : "\n\n";
+        if (!cur) cur = piece;
+        else if ((cur + sep + piece).length <= 1950) cur += sep + piece;
+        else {
+          parts.push(cur);
+          cur = piece;
+        }
+      }
+    }
+    if (cur) parts.push(cur);
+    body.appendChild(el("h4", "cvt-h4", `Mensaje para el canal de pagas${parts.length > 1 ? ` · ${parts.length} partes (Discord no deja más de 2.000 caracteres por mensaje)` : ""}`));
+    parts.forEach((t, i) => {
+      const ta = el("textarea", "text-input cvt-ta");
+      ta.value = t;
+      ta.readOnly = true;
+      ta.rows = Math.min(14, t.split("\n").length + 1);
+      const b = el("button", "", parts.length > 1 ? `📋 Copiar parte ${i + 1} de ${parts.length}` : "📋 Copiar mensaje");
+      b.type = "button";
+      b.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(t);
+        } catch {
+          ta.select();
+          document.execCommand("copy");
+        }
+        b.textContent = "✔ Copiado";
+        setTimeout(() => (b.textContent = parts.length > 1 ? `📋 Copiar parte ${i + 1} de ${parts.length}` : "📋 Copiar mensaje"), 1800);
+      });
+      body.append(ta, b);
+    });
+    body.appendChild(el("p", "muted cvt-small", "Es un pago aparte, una sola vez: no se suma a las pagas de Pagos. Paga a cada uno en el juego y pega el mensaje en el canal de pagas."));
+    d.showModal();
+  }
+  $("cv-com-hist")?.addEventListener("click", async () => {
+    await cvGastosLoad(true);
+    compute();
+    openHistorico();
+  });
+
   // Periodo del resumen y del ranking.
   document.querySelectorAll("[data-cvt-period]").forEach((b) =>
     b.addEventListener("click", () => {
@@ -505,6 +635,7 @@ function setupCvTracking({ source, rerender, el }) {
 // ============================================================================
 const CV_COM_VENTA = 0.1;
 const CV_COM_COMPRA = 0.05;
+const CV_COM_START = "2026-11-15"; // semana desde la que Pagos suma la comisión sola (v158)
 const CVCOM = { semana: "", ok: null, rows: [], byName: new Map(), logAt: "", busy: null, lastSig: "" };
 
 // Domingo (AAAA-MM-DD) de la semana de pago de una fecha del log (hora de España).

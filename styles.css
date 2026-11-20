@@ -2918,3 +2918,9 @@ button.pg-com-go { margin-left: auto; min-height: 0; padding: 4px 10px; font-siz
 .pg-com-warn2 { margin: 6px 0 0; color: #ff9a4a; font-size: 12.5px; }
 .pg-com-note { margin: 4px 0 0; font-size: 12px; }
 .pg-amt-split { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; margin-top: 2px; }
+
+/* v159 · Comisiones históricas */
+#cv-com-hist { white-space: nowrap; }
+.cvt-h4 { margin: 14px 0 6px; font-size: 12px; color: #ff9a3c; text-transform: uppercase; letter-spacing: .08em; }
+.cvt-ta { width: 100%; font-family: Consolas, monospace; font-size: 12px; margin-bottom: 6px; }
+#cvt-hist-dlg .modal-card { max-width: 760px; }
