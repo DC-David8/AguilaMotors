@@ -251,6 +251,16 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 157 · 19 de noviembre de 2026
+
+- **Compraventa · seguimiento de cada coche** (`js/cv-ciclos.js`, SQL 22), solo el Jefe Aguila:
+  - **Resumen** (semana · mes · todo): beneficio de las reventas, margen medio, días de media hasta venderse, dinero parado en el almacén, mejor reventa y mediador con más beneficio.
+  - **Avisos**: coches parados más de 14 días y ventas con pérdida (tocándolos se filtra la lista).
+  - Pestaña **🔄 Ciclos**: un coche por fila, de la compra a la venta (fechas, a quién, mediadores, días, compra, gastos, venta, resultado y estado), con filtros: en almacén, con ganancia, con pérdida, traspasos y parados. En los que siguen en el almacén, «vender desde» (el mínimo del catálogo o lo que costó + 10 %).
+  - **Historial**: nueva columna «Resultado» (en las ventas, la ganancia y los días en almacén; en las compras, si ya se vendió o cuántos días lleva) y **ranking de mediadores** del periodo.
+  - **Ficha de la matrícula** (tocando el vehículo): todo lo que ha pasado con ese coche, sus cifras y los **gastos** antes de venderlo (reparación, tuning…), que se restan de la ganancia.
+  - Las compras o ventas a **$ 0 son traspasos**: se marcan solos y no cuentan en las ganancias ni en el almacén.
+
 ### Versión 156 · 19 de noviembre de 2026
 
 - **Caja · productos sin ventana aparte**: «Gestión de Productos» pasa a dos botones junto a «Productos y Servicios», que solo ve el Jefe Aguila: **Agregar** (abre el formulario con la categoría que estás viendo ya elegida) y **Editar / Quitar**, que pone la propia cuadrícula en modo edición: el precio se cambia en la tarjeta (Enter o salir del campo guarda), ✏️ para nombre, categoría e imagen, 🗑 para quitar (o ocultar los de la lista, que salen en gris con «↩ Restaurar»), y una tarjeta «＋ Agregar aquí». En modo edición tocar un producto no lo añade al ticket. «✔ Terminar edición» vuelve a la Caja normal.

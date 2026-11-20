@@ -269,6 +269,7 @@ function setupCompraventa() {
   // Estado de la base en linea.
   const cloud = { ok: false, tried: false, error: "", tx: [], photoPaths: {}, photoUrls: {}, loadedAt: null };
 
+  let track = null; // v157: seguimiento de compras y ventas (cv-ciclos.js)
   const online = () => cloud.ok;
   const canEdit = () => (online() ? hasAccess() : hasAccess() && !isSharedReadOnly());
 
@@ -705,9 +706,11 @@ function setupCompraventa() {
     const full = AUTH.aguila;
     root.querySelectorAll(".cv-kpis .pg-kpi:not(.hl)").forEach((k) => k.toggleAttribute("hidden", !full));
     root.querySelector('[data-cv="cv-p-hist"]')?.toggleAttribute("hidden", !full);
+    root.querySelector('[data-cv="cv-p-cyc"]')?.toggleAttribute("hidden", !full);
+    $("cv-track").hidden = !full;
     root.querySelector('[data-cv="cv-p-log"]')?.toggleAttribute("hidden", !full);
     const activePane = root.querySelector(".sx-pane.is-active")?.id;
-    if (!full && (activePane === "cv-p-hist" || activePane === "cv-p-log")) showPane("cv-p-stock");
+    if (!full && (activePane === "cv-p-hist" || activePane === "cv-p-log" || activePane === "cv-p-cyc")) showPane("cv-p-stock");
     const dot = $("cv-cloud-dot");
     const txt = $("cv-cloud-text");
     if (online()) {
@@ -924,6 +927,11 @@ function setupCompraventa() {
 
   function render() {
     renderBar();
+    try {
+      track?.render();
+    } catch (err) {
+      console.warn("[ciclos]", err);
+    }
     const { tx, photos } = source();
     const stock = cvStock(tx);
     const buys = tx.filter((t) => cvKind(t) === "compra");
@@ -974,13 +982,23 @@ function setupCompraventa() {
       tdK.appendChild(el("span", `cv-badge cv-${k}`, labels[k]));
       tr.appendChild(tdK);
       const tdV = el("td");
-      tdV.appendChild(el("b", "", t.model.toUpperCase()));
-      tdV.appendChild(el("span", "cv-plate-sm", t.plate));
+      if (track && AUTH.aguila) {
+        const pb = el("button", "cvt-plate");
+        pb.type = "button";
+        pb.title = "Ver todo lo que ha pasado con esta matrícula";
+        pb.append(el("b", "", t.model.toUpperCase()), el("span", "cv-plate-sm", t.plate));
+        pb.addEventListener("click", () => track.openFicha(t.plate));
+        tdV.appendChild(pb);
+      } else {
+        tdV.appendChild(el("b", "", t.model.toUpperCase()));
+        tdV.appendChild(el("span", "cv-plate-sm", t.plate));
+      }
       tr.appendChild(tdV);
       tr.appendChild(el("td", cvIsSociety(t.owner) ? "cv-soc" : "", cvDisplayName(t.owner)));
       tr.appendChild(el("td", cvIsSociety(t.buyer) ? "cv-soc" : "", cvDisplayName(t.buyer)));
       tr.appendChild(el("td", "", cvDisplayName(t.mediator)));
       tr.appendChild(el("td", `num cv-money-${k}`, (k === "compra" ? "− " : k === "venta" ? "+ " : "") + fmtMoney(t.price)));
+      tr.appendChild(track && AUTH.aguila ? track.resultFor(t) : el("td"));
       body.appendChild(tr);
     }
     $("cv-hist-empty").hidden = rows.length > 0;
@@ -1010,6 +1028,7 @@ function setupCompraventa() {
       cloud.photoPaths = {};
       for (const ph of photos) cloud.photoPaths[ph.plate] = ph.path;
       cloud.photoUrls = await cvSignedUrls(Object.values(cloud.photoPaths));
+      if (typeof cvGastosLoad === "function") await cvGastosLoad(true);
       cloud.ok = true;
       cloud.reachable = true;
       cloud.error = "";
@@ -1326,6 +1345,9 @@ function setupCompraventa() {
     setStatus("Historial borrado.");
     render();
   });
+
+  // v157: seguimiento de cada coche (ciclos, resumen, avisos, ficha y gastos).
+  if (typeof setupCvTracking === "function") track = setupCvTracking({ source, rerender: render, el });
 
   // Se ve al momento con lo de esta PC; luego se conecta y se mantiene al dia
   // (cada 45 s mientras la pestana esta abierta y al volver a la ventana).

@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aguila Motors</title>
-  <link rel="stylesheet" href="styles.css?v=156" />
+  <link rel="stylesheet" href="styles.css?v=157" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- App web en la pantalla de Inicio (iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=156" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=157" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Aguila Motors" />
@@ -819,9 +819,24 @@
       </div>
       <p class="muted cv-mode" id="cv-mode"></p>
 
+      <!-- v157: seguimiento de compras y ventas (solo el Jefe Aguila) -->
+      <section class="card cvt-card" id="cv-track" hidden>
+        <div class="card-head-row">
+          <h2>📈 Resumen del compraventa</h2>
+          <span class="cvt-period">
+            <button type="button" data-cvt-period="semana">Semana</button>
+            <button type="button" data-cvt-period="mes" class="on">Mes</button>
+            <button type="button" data-cvt-period="todo">Todo</button>
+          </span>
+        </div>
+        <div class="cvt-sum" id="cv-track-sum"></div>
+        <div class="cvt-alerts" id="cv-track-alerts" hidden></div>
+      </section>
+
       <nav class="sx-subtabs" aria-label="Secciones de compraventa">
         <button type="button" class="sx-subtab is-active" data-cv="cv-p-stock">Almacén</button>
         <button type="button" class="sx-subtab" data-cv="cv-p-cat">📖 Catálogo</button>
+        <button type="button" class="sx-subtab" data-cv="cv-p-cyc">🔄 Ciclos</button>
         <button type="button" class="sx-subtab" data-cv="cv-p-hist">Historial</button>
         <button type="button" class="sx-subtab" data-cv="cv-p-log" id="cv-tab-log">Procesar log</button>
       </nav>
@@ -836,6 +851,24 @@
           <div class="cv-grid" id="cv-stock"></div>
           <p class="muted cv-empty" id="cv-stock-empty" hidden></p>
           <input type="file" id="cv-file" accept="image/*" hidden />
+        </section>
+      </div>
+
+      <div id="cv-p-cyc" class="sx-pane">
+        <section class="card">
+          <div class="card-head-row">
+            <h2>Ciclos · un coche por fila</h2>
+            <input id="cv-cyc-q" class="text-input cv-search" type="search" placeholder="Buscar modelo, matrícula o persona" />
+          </div>
+          <p class="muted">Cada coche que compra el taller, de la compra a la venta. Las compras y ventas a $ 0 son traspasos y no cuentan en las ganancias. Toca la matrícula para ver su ficha y apuntar gastos.</p>
+          <div class="cvt-filters" id="cv-cyc-filters"></div>
+          <div class="table-wrap cv-table">
+            <table>
+              <thead><tr><th>Vehículo</th><th>Comprado</th><th>Vendido</th><th class="num">Días</th><th class="num">Compra</th><th class="num">Gastos</th><th class="num">Venta</th><th class="num">Resultado</th><th>Estado</th></tr></thead>
+              <tbody id="cv-cyc"></tbody>
+            </table>
+          </div>
+          <p class="muted cv-empty" id="cv-cyc-empty" hidden>No hay coches con este filtro.</p>
         </section>
       </div>
 
@@ -855,11 +888,12 @@
           </div>
           <div class="table-wrap cv-table">
             <table>
-              <thead><tr><th>Fecha</th><th>Tipo</th><th>Vehículo</th><th>Dueño</th><th>Comprador</th><th>Mediador</th><th class="num">Precio</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Vehículo</th><th>Dueño</th><th>Comprador</th><th>Mediador</th><th class="num">Precio</th><th>Resultado</th></tr></thead>
               <tbody id="cv-hist"></tbody>
             </table>
           </div>
           <p class="muted cv-empty" id="cv-hist-empty" hidden>No hay transacciones.</p>
+          <div class="cvt-rankbox"><h3>🏅 Mediadores · mismo periodo que el resumen</h3><div id="cv-rank"></div></div>
         </section>
       </div>
 
@@ -986,7 +1020,7 @@
 
     <nav class="m-bnav" id="m-bnav" aria-label="Secciones" hidden></nav>
 
-    <footer class="app-version">Versión 156 - Aguila Motors</footer>
+    <footer class="app-version">Versión 157 - Aguila Motors</footer>
   </main>
 
   <!-- Menu lateral del movil (en PC no se muestra) -->
@@ -1189,32 +1223,33 @@
     </form>
   </dialog>
 
-  <script src="catalogo/vehiculos.js?v=156"></script>
+  <script src="catalogo/vehiculos.js?v=157"></script>
   <!-- Código de la página (v125: antes todo en app.js). El orden importa; main.js el último. -->
-  <script src="js/base.js?v=156"></script>
-  <script src="js/productos.js?v=156"></script>
-  <script src="js/empleados-datos.js?v=156"></script>
-  <script src="js/datos-compartidos.js?v=156"></script>
-  <script src="js/caja.js?v=156"></script>
-  <script src="js/facturas.js?v=156"></script>
-  <script src="js/pagos.js?v=156"></script>
-  <script src="js/pagos-pasos.js?v=156"></script>
-  <script src="js/empleados.js?v=156"></script>
-  <script src="js/sorteo.js?v=156"></script>
-  <script src="js/movil.js?v=156"></script>
-  <script src="js/nube.js?v=156"></script>
-  <script src="js/inactividad.js?v=156"></script>
-  <script src="js/sesion.js?v=156"></script>
-  <script src="js/compraventa.js?v=156"></script>
-  <script src="js/discord-log.js?v=156"></script>
-  <script src="js/kits.js?v=156"></script>
-  <script src="js/catalogo.js?v=156"></script>
-  <script src="informes/qrcode.js?v=156"></script>
-  <script src="js/informes.js?v=156"></script>
-  <script src="js/panel.js?v=156"></script>
-  <script src="js/en-vivo.js?v=156"></script>
-  <script src="js/log-empleados.js?v=156"></script>
-  <script src="js/nitro.js?v=156"></script>
-  <script src="js/main.js?v=156"></script>
+  <script src="js/base.js?v=157"></script>
+  <script src="js/productos.js?v=157"></script>
+  <script src="js/empleados-datos.js?v=157"></script>
+  <script src="js/datos-compartidos.js?v=157"></script>
+  <script src="js/caja.js?v=157"></script>
+  <script src="js/facturas.js?v=157"></script>
+  <script src="js/pagos.js?v=157"></script>
+  <script src="js/pagos-pasos.js?v=157"></script>
+  <script src="js/empleados.js?v=157"></script>
+  <script src="js/sorteo.js?v=157"></script>
+  <script src="js/movil.js?v=157"></script>
+  <script src="js/nube.js?v=157"></script>
+  <script src="js/inactividad.js?v=157"></script>
+  <script src="js/sesion.js?v=157"></script>
+  <script src="js/cv-ciclos.js?v=157"></script>
+  <script src="js/compraventa.js?v=157"></script>
+  <script src="js/discord-log.js?v=157"></script>
+  <script src="js/kits.js?v=157"></script>
+  <script src="js/catalogo.js?v=157"></script>
+  <script src="informes/qrcode.js?v=157"></script>
+  <script src="js/informes.js?v=157"></script>
+  <script src="js/panel.js?v=157"></script>
+  <script src="js/en-vivo.js?v=157"></script>
+  <script src="js/log-empleados.js?v=157"></script>
+  <script src="js/nitro.js?v=157"></script>
+  <script src="js/main.js?v=157"></script>
 </body>
 </html>
