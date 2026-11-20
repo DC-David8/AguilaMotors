@@ -68,7 +68,7 @@ function cvCycles(tx) {
       const prev = open.get(t.plate);
       if (prev) {
         // Comprado otra vez sin venta registrada: el anterior se cierra tal cual.
-        prev.estado = prev.zeroIn ? "traspaso" : "sinventa";
+        prev.estado = "sinventa";
         close(prev);
       }
       open.set(t.plate, { plate: t.plate, model: t.model, buy: t, sell: null, zeroIn: !(Number(t.price) > 0), key: cvCycleKey(t.plate, t) });
@@ -77,7 +77,9 @@ function cvCycles(tx) {
       if (c) {
         open.delete(t.plate);
         c.sell = t;
-        c.estado = c.zeroIn || !(Number(t.price) > 0) ? "traspaso" : "vendido";
+        // v160: solo es traspaso si entró Y salió a $ 0. Si entró a $ 0 y se vendió
+        // con dinero, es una venta normal (coste 0 + los gastos que se apunten).
+        c.estado = c.zeroIn && !(Number(t.price) > 0) ? "traspaso" : "vendido";
         close(c);
       } else {
         close({ plate: t.plate, model: t.model, buy: null, sell: t, key: cvCycleKey(t.plate, t), estado: Number(t.price) > 0 ? "sincompra" : "traspaso" });
@@ -109,7 +111,7 @@ function setupCvTracking({ source, rerender, el }) {
   let cycles = [];
   const money = (v) => fmtMoney(Math.round(v || 0));
   const signed = (v) => `${v >= 0 ? "+" : "−"}${fmtMoney(Math.abs(Math.round(v || 0)))}`;
-  const pctS = (p) => (p == null ? "" : `${p >= 0 ? "+" : "−"}${Math.abs(Math.round(p * 100))} %`);
+  const pctS = (p) => (p == null ? "entró a $ 0" : `${p >= 0 ? "+" : "−"}${Math.abs(Math.round(p * 100))} %`);
   const nameOf = (c) => (c.cat?.nombre || (c.buy || c.sell).model || "").toString();
   const who = (n) => cvDisplayName(n);
 
@@ -124,7 +126,7 @@ function setupCvTracking({ source, rerender, el }) {
     if (!box) return;
     box.textContent = "";
     const sold = cycles.filter((c) => c.estado === "vendido" && cvInPeriod(c.dSell, period));
-    const stock = cycles.filter((c) => c.estado === "almacen" && !c.zeroIn);
+    const stock = cycles.filter((c) => c.estado === "almacen");
     const profit = sold.reduce((a, c) => a + c.profit, 0);
     const pcts = sold.filter((c) => c.pct != null);
     const avgPct = pcts.length ? pcts.reduce((a, c) => a + c.pct, 0) / pcts.length : null;
@@ -179,7 +181,7 @@ function setupCvTracking({ source, rerender, el }) {
     ["ganancia", "✅ Con ganancia", (c) => c.estado === "vendido" && c.profit >= 0],
     ["perdida", "🔻 Con pérdida", (c) => c.estado === "vendido" && c.profit < 0],
     ["traspaso", "🔁 Traspasos", (c) => c.estado === "traspaso"],
-    ["lentos", "🐢 Parados", (c) => c.estado === "almacen" && !c.zeroIn && (c.days || 0) > CV_SLOW_DAYS],
+    ["lentos", "🐢 Parados", (c) => c.estado === "almacen" && (c.days || 0) > CV_SLOW_DAYS],
   ];
   function setFilter(k) {
     filter = k;
@@ -191,7 +193,7 @@ function setupCvTracking({ source, rerender, el }) {
     if (c.estado === "traspaso") return el("span", "cvt-st s-z", "🔁 Traspaso");
     if (c.estado === "sincompra") return el("span", "cvt-st s-z", "Sin compra registrada");
     if (c.estado === "sinventa") return el("span", "cvt-st s-z", "Sin venta registrada");
-    return el("span", "cvt-st s-alm", c.zeroIn ? "⏳ En almacén (traspaso)" : "⏳ En almacén");
+    return el("span", "cvt-st s-alm", "⏳ En almacén");
   }
   function plateBtn(plate, model) {
     const b = el("button", "cvt-plate", "");
@@ -235,11 +237,11 @@ function setupCvTracking({ source, rerender, el }) {
       if (c.sell) tdS.append(el("span", "", c.sell.ts ? c.sell.ts.slice(0, 16) : "—"), el("small", "cvt-sub", `a ${who(c.sell.buyer)}${c.sell.mediator ? ` · vía ${who(c.sell.mediator)}` : ""}`));
       else tdS.appendChild(el("span", "muted", "—"));
       tr.appendChild(tdS);
-      const slow = c.estado === "almacen" && !c.zeroIn && (c.days || 0) > CV_SLOW_DAYS;
+      const slow = c.estado === "almacen" && (c.days || 0) > CV_SLOW_DAYS;
       tr.appendChild(el("td", "num" + (slow ? " cvt-y" : ""), c.days == null ? "—" : `${c.days}${slow ? " 🐢" : ""}`));
       tr.appendChild(el("td", "num", c.buy ? money(c.buy.price) : "—"));
       tr.appendChild(el("td", "num" + (c.gasto ? "" : " muted"), c.gasto ? money(c.gasto) : "—"));
-      tr.appendChild(el("td", "num", c.sell ? money(c.sell.price) : c.estado === "almacen" && !c.zeroIn ? `≥ ${money(c.target)}` : "—"));
+      tr.appendChild(el("td", "num", c.sell ? money(c.sell.price) : c.estado === "almacen" ? `≥ ${money(c.target)}` : "—"));
       const tdR = el("td", "num");
       if (c.estado === "vendido") tdR.append(el("b", c.profit >= 0 ? "cvt-g" : "cvt-r", signed(c.profit)), el("small", "cvt-sub", pctS(c.pct)));
       else tdR.appendChild(el("span", "muted", c.estado === "traspaso" ? "no cuenta" : "—"));
@@ -376,7 +378,7 @@ function setupCvTracking({ source, rerender, el }) {
         tl.appendChild(row);
       }
     }
-    if (cur?.estado === "almacen" && !cur.zeroIn) {
+    if (cur?.estado === "almacen") {
       const row = el("div", "cvt-ti p");
       row.appendChild(el("b", "", "Pendiente de venta"));
       row.appendChild(el("div", "", `Vender desde ${money(cur.target)}${cur.cat ? " (mínimo del catálogo o lo que costó + 10 %)" : " (lo que costó + 10 %)"}`));
@@ -395,7 +397,7 @@ function setupCvTracking({ source, rerender, el }) {
     box(money(cur.gasto), "gastos");
     box(money(cur.cost), "coste total");
     if (cur.estado === "vendido") box(signed(cur.profit), `resultado · ${pctS(cur.pct)}`, cur.profit >= 0 ? "cvt-g" : "cvt-r");
-    else if (cur.estado === "almacen" && !cur.zeroIn) box(`≥ ${money(cur.target)}`, `para ganar al menos un ${Math.max(0, Math.round((cur.target / Math.max(1, cur.cost) - 1) * 100))} %`, "cvt-y");
+    else if (cur.estado === "almacen") box(`≥ ${money(cur.target)}`, cur.cost > 0 ? `para ganar al menos un ${Math.max(0, Math.round((cur.target / cur.cost - 1) * 100))} %` : "entró a $ 0: todo lo que se venda es ganancia", "cvt-y");
     else box(cur.estado === "traspaso" ? "🔁" : "—", cur.estado === "traspaso" ? "traspaso (no cuenta)" : "sin compra registrada");
     body.appendChild(sum);
     if (cyc.length > 1) body.appendChild(el("p", "muted cvt-small", `Este coche ha pasado ${cyc.length} veces por el taller: las cifras son de la última.`));

@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 160 · 19 de noviembre de 2026
+
+- **Compraventa · traspasos**: solo es traspaso cuando el coche entra **y** sale a $ 0. Si entra a $ 0 (por ejemplo, un coche propio pasado a la empresa) y se vende con dinero, es una venta normal con coste $ 0 (más los gastos que se apunten): cuenta en el resumen, en las ganancias y en las comisiones. Ya no se excluyen esos coches del almacén ni de los avisos de parados.
+
 ### Versión 159 · 19 de noviembre de 2026
 
 - **Compraventa → Ciclos · 🧾 Comisiones históricas** (solo el Jefe Aguila): calcula, con las mismas reglas (10 % venta · 5 % compra · sobre la ganancia después de gastos), las comisiones de todas las ventas anteriores al 15/11/2026 —desde esa semana las suma Pagos sola—, el total por empleado y el mensaje para el canal de pagas (partido en varios si no cabe), para pagarlas aparte una sola vez. Avisa de quien no es empleado o no cobra.
