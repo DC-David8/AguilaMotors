@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 156 · 19 de noviembre de 2026
+
+- **Caja · productos sin ventana aparte**: «Gestión de Productos» pasa a dos botones junto a «Productos y Servicios», que solo ve el Jefe Aguila: **Agregar** (abre el formulario con la categoría que estás viendo ya elegida) y **Editar / Quitar**, que pone la propia cuadrícula en modo edición: el precio se cambia en la tarjeta (Enter o salir del campo guarda), ✏️ para nombre, categoría e imagen, 🗑 para quitar (o ocultar los de la lista, que salen en gris con «↩ Restaurar»), y una tarjeta «＋ Agregar aquí». En modo edición tocar un producto no lo añade al ticket. «✔ Terminar edición» vuelve a la Caja normal.
+
 ### Versión 155 · 18 de noviembre de 2026
 
 - **Empleados · fila más completa**: el hueco del centro muestra cómo va cada uno esta semana (cifra en color, frase corta —«faltan $ X al mínimo», «mín. ✔ · N % de la meta», «⬆️ meta alcanzada»— y barra hacia la meta con una marca en el mínimo). Quien no cobra sale en gris. A la derecha, los iconos de sus licencias (🚗 🏍️ 🚚 ✈️) y su licencia de nitro (👑/⚡ nº). En el móvil la barra va en su propia línea.

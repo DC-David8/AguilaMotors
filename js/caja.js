@@ -13,7 +13,9 @@ function setupCaja() {
     selected: null,
     activeCategory: null,
     emp: false, // 👷 precio de empleado (solo el Jefe Aguila)
+    editMode: false, // v156: editar productos en la propia cuadrícula (solo el Jefe Aguila)
   };
+  let prodAdmin = null;
   const priceOf = (p) => (state.emp && AUTH.aguila ? empPrice(p) : p?.price || 0);
   const priceByName = (name) => priceOf(getAllProducts().find((p) => p.name === name));
 
@@ -371,8 +373,19 @@ function setupCaja() {
     }
   }
 
+  // v156: en modo edición se ven también los ocultos, con su precio de lista.
+  const editProducts = () => {
+    const notes = new Map(getAllProducts().map((p) => [p.name, p.note]));
+    return listProductsForAdmin()
+      .filter((r) => AUTH.aguila || !isInfCat(r.category))
+      .map((r) => ({ ...r, note: notes.get(r.name) || "", _row: r }));
+  };
   function renderProductGrid() {
-    const all = cajaProducts();
+    const editing = !!(state.editMode && prodAdmin);
+    productGrid.classList.toggle("is-editing", editing);
+    const hint = byId("prod-edit-hint");
+    if (hint) hint.hidden = !editing;
+    const all = editing ? editProducts() : cajaProducts();
     renderCategoryTabs(all);
     let shown = all.filter((p) => groupOf(p.category || "otros") === state.activeCategory);
     const subs = (CAT_GROUPS[state.activeCategory] || []).filter((s) => shown.some((p) => (p.category || "otros") === s.key));
@@ -418,6 +431,10 @@ function setupCaja() {
         h.append(s ? s.label : lastSub);
         productGrid.appendChild(h);
       }
+      if (editing) {
+        productGrid.appendChild(editCard(product));
+        continue;
+      }
       const button = document.createElement("button");
       button.className = "product-btn";
       button.type = "button";
@@ -443,7 +460,100 @@ function setupCaja() {
       });
       productGrid.appendChild(button);
     }
+    if (editing) {
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "product-btn prod-new-card";
+      add.innerHTML = "<span>＋</span><strong>Agregar aquí</strong>";
+      add.addEventListener("click", () => prodAdmin.openAdd(defaultCat()));
+      productGrid.appendChild(add);
+    }
     renderQtyBadges();
+  }
+  // Categoría que estás viendo (para «Agregar»).
+  function defaultCat() {
+    if (state.activeSub && state.activeSub !== "all") return state.activeSub;
+    const subs = CAT_GROUPS[state.activeCategory] || [];
+    return subs[0]?.key || state.activeCategory || "otros";
+  }
+  // Tarjeta en modo edición: precio editable, ✏️ y 🗑 / ↩.
+  function editCard(product) {
+    const row = product._row;
+    const card = document.createElement("div");
+    card.className = "product-btn prod-edit-card" + (row.hidden ? " is-hidden" : "");
+    const img = document.createElement("img");
+    img.src = getProductIcon(product);
+    img.alt = product.name;
+    const name = document.createElement("strong");
+    name.textContent = product.name;
+    card.append(img, name);
+    if (row.hidden) {
+      const tag = document.createElement("small");
+      tag.className = "prod-hidden-tag";
+      tag.textContent = "Oculto en la Caja";
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "prod-ic";
+      back.textContent = "↩ Restaurar";
+      back.addEventListener("click", () => prodAdmin.restore(row, back));
+      card.append(tag, back);
+      return card;
+    }
+    if (INF_DYN[product.name]) {
+      const s = document.createElement("small");
+      s.textContent = "Se calcula solo";
+      card.appendChild(s);
+    } else {
+      const pr = document.createElement("input");
+      pr.type = "number";
+      pr.min = "0";
+      pr.step = "1";
+      pr.className = "prod-price-in";
+      pr.value = String(row.price);
+      pr.title = "Precio: cámbialo y pulsa Enter";
+      const save = async () => {
+        const v = Number(pr.value);
+        if (!Number.isFinite(v) || v < 0) {
+          pr.value = String(row.price);
+          return;
+        }
+        if (v === Number(row.price)) return;
+        pr.disabled = true;
+        const ok = await prodAdmin.setPrice(row, v);
+        if (!ok) {
+          pr.disabled = false;
+          pr.value = String(row.price);
+        }
+      };
+      pr.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          pr.blur();
+        } else if (ev.key === "Escape") {
+          pr.value = String(row.price);
+          pr.blur();
+        }
+      });
+      pr.addEventListener("change", save);
+      card.appendChild(pr);
+    }
+    const acts = document.createElement("div");
+    acts.className = "prod-acts";
+    const ed = document.createElement("button");
+    ed.type = "button";
+    ed.className = "prod-ic";
+    ed.textContent = "✏️";
+    ed.title = row.source === "fixed" ? "Cambiar imagen o precio" : "Cambiar nombre, precio, categoría o imagen";
+    ed.addEventListener("click", () => prodAdmin.openEdit(row));
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "prod-ic danger";
+    del.textContent = "🗑";
+    del.title = row.source === "fixed" ? "Ocultar de la Caja (se puede restaurar)" : "Quitar el producto";
+    del.addEventListener("click", () => prodAdmin.remove(row, del));
+    acts.append(ed, del);
+    card.appendChild(acts);
+    return card;
   }
   renderProductGrid();
 
@@ -548,15 +658,37 @@ function setupCaja() {
   });
   renderEmpMode();
 
-  setupProductsAdminModal(renderProductGrid);
+  prodAdmin = setupProductsAdminModal(renderProductGrid);
+  // v156: botones de la Caja (solo el Jefe Aguila): Agregar y Editar / Quitar.
+  const editBtn = byId("btn-prod-edit");
+  const paintEditBtn = () => {
+    if (!editBtn) return;
+    editBtn.classList.toggle("is-on", state.editMode);
+    editBtn.textContent = state.editMode ? "✔ Terminar edición" : "Editar / Quitar";
+  };
+  editBtn?.addEventListener("click", async () => {
+    if (!state.editMode && !(await prodAdmin?.gate())) return;
+    state.editMode = !state.editMode;
+    paintEditBtn();
+    renderProductGrid();
+  });
+  byId("btn-prod-add")?.addEventListener("click", () => prodAdmin?.openAdd(defaultCat()));
+  // Si se cierra la sesión o se pierde el permiso, se sale del modo edición.
+  document.addEventListener("aguila-auth", () => {
+    if (state.editMode && !(PROD_CLOUD.ok ? AUTH.aguila : hasAccess())) {
+      state.editMode = false;
+      paintEditBtn();
+      renderProductGrid();
+    }
+  });
 
   renderTicket();
 }
 
 function setupProductsAdminModal(onProductsChanged) {
-  const btnOpen = byId("btn-add-product");
   const dlg = byId("add-product-modal");
-  if (!btnOpen || !dlg) return;
+  if (!dlg) return null;
+  const titleEl = byId("prod-modal-title");
 
   const nameEl = byId("prod-new-name");
   const priceEl = byId("prod-new-price");
@@ -779,7 +911,10 @@ function setupProductsAdminModal(onProductsChanged) {
     reader.readAsDataURL(file);
   });
 
-  cancelEditBtn?.addEventListener("click", () => exitEditMode());
+  cancelEditBtn?.addEventListener("click", () => {
+    exitEditMode();
+    dlg.close();
+  });
 
   // Otro PC o el Jefe cambia un precio: al volver a la pestaña se recargan.
   const refreshCloud = async () => {
@@ -793,38 +928,88 @@ function setupProductsAdminModal(onProductsChanged) {
   window.addEventListener("focus", refreshCloud);
   setInterval(refreshCloud, 5 * 60000);
 
-  btnOpen.addEventListener("click", async () => {
+  // Permiso para tocar productos: con la base en línea, solo el Jefe Aguila
+  // (y la primera vez ofrece subir los cambios guardados solo en este PC).
+  let pendAsked = false;
+  async function gate() {
     if (PROD_CLOUD.ok) {
-      if (!AUTH.aguila) return alert("Los precios y productos solo los cambia el Jefe Aguila.");
+      if (!AUTH.aguila) {
+        alert("Los precios y productos solo los cambia el Jefe Aguila.");
+        return false;
+      }
       await prodCloudLoad();
       onProductsChanged?.();
       const pend = prodLocalPending();
       const n = pend.ovKeys.length + pend.custom.length;
-      if (n && confirm(`Este PC tiene ${n} ${n === 1 ? "cambio guardado" : "cambios guardados"} solo aquí (precios, imágenes, ocultos o productos agregados).\n\n¿Subirlos a la base para que todos los vean? Los que ya estén en la base no se tocan.`)) {
-        try {
-          const up = await prodUploadLocal();
-          onProductsChanged?.();
-          alert(`✔ ${up} ${up === 1 ? "cambio subido" : "cambios subidos"}.`);
-        } catch (e) {
-          alert(`No se pudo subir: ${e?.message || e}`);
+      if (n && !pendAsked) {
+        pendAsked = true;
+        if (confirm(`Este PC tiene ${n} ${n === 1 ? "cambio guardado" : "cambios guardados"} solo aquí (precios, imágenes, ocultos o productos agregados).\n\n¿Subirlos a la base para que todos los vean? Los que ya estén en la base no se tocan.`)) {
+          try {
+            const up = await prodUploadLocal();
+            onProductsChanged?.();
+            alert(`✔ ${up} ${up === 1 ? "cambio subido" : "cambios subidos"}.`);
+          } catch (e) {
+            alert(`No se pudo subir: ${e?.message || e}`);
+          }
         }
       }
-    } else {
-      if (isSharedReadOnly()) {
-        alert("Los productos los gestiona el encargado. Aquí se ven los publicados y no se pueden cambiar.");
-        return;
-      }
-      const ok = await showAccessModal({
-        sectionLabel: "Gestión de Productos",
-      });
-      if (!ok) return;
+      return true;
     }
+    if (isSharedReadOnly()) {
+      alert("Los productos los gestiona el encargado. Aquí se ven los publicados y no se pueden cambiar.");
+      return false;
+    }
+    return !!(await showAccessModal({ sectionLabel: "Gestión de Productos" }));
+  }
+
+  async function openAdd(cat) {
+    if (!(await gate())) return;
     exitEditMode();
+    if (categoryEl && cat && [...categoryEl.options].some((o) => o.value === cat)) categoryEl.value = cat;
+    if (titleEl) titleEl.textContent = "Agregar producto";
     switchSubtab("prod-tab-add");
-    renderAdminTable();
     dlg.showModal();
     setTimeout(() => nameEl?.focus(), 50);
-  });
+  }
+  function openEdit(row) {
+    enterEditMode(row);
+    if (titleEl) titleEl.textContent = row.source === "fixed" ? `Editar · ${row.name}` : "Editar producto";
+    if (!dlg.open) dlg.showModal();
+  }
+  async function remove(row, btn) {
+    const action = row.source === "fixed" ? "ocultar de la Caja" : "quitar";
+    if (!window.confirm(`¿Seguro que quieres ${action} "${row.name}"?${row.source === "fixed" ? "\n\nEs un producto de la lista: se oculta y lo puedes restaurar cuando quieras." : ""}`)) return;
+    if (btn) btn.disabled = true;
+    try {
+      if (row.source === "fixed") await setFixedProductHidden(row.name, true, accessPassword());
+      else await deleteCustomProduct(row.id, accessPassword());
+    } catch (e) {
+      if (btn) btn.disabled = false;
+      return alert(String(e?.message || e));
+    }
+    onProductsChanged?.();
+  }
+  async function restore(row, btn) {
+    if (btn) btn.disabled = true;
+    try {
+      await setFixedProductHidden(row.name, false, accessPassword());
+    } catch (e) {
+      if (btn) btn.disabled = false;
+      return alert(`No se pudo restaurar: ${e?.message || e}`);
+    }
+    onProductsChanged?.();
+  }
+  async function setPrice(row, price) {
+    try {
+      if (row.source === "custom") await updateCustomProduct(row.id, { name: row.name, price, image: row.image, category: row.category }, accessPassword());
+      else await setFixedProductOverride(row.name, { price }, accessPassword());
+    } catch (e) {
+      alert(`No se pudo guardar el precio: ${e?.message || e}`);
+      return false;
+    }
+    onProductsChanged?.();
+    return true;
+  }
 
   saveBtn?.addEventListener("click", async () => {
     const name = String(nameEl?.value || "").trim();
@@ -864,10 +1049,10 @@ function setupProductsAdminModal(onProductsChanged) {
       saveBtn.disabled = false;
     }
 
-    const wasEditing = !!editingTarget;
     exitEditMode();
     onProductsChanged?.();
     renderAdminTable();
-    if (wasEditing) switchSubtab("prod-tab-edit");
+    dlg.close();
   });
+  return { gate, openAdd, openEdit, remove, restore, setPrice };
 }
