@@ -102,14 +102,22 @@ function setupContabilidad() {
       r.kits += qty;
       r.self += state.kitsSelfBySeller[name] || 0;
     }
+    // v158: comisión del compraventa de la semana (se suma a la paga y cuenta
+    // para el Empleado de la Semana, que se elige por lo que cobra sin bono).
+    if (hasAccess() && CVCOM.semana !== payWeekKey() && !CVCOM.busy && CVCOM.ok !== false) cvComLoad(payWeekKey());
     const empByKey = new Map(employees.map((e) => [normalizeKeySimple(fullName(e)), e]));
+    // Solo empleados: quien no lo es sale avisado en el cuadro de comisiones.
+    if (CVCOM.semana === payWeekKey()) for (const c of CVCOM.byName.values()) if (empByKey.has(normalizeKeySimple(c.name))) row(c.name);
     const rows = [...byKey.entries()].map(([key, r]) => {
       const e = empByKey.get(key);
       const name = e ? fullName(e) : r.name;
       const total = r.fact + r.kits * kitPrice;
       const pct = e ? pctForRank(e.rank) : 0;
-      const payout = Math.round(total * pct);
-      return { ...r, name, emp: e, rank: e?.rank || "", total, payout, noPay: isEmployeeNoPay(name), iban: getEmployeeIban(name) };
+      const noPay = isEmployeeNoPay(name);
+      const com = e && !noPay ? cvComOf(name) : 0;
+      const taller = Math.round(total * pct);
+      const payout = taller + com;
+      return { ...r, name, emp: e, rank: e?.rank || "", total, taller, com, payout, noPay, iban: getEmployeeIban(name) };
     });
     rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es"));
 
@@ -118,7 +126,7 @@ function setupContabilidad() {
     const winners = weekWinners(rows, (r) => !!r.emp);
     const top = rows.find((r) => winners.has(r));
     const bonusTotal = WEEK_BONUS * winners.size;
-    totalAPagar += bonusTotal;
+    totalAPagar += bonusTotal + rows.reduce((a, r) => a + (r.com || 0), 0);
     if (byId("conta-total-a-pagar")) byId("conta-total-a-pagar").textContent = fmtMoney(totalAPagar);
     const kitsQty = kitsSummary.qty || 0;
     const selfQty = rows.reduce((a, r) => a + r.self, 0);
@@ -196,6 +204,7 @@ function setupContabilidad() {
         amt.append(el("small", "", "Sin rango"), el("b", "pg-dash", "$ 0"));
       } else {
         amt.append(el("small", "", isWinner ? "A pagar · incl. bono 🏆" : "A pagar"), el("b", "pay", fmtMoney(r.payout + (isWinner ? WEEK_BONUS : 0))));
+        if (r.com) amt.appendChild(el("small", "pg-amt-split", `🔧 ${fmtMoney(r.taller)} · 🚗 ${fmtMoney(r.com)}${isWinner ? ` · 🏆 ${fmtMoney(WEEK_BONUS)}` : ""}`));
       }
       card.append(av, mid, amt);
       list.appendChild(card);
@@ -224,6 +233,7 @@ function setupContabilidad() {
           kitsMoney: r ? r.kits * kitPrice : 0,
           nfact: Object.entries(state.invNByIssuerPaid || {}).reduce((a, [k, n]) => a + (normalizeKeySimple(k) === normalizeKeySimple(name) ? n : 0), 0),
           payout: r && !noPay ? r.payout + (winners.has(r) ? WEEK_BONUS : 0) : 0,
+          com: r && !noPay ? r.com || 0 : 0,
           bonus: r && winners.has(r) && !noPay ? WEEK_BONUS : 0,
           noPay,
           strike: ws.on,
@@ -736,6 +746,88 @@ function setupContabilidad() {
     }
   });
 
+  // v158: 🚗 Comisiones del compraventa de la semana (paso 5).
+  function renderComBox(employees) {
+    const box = byId("pg-com");
+    if (!box) return;
+    box.textContent = "";
+    const wk = payWeekKey();
+    box.hidden = !hasAccess() || CVCOM.ok === false || !wk;
+    if (box.hidden) return;
+    const el = (tag, cls, text) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    const head = el("div", "pg-com-h");
+    head.appendChild(el("b", "", "🚗 Comisiones del compraventa"));
+    head.appendChild(el("span", "muted", "10 % venta · 5 % compra · sobre la ganancia"));
+    box.appendChild(head);
+    const at = CVCOM.logAt ? new Date(CVCOM.logAt) : null;
+    const warn = el("p", "pg-com-warn");
+    warn.append("🚗 ", el("b", "", "Procesa el log del Compraventa antes de cerrar."), ` Último procesado: ${at ? `${at.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" })} a las ${at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}` : "—"}.`);
+    if (AUTH.aguila) {
+      const go = el("button", "ghost pg-com-go", "Ir al Compraventa");
+      go.type = "button";
+      go.addEventListener("click", () => {
+        document.querySelector('.tab[data-tab-target="tab-cv"]')?.click();
+        setTimeout(() => document.querySelector('[data-cv="cv-p-log"]')?.click(), 60);
+      });
+      warn.appendChild(go);
+    }
+    box.appendChild(warn);
+    if (CVCOM.semana !== wk) {
+      box.appendChild(el("p", "muted", "Cargando las comisiones…"));
+      return;
+    }
+    if (!CVCOM.rows.length) {
+      box.appendChild(el("p", "muted", "Esta semana no hay coches vendidos con ganancia."));
+      return;
+    }
+    const isEmp = new Set(employees.map((e) => normalizeKeySimple(fullName(e))));
+    const tb = el("table", "pg-com-t");
+    const h = el("tr");
+    for (const [t, c] of [["🚙 Coche", ""], ["💰 Ganancia", "num"], ["🤝 Venta (10 %)", ""], ["🛒 Compra (5 %)", ""]]) h.appendChild(el("th", c, t));
+    tb.appendChild(h);
+    const outside = new Set();
+    let total = 0;
+    const who = (n, amount) => {
+      const span = el("span");
+      if (!n || !(amount > 0)) {
+        span.className = "muted";
+        span.textContent = "—";
+        return span;
+      }
+      const ok = isEmp.has(normalizeKeySimple(n));
+      if (!ok) outside.add(n);
+      else total += amount;
+      span.append(`${n} · `, el("b", ok ? "pg-com-amt" : "pg-com-out", fmtMoney(amount)));
+      if (!ok) span.title = "No es empleado: no cobra";
+      return span;
+    };
+    for (const r of CVCOM.rows) {
+      const tr = el("tr");
+      const tdC = el("td");
+      tdC.append(el("b", "", r.modelo || "—"), " ", el("code", "", r.plate || ""));
+      tr.appendChild(tdC);
+      tr.appendChild(el("td", "num", fmtMoney(r.ganancia)));
+      const tv = el("td");
+      tv.appendChild(who(r.med_venta, Number(r.com_venta)));
+      const tc = el("td");
+      tc.appendChild(who(r.med_compra, Number(r.com_compra)));
+      tr.append(tv, tc);
+      tb.appendChild(tr);
+    }
+    box.appendChild(tb);
+    const foot = el("p", "pg-com-foot");
+    foot.append("💵 ", el("b", "", `Total en comisiones: ${fmtMoney(total)}`), " · ya incluido en las pagas y en el total a retirar.");
+    box.appendChild(foot);
+    if (outside.size) box.appendChild(el("p", "pg-com-warn2", `⚠ ${[...outside].join(", ")} ${outside.size === 1 ? "no es empleado" : "no son empleados"}: su comisión no se paga. Si es un error de nombre, corrígelo en su ficha.`));
+    box.appendChild(el("p", "muted pg-com-note", "Ventas con pérdida y traspasos a $ 0: sin comisión (los traspasos ya llevan su factura de mediación)."));
+  }
+  document.addEventListener("aguila-cvcom", () => refresh());
+
   async function refresh() {
     const invSummary = {
       count: Object.keys(state.invoices).length,
@@ -831,6 +923,7 @@ function setupContabilidad() {
     refs.footer.textContent = footerText;
     refs.loaded.textContent = invSummary.count || kitsSummary.count ? "Datos cargados" : "Sin datos";
     renderRanking({ employees, kitPrice, invSummary, kitsSummary, totalAPagar });
+    renderComBox(employees);
     renderClose();
     syncMobilePagos(invSummary, kitsSummary);
     // v137: avisa al cierre guiado (js/pagos-pasos.js) de cómo va la semana.
@@ -987,8 +1080,11 @@ function setupEmployeesModal(state, refreshPagos) {
       const kitsValue = kitsUnits * kitPrice;
       const gross = paid + kitsValue;
       const pct = pctForRank(e.rank);
-      const payout = Math.round(gross * pct);
-      return { id: e.id, name, rank: e.rank || "", pct, gross, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name), noPay: isEmployeeNoPay(name), kitsUnits, kitsSelf };
+      const noPay = isEmployeeNoPay(name);
+      const com = noPay ? 0 : cvComOf(name);
+      const taller = Math.round(gross * pct);
+      const payout = taller + com;
+      return { id: e.id, name, rank: e.rank || "", pct, gross, taller, com, payout, discord: getEmployeeDiscord(name), iban: getEmployeeIban(name), noPay, kitsUnits, kitsSelf };
     });
     // Empleado de la Semana: se decide aqui (con lo que cobra sin bono) y se le suma el bono.
     const winners = weekWinners(totalsRows);
@@ -1046,7 +1142,7 @@ function setupEmployeesModal(state, refreshPagos) {
       const icon = !r.iban ? "⏳" : r.warn && !isAguila(r) ? "⚠️" : "💰";
       const iban = r.iban ? `\`${r.iban}\`` : "*IBAN pendiente*";
       const extra = `${isEmployeeOfWeek(r) ? " 🏆" : ""}${r.warn && !isAguila(r) ? ` · ${strikeTag(r.strikeN)}` : ""}`;
-      return `> ${icon} ${who(r)}${rk(r)} — **${$(r.payout)}** · ${iban}${extra}`;
+      return `> ${icon} ${who(r)}${rk(r)} — **${$(r.payout)}** · ${iban}${extra}${r.com ? `\n> -# ↳ incluye 🚗 ${$(r.com)} de comisión de compraventa` : ""}`;
     });
     const eow = sorted.filter((r) => r.bonus && !r.noPay);
     const paying = rows.filter((r) => !r.noPay && r.payout > 0).length;
@@ -1055,6 +1151,28 @@ function setupEmployeesModal(state, refreshPagos) {
       `## 💸 Nóminas\n${lines.join("\n")}`,
     ];
     if (eow.length) parts.push(`## 🏆 Empleado de la Semana\n${eow.map((r) => `> 👑 ${who(r)} · ${EMPLOYEE_OF_WEEK_TAG} — su paga incluye el **bono de ${$(r.bonus)}**`).join("\n")}`);
+    // v158: comisiones del compraventa (solo las de empleados que cobran).
+    const comRows = CVCOM.semana === payWeekKey() ? CVCOM.rows : [];
+    const payable = new Set(rows.filter((r) => !r.noPay).map((r) => normalizeKeySimple(r.name)));
+    const mention = (n) => {
+      const r = rows.find((x) => normalizeKeySimple(x.name) === normalizeKeySimple(n));
+      return r ? who(r) : n;
+    };
+    let comTotal = 0;
+    const comLines = [];
+    for (const c of comRows) {
+      const parts2 = [];
+      if (c.med_venta && Number(c.com_venta) > 0 && payable.has(normalizeKeySimple(c.med_venta))) {
+        parts2.push(`Venta: ${mention(c.med_venta)} ${$(c.com_venta)}`);
+        comTotal += Number(c.com_venta);
+      }
+      if (c.med_compra && Number(c.com_compra) > 0 && payable.has(normalizeKeySimple(c.med_compra))) {
+        parts2.push(`Compra: ${mention(c.med_compra)} ${$(c.com_compra)}`);
+        comTotal += Number(c.com_compra);
+      }
+      if (parts2.length) comLines.push(`> 🚙 **${c.modelo || c.plate}** · ganancia ${$(c.ganancia)}\n> -# ${parts2.join(" · ")}`);
+    }
+    if (comLines.length) parts.push(`## 🚗 Comisiones del compraventa\n${comLines.join("\n")}\n> **Total en comisiones: ${$(comTotal)}**`);
     parts.push(`## 🏦 Resumen\n> 👥 **${paying}** ${paying === 1 ? "empleado cobra" : "empleados cobran"} esta semana\n> 💵 **Total retirado de la caja: ${$(bankTotalOf(rows))}**`);
     const jef = DC_JEFATURA_ID ? `<@&${DC_JEFATURA_ID}>` : "**Jefatura**";
     parts.push(`-# — ${jef} · 🦅 Aguila Motors`);

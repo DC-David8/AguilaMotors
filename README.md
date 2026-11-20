@@ -251,6 +251,13 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 158 · 19 de noviembre de 2026
+
+- **Comisión del compraventa** (SQL 23): 10 % de la ganancia para el mediador de la venta y 5 % para el de la compra (ganancia = venta − compra − gastos). Sin comisión en ventas con pérdida ni en traspasos a $ 0 (ya llevan su factura de mediación). Se paga con la semana en que se vendió el coche.
+- La calcula la página del Jefe Aguila al ver o procesar el log del compraventa y la guarda en `cv_comisiones` (solo nombres e importes); las semanas ya cerradas en Pagos no se tocan. Así la Jefatura que cierre la semana la ve sin acceder al historial.
+- **Pagos**: la comisión se suma a la paga de cada uno (🔧 taller · 🚗 comisión · 🏆 bono) y al total a retirar; el **Empleado de la Semana** se elige por la paga líquida de taller + comisión. En el paso 5, cuadro «🚗 Comisiones del compraventa» con aviso de procesar el log antes de cerrar (y cuándo se procesó por última vez), la tabla por coche y aviso si un mediador no es empleado (no cobra).
+- **Mensaje de pagas**: «↳ incluye 🚗 $ X de comisión de compraventa» bajo cada nómina y sección «🚗 Comisiones del compraventa» con el total.
+
 ### Versión 157 · 19 de noviembre de 2026
 
 - **Compraventa · seguimiento de cada coche** (`js/cv-ciclos.js`, SQL 22), solo el Jefe Aguila:

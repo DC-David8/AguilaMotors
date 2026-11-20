@@ -488,6 +488,7 @@ function setupCvTracking({ source, rerender, el }) {
       renderSummary();
       renderCycles();
       renderRanking();
+      cvComSync(cycles);
     },
     resultFor,
     openFicha,
@@ -497,3 +498,106 @@ function setupCvTracking({ source, rerender, el }) {
     },
   };
 }
+
+// ============================================================================
+// v158 · Comisiones del compraventa: 10 % de la ganancia al mediador de la
+// venta y 5 % al de la compra. Se pagan con la semana en que se vendió.
+// ============================================================================
+const CV_COM_VENTA = 0.1;
+const CV_COM_COMPRA = 0.05;
+const CVCOM = { semana: "", ok: null, rows: [], byName: new Map(), logAt: "", busy: null, lastSig: "" };
+
+// Domingo (AAAA-MM-DD) de la semana de pago de una fecha del log (hora de España).
+function cvPayWeekOf(d) {
+  if (!d) return "";
+  const u = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  return new Date(u - u.getUTCDay() * 86400000).toISOString().slice(0, 10);
+}
+
+// Comisiones de los coches vendidos con ganancia.
+function cvCommissions(cycles) {
+  const out = [];
+  for (const c of cycles) {
+    if (c.estado !== "vendido" || !(c.profit > 0) || !c.sell) continue;
+    out.push({
+      venta_uid: String(c.sell.uid || c.key),
+      semana: cvPayWeekOf(c.dSell),
+      plate: c.plate,
+      modelo: String(c.cat?.nombre || c.model || "").slice(0, 60),
+      ganancia: Math.round(c.profit),
+      med_venta: cvDisplayName(c.sell.mediator || "") || null,
+      com_venta: c.sell.mediator ? Math.round(c.profit * CV_COM_VENTA) : 0,
+      med_compra: c.buy?.mediator ? cvDisplayName(c.buy.mediator) : null,
+      com_compra: c.buy?.mediator ? Math.round(c.profit * CV_COM_COMPRA) : 0,
+    });
+  }
+  return out.filter((x) => x.semana);
+}
+
+// El Jefe Aguila, al ver o procesar el compraventa, deja las comisiones al día
+// en Supabase. Las semanas ya cerradas en Pagos no se tocan (quedan congeladas).
+async function cvComSync(cycles) {
+  if (!AUTH.aguila || CVCOM.ok === false) return;
+  const all = cvCommissions(cycles);
+  const sig0 = JSON.stringify(all);
+  if (sig0 === CVCOM.lastSig) return;
+  try {
+    // Semanas ya cerradas en Pagos: sus comisiones quedan como se pagaron.
+    const weeks = (await cvCloud.req("/rest/v1/pagos_semanas?select=semana", { auth: true })) || [];
+    const closed = new Set(weeks.map((w) => String(w.semana)));
+    const want = all.filter((x) => !closed.has(x.semana));
+    const have = (await cvCloud.req("/rest/v1/cv_comisiones?select=venta_uid,semana", { auth: true })) || [];
+    const keep = new Set(want.map((x) => x.venta_uid));
+    const stale = have.filter((h) => !closed.has(String(h.semana)) && !keep.has(h.venta_uid));
+    for (const h of stale) await cvCloud.del("cv_comisiones", `venta_uid=eq.${encodeURIComponent(h.venta_uid)}`);
+    if (want.length) await cvCloud.upsert("cv_comisiones", want.map((x) => ({ ...x, calc_at: new Date().toISOString() })), "venta_uid");
+    CVCOM.lastSig = sig0;
+    CVCOM.ok = true;
+    if (CVCOM.semana) cvComLoad(CVCOM.semana, true);
+  } catch (err) {
+    if (/PGRST205|42P01|does not exist|404/.test(String(err?.message || err))) CVCOM.ok = false;
+    console.warn("[comisiones]", err);
+  }
+}
+
+// Pagos: comisiones de la semana, por empleado.
+async function cvComLoad(semana, force = false) {
+  if (!semana || !hasAccess()) return CVCOM;
+  if (!force && CVCOM.semana === semana && CVCOM.at && Date.now() - CVCOM.at < 60000) return CVCOM;
+  if (CVCOM.busy) return CVCOM.busy;
+  CVCOM.busy = (async () => {
+    try {
+      const [rows, set] = await Promise.all([
+        cvCloud.req(`/rest/v1/cv_comisiones?select=*&semana=eq.${semana}&order=calc_at.asc`, { auth: true }),
+        cvCloud.req("/rest/v1/app_settings?select=value&key=eq.cv_log_at", { auth: true }).catch(() => []),
+      ]);
+      CVCOM.rows = rows || [];
+      CVCOM.ok = true;
+      CVCOM.logAt = set?.[0]?.value || "";
+    } catch (err) {
+      CVCOM.rows = [];
+      if (/PGRST205|42P01|does not exist|404/.test(String(err?.message || err))) CVCOM.ok = false;
+    } finally {
+      CVCOM.semana = semana;
+      CVCOM.at = Date.now();
+      CVCOM.byName = new Map();
+      const add = (name, amount, item) => {
+        if (!name || !(amount > 0)) return;
+        const k = normalizeKeySimple(name);
+        if (!CVCOM.byName.has(k)) CVCOM.byName.set(k, { name, amount: 0, items: [] });
+        const x = CVCOM.byName.get(k);
+        x.amount += amount;
+        x.items.push(item);
+      };
+      for (const r of CVCOM.rows) {
+        add(r.med_venta, Number(r.com_venta) || 0, { ...r, part: "venta", amount: Number(r.com_venta) || 0 });
+        add(r.med_compra, Number(r.com_compra) || 0, { ...r, part: "compra", amount: Number(r.com_compra) || 0 });
+      }
+      CVCOM.busy = null;
+      document.dispatchEvent(new CustomEvent("aguila-cvcom"));
+    }
+    return CVCOM;
+  })();
+  return CVCOM.busy;
+}
+const cvComOf = (name) => (CVCOM.semana && CVCOM.semana === payWeekKey() ? CVCOM.byName.get(normalizeKeySimple(name))?.amount || 0 : 0);

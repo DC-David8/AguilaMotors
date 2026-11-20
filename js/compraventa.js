@@ -1301,6 +1301,8 @@ function setupCompraventa() {
         const fixed = data.lastFixed || 0;
         delete data.lastFixed;
         await pushChanges(before, data);
+        // v158: para el aviso de Pagos («último log procesado»).
+        cvCloud.upsert("app_settings", [{ key: "cv_log_at", value: new Date().toISOString() }], "key").catch(() => {});
         $("cv-input").value = "";
         await loadCloud();
         setStatus(`☁️ ${summary(found.length, added, fixed)} Ya está en línea para todos.`);
