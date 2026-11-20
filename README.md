@@ -251,6 +251,10 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 162 · 19 de noviembre de 2026
+
+- Compraventa: si un coche sale a $ 0 y vuelve al taller a $ 0 antes de venderse, es un **ida y vuelta** y no cuenta. El coche sigue en el mismo ciclo con su coste de compra (antes salía una pérdida falsa y un segundo ciclo). En el historial esos dos movimientos salen como «↔ Salida y vuelta a $ 0» y en la ficha, en gris.
+
 ### Versión 161 · 19 de noviembre de 2026
 
 - **Compraventa · movimientos repetidos**: al procesar el log, un movimiento con el mismo coche, personas y precio que otro ya guardado a 2 minutos o menos se toma como el mismo (en Discord, los mensajes seguidos pueden copiarse con la hora de la cabecera del grupo, un minuto antes). Para los que ya estaban repetidos, aviso arriba del Compraventa con la lista y botón «🧹 Quitar los repetidos» (se queda el de la hora más reciente).

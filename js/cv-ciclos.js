@@ -62,30 +62,57 @@ function cvCycles(tx) {
     c.target = Math.max(ref ? ref.sell[0] : 0, Math.round(c.cost * 1.1));
     out.push(c);
   };
+  // v162: una salida a $ 0 queda «en espera»: si el coche vuelve al taller a $ 0
+  // antes de otra cosa, es un ida y vuelta (moverlo, probarlo…) y no cuenta.
+  const pend = new Map(); // matrícula → { c, out }
+  const settle = (plate) => {
+    const p = pend.get(plate);
+    if (!p) return;
+    pend.delete(plate);
+    p.c.sell = p.out;
+    p.c.estado = p.c.zeroIn ? "traspaso" : "vendido";
+    close(p.c);
+  };
   for (const t of tx) {
     const k = cvKind(t);
+    const zero = !(Number(t.price) > 0);
     if (k === "compra") {
+      const p = pend.get(t.plate);
+      if (p && zero) {
+        // Vuelve a $ 0: se ignoran la salida y la vuelta, el coche sigue en su ciclo.
+        pend.delete(t.plate);
+        (p.c.trips = p.c.trips || []).push(p.out, t);
+        open.set(t.plate, p.c);
+        continue;
+      }
+      settle(t.plate);
       const prev = open.get(t.plate);
       if (prev) {
         // Comprado otra vez sin venta registrada: el anterior se cierra tal cual.
         prev.estado = "sinventa";
         close(prev);
       }
-      open.set(t.plate, { plate: t.plate, model: t.model, buy: t, sell: null, zeroIn: !(Number(t.price) > 0), key: cvCycleKey(t.plate, t) });
+      open.set(t.plate, { plate: t.plate, model: t.model, buy: t, sell: null, zeroIn: zero, trips: [], key: cvCycleKey(t.plate, t) });
     } else if (k === "venta") {
+      settle(t.plate);
       const c = open.get(t.plate);
       if (c) {
         open.delete(t.plate);
+        if (zero) {
+          pend.set(t.plate, { c, out: t });
+          continue;
+        }
+        // v160: solo es traspaso si entró Y salió a $ 0; si entró a $ 0 y se
+        // vendió con dinero, es una venta normal (coste 0 + gastos).
         c.sell = t;
-        // v160: solo es traspaso si entró Y salió a $ 0. Si entró a $ 0 y se vendió
-        // con dinero, es una venta normal (coste 0 + los gastos que se apunten).
-        c.estado = c.zeroIn && !(Number(t.price) > 0) ? "traspaso" : "vendido";
+        c.estado = "vendido";
         close(c);
       } else {
-        close({ plate: t.plate, model: t.model, buy: null, sell: t, key: cvCycleKey(t.plate, t), estado: Number(t.price) > 0 ? "sincompra" : "traspaso" });
+        close({ plate: t.plate, model: t.model, buy: null, sell: t, trips: [], key: cvCycleKey(t.plate, t), estado: zero ? "traspaso" : "sincompra" });
       }
     }
   }
+  for (const plate of [...pend.keys()]) settle(plate);
   for (const c of open.values()) {
     c.estado = "almacen";
     close(c);
@@ -258,8 +285,12 @@ function setupCvTracking({ source, rerender, el }) {
   // ---------- Historial: columna «Resultado» y ranking de mediadores ----------
   function resultFor(t) {
     const k = cvKind(t);
-    const c = cycles.find((x) => (k === "venta" ? x.sell === t : x.buy === t));
     const td = el("td", "cvt-res");
+    if (cycles.some((x) => x.trips?.includes(t))) {
+      td.append(el("span", "cvt-st s-z", "↔ Salida y vuelta a $ 0"), el("small", "cvt-sub", "no cuenta: el coche siguió en el taller"));
+      return td;
+    }
+    const c = cycles.find((x) => (k === "venta" ? x.sell === t : x.buy === t));
     if (!c || k === "traspaso") return td;
     if (c.estado === "traspaso") {
       td.appendChild(el("span", "cvt-st s-z", "🔁 Traspaso"));
@@ -368,7 +399,9 @@ function setupCvTracking({ source, rerender, el }) {
         const k = cvKind(it.t);
         const zero = !(Number(it.t.price) > 0);
         const row = el("div", `cvt-ti ${k === "venta" ? "v" : k === "compra" ? "c" : "x"}`);
-        row.appendChild(el("b", "", `${it.t.ts || "Sin fecha"} · ${zero && k !== "traspaso" ? "Traspaso" : k === "compra" ? "Compra" : k === "venta" ? "Venta" : "Traspaso entre particulares"} · ${money(it.t.price)}`));
+        const trip = cyc.some((x) => x.trips?.includes(it.t));
+        row.appendChild(el("b", "", `${it.t.ts || "Sin fecha"} · ${trip ? (k === "venta" ? "Sale a $ 0 (ida y vuelta, no cuenta)" : "Vuelve a $ 0 (ida y vuelta, no cuenta)") : zero && k !== "traspaso" ? "Traspaso" : k === "compra" ? "Compra" : k === "venta" ? "Venta" : "Traspaso entre particulares"} · ${money(it.t.price)}`));
+        if (trip) row.className = "cvt-ti x";
         row.appendChild(el("div", "", `${k === "venta" ? `A ${who(it.t.buyer)}` : `De ${who(it.t.owner)}${k === "traspaso" ? ` a ${who(it.t.buyer)}` : ""}`}${it.t.mediator ? ` · mediador ${who(it.t.mediator)}` : ""}`));
         tl.appendChild(row);
       } else {
