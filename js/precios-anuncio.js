@@ -394,6 +394,8 @@ async function precPublish() {
   if (blob.size > 9.5 * 1024 * 1024) throw new Error("La imagen pesa demasiado para Discord.");
   const img = await precB64(blob);
   const r = await logEmpCall({ precios: { content, img, tipo: blob.type === "image/jpeg" ? "jpg" : "png", por: AUTH.name || "" } });
+  // Función vieja (sin la acción «precios»): responde ok pero no publica nada.
+  if (!(Number(r?.mensajes) > 0)) throw new Error("La función del bot no está actualizada: vuelve a desplegar log-empleados en Supabase con el archivo del paso 18 (v163).");
   const sig = precSigOf(src);
   PREC.sig = sig;
   cvCloud.upsert("app_settings", [{ key: "precios_sig", value: sig }], "key").catch(() => {});
