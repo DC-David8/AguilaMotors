@@ -305,6 +305,8 @@ function setupAuthUI() {
   if (active?.hidden) document.querySelector('nav.tabs .tab[data-tab-target="tab-caja"]')?.click();
   const prodBtn = byId("btn-add-product");
   if (prodBtn) prodBtn.hidden = PROD_CLOUD.ok ? !AUTH.aguila : !hasAccess();
+  const precBtn = byId("btn-prod-anuncio");
+  if (precBtn) precBtn.hidden = !(AUTH.aguila && PROD_CLOUD.ok);
 
   if (AUTH.error) {
     setTimeout(() => alert(`No se pudo entrar con Discord: ${AUTH.error}`), 300);

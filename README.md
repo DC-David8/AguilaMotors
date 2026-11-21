@@ -251,6 +251,14 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 163 · 21 de noviembre de 2026
+
+- **Anuncio de precios automático en Discord.** En la Caja, el Jefe Aguila tiene el botón **📣 Anuncio**: enseña la imagen y el texto con los precios vigentes, deja descargar la imagen y lo publica en el canal de precios (1263156547349905440). Primero va el texto y al final la imagen.
+- Cuando el Jefe Aguila cambia un precio, agrega o quita un producto en la Caja, el bot **edita los mismos mensajes solo** (a los 6 s, juntando los cambios seguidos). Si nada del anuncio cambió, no hace nada. La primera publicación se hace con el botón.
+- Imagen nueva estilo «muro sucio»: título con Rubik Dirt, eslogan con Permanent Marker, secciones con Anton y precios con Chakra Petch (fuentes libres, en `fonts/`). Tabla de tuning por bloques (Estética, Carrocería, Rendimiento), iconos propios, 🦎 en Camaleónica y 🤝 en **Mediación de venta** (antes «Compraventa (papeles)»).
+- El texto incluye ahora **Servicios en el taller** y **Fuera del taller (grúa)**. Donde una gama tiene precios distintos según la pieza, sale el rango (`$1.500–1.550`).
+- Función del bot (paso 18): nueva acción `precios`; solo el Jefe Aguila. Hay que volver a desplegar `log-empleados` y darle al bot en el canal de precios los permisos **Ver canal, Enviar mensajes, Adjuntar archivos** (Gestionar mensajes no hace falta).
+
 ### Versión 162 · 19 de noviembre de 2026
 
 - Compraventa: si un coche sale a $ 0 y vuelve al taller a $ 0 antes de venderse, es un **ida y vuelta** y no cuenta. El coche sigue en el mismo ciclo con su coste de compra (antes salía una pérdida falsa y un segundo ciclo). En el historial esos dos movimientos salen como «↔ Salida y vuelta a $ 0» y en la ficha, en gris.

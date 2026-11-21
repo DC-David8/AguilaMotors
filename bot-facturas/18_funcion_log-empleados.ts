@@ -11,6 +11,8 @@
 // Con { roles: {...} } pone y quita los roles del taller en Discord.
 // Con { nitro: true } mantiene además los 4 mensajes del canal de licencias de
 // nitro (inversiones, asignación, normas e historial; tablas del paso 20).
+// Con { precios: {content, img} } publica (o edita) el anuncio de precios:
+// el texto y al final la imagen (solo el Jefe Aguila; v163).
 //
 // Qué hace: mantiene un mensaje por empleado en el canal del log. La página
 // la llama al dar de alta, editar, cambiar de rango, despedir o readmitir, y
@@ -21,6 +23,7 @@ const API = "https://discord.com/api/v10";
 const CANAL_LOG = "1263156547052244993"; // #log de empleados
 const CANAL_NITRO = "1562541884222738472"; // #licencias de nitro (paso 20)
 const ROL_JEFATURA = "1430927770938114230";
+const CANAL_PRECIOS = "1263156547349905440"; // #precios (anuncio para clientes)
 
 // Publicar los mensajes de la semana (paso 21) y roles automáticos.
 const GUILD = "1263156546519433328";
@@ -150,7 +153,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < 5; i++) {
       const r = await fetch(`${API}${path}`, {
         ...init,
-        headers: { Authorization: `Bot ${BOT}`, "Content-Type": "application/json", ...(init.headers || {}) },
+        headers: { Authorization: `Bot ${BOT}`, ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }), ...(init.headers || {}) },
       });
       if (r.status !== 429) return r;
       const j = await r.json().catch(() => ({}));
@@ -223,6 +226,81 @@ Deno.serve(async (req) => {
       body: JSON.stringify([{ semana, clave, msg_ids: ids, at: new Date().toISOString(), por: limpio(p?.por, 40) || null }]),
     });
     return { ok: true, publicados, editados, mensajes: ids.length, editado: editados > 0 && !publicados };
+  }
+
+  // -------------------------------------------------------------- PRECIOS ---
+  // Texto troceado y, en el último mensaje, la imagen. Si siguen todos los
+  // mensajes y salen los mismos trozos, se editan; si no, se publican de nuevo
+  // en orden (así la imagen siempre queda al final).
+  async function precios(p: any) {
+    const aguila = await fetch(`${SB_URL}/rest/v1/rpc/es_jefe_aguila`, {
+      method: "POST",
+      headers: { apikey: ANON!, Authorization: auth, "Content-Type": "application/json" },
+      body: "{}",
+    }).then((r) => (r.ok ? r.json() : false)).catch(() => false);
+    if (aguila !== true) return { ok: false, error: "El anuncio de precios solo lo publica el Jefe Aguila." };
+    const content = String(p?.content || "").replace(/@(everyone|here)/g, "@\u200b$1").trim();
+    if (!content) return { ok: false, error: "El texto está vacío." };
+    let bytes: Uint8Array;
+    try {
+      const bin = atob(String(p?.img || ""));
+      bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    } catch {
+      return { ok: false, error: "La imagen no llegó bien." };
+    }
+    if (bytes.length < 1000) return { ok: false, error: "Falta la imagen." };
+    if (bytes.length > 9.8 * 1024 * 1024) return { ok: false, error: "La imagen pesa demasiado para Discord." };
+    const SEMANA = "2000-01-01";
+    const prev = await sb(`pub_msgs?select=msg_ids&semana=eq.${SEMANA}&clave=eq.precios`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    if (prev === null) return { ok: false, error: "Falta la tabla de publicaciones (ejecuta el SQL 21 en Supabase)." };
+    const old: string[] = Array.isArray(prev?.[0]?.msg_ids) ? prev[0].msg_ids : [];
+    const parts = trozos(content);
+    const sin = { parse: [] as string[] };
+    const jpg = p?.tipo === "jpg";
+    const FILE = `precios-aguila-motors.${jpg ? "jpg" : "png"}`;
+    const imgBody = () => {
+      const fd = new FormData();
+      fd.append("payload_json", JSON.stringify({ content: "", allowed_mentions: sin, attachments: [{ id: 0, filename: FILE }] }));
+      fd.append("files[0]", new Blob([bytes], { type: jpg ? "image/jpeg" : "image/png" }), FILE);
+      return fd;
+    };
+    const ruta = (id = "") => `/channels/${CANAL_PRECIOS}/messages${id ? `/${id}` : ""}`;
+    const noPuede = (st: number) => (st === 403 ? "El bot no puede escribir en el canal de precios (permisos Ver canal, Enviar mensajes y Adjuntar archivos)." : `Discord respondió ${st} con el anuncio de precios.`);
+    const ids: string[] = [];
+    let editado = false;
+    if (old.length === parts.length + 1) {
+      editado = true;
+      for (let i = 0; i <= parts.length && editado; i++) {
+        const r = i < parts.length
+          ? await dc(ruta(old[i]), { method: "PATCH", body: JSON.stringify({ content: parts[i], allowed_mentions: sin }) })
+          : await dc(ruta(old[i]), { method: "PATCH", body: imgBody() });
+        if (r.ok) {
+          ids.push(old[i]);
+          await sleep(250);
+        } else if (r.status === 404) editado = false; // borraron alguno: se publica todo de nuevo
+        else return { ok: false, error: noPuede(r.status) };
+      }
+    }
+    if (!editado) {
+      ids.length = 0;
+      for (const id of old) await dc(ruta(id), { method: "DELETE" });
+      for (const part of parts) {
+        const r = await dc(ruta(), { method: "POST", body: JSON.stringify({ content: part, allowed_mentions: sin }) });
+        if (!r.ok) return { ok: false, error: noPuede(r.status) };
+        ids.push((await r.json()).id);
+        await sleep(400);
+      }
+      const r = await dc(ruta(), { method: "POST", body: imgBody() });
+      if (!r.ok) return { ok: false, error: noPuede(r.status) };
+      ids.push((await r.json()).id);
+    }
+    await sb("pub_msgs?on_conflict=semana,clave", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify([{ semana: SEMANA, clave: "precios", msg_ids: ids, at: new Date().toISOString(), por: limpio(p?.por, 40) || null }]),
+    });
+    return { ok: true, editado, mensajes: ids.length };
   }
 
   // ---------------------------------------------------------------- ROLES ---
@@ -515,6 +593,8 @@ Deno.serve(async (req) => {
     if (res.errores.length) res.ok = res.publicados + res.editados > 0;
     return res;
   }
+
+  if (body.precios) return json(await precios(body.precios));
 
   const emps: Emp[] = await sb(
     "employees?select=id,name,surname,rank,discord,discord_previo,iban,no_pay,alta_at,contratado_at,despedido_at,despedido_motivo,licencia,log_msg_id",

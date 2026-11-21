@@ -658,7 +658,10 @@ function setupCaja() {
   });
   renderEmpMode();
 
-  prodAdmin = setupProductsAdminModal(renderProductGrid);
+  prodAdmin = setupProductsAdminModal(() => {
+    renderProductGrid();
+    if (typeof precAuto === "function") precAuto(); // v163: anuncio de precios en Discord
+  });
   // v156: botones de la Caja (solo el Jefe Aguila): Agregar y Editar / Quitar.
   const editBtn = byId("btn-prod-edit");
   const paintEditBtn = () => {

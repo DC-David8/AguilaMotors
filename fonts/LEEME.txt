@@ -1,0 +1,12 @@
+Fuentes de la imagen de precios (v163). Todas son libres y se pueden usar,
+incluso con fines comerciales, sin pagar nada:
+
+- Rubik Dirt ............ SIL Open Font License 1.1 (OFL)
+- Anton ................. SIL Open Font License 1.1 (OFL)
+- Russo One ............. SIL Open Font License 1.1 (OFL)
+- Chakra Petch .......... SIL Open Font License 1.1 (OFL)
+- Barlow Semi Condensed . SIL Open Font License 1.1 (OFL)
+- Permanent Marker ...... Apache License 2.0
+
+Sacadas de Google Fonts (paquetes @fontsource). Licencias completas:
+https://openfontlicense.org · https://www.apache.org/licenses/LICENSE-2.0
