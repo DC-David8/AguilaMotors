@@ -251,6 +251,12 @@ Al publicar un cambio, sube el número de versión en `index.html`: el pie de p�
 
 ## Bitácora de cambios
 
+### Versión 164 · 21 de noviembre de 2026
+
+- Imagen de precios con **iconos propios al estilo de la Caja** (línea, con el color de cada categoría) que siguen a los emojis del texto de Discord: gamas (moto, todoterreno, coche, deportivo, diamante, camión, helicóptero), Estética/Carrocería/Rendimiento, reparación, limpieza, repostaje, packs, pack completo, kit de desvuelco, rueda, mando, camaleónica (lagarto), neones, nitro (llave y botella), grúa, rescate (salvavidas), tienda (carrito) y mediación de venta (apretón de manos).
+- Emoji del águila del anuncio cambiado al de tu servidor (`1573757688024797350`).
+- Si la función del bot no está actualizada, el anuncio avisa en lugar de decir «Publicado».
+
 ### Versión 163 · 21 de noviembre de 2026
 
 - **Anuncio de precios automático en Discord.** En la Caja, el Jefe Aguila tiene el botón **📣 Anuncio**: enseña la imagen y el texto con los precios vigentes, deja descargar la imagen y lo publica en el canal de precios (1263156547349905440). Primero va el texto y al final la imagen.

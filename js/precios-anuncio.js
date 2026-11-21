@@ -5,27 +5,42 @@
 // mensajes solos. Fuentes de la imagen: libres (OFL/Apache), en /fonts.
 
 const PREC_CANAL_TXT = "canal de precios";
-const PREC_VER = 3; // súbelo si cambia el diseño para que se vuelva a publicar
+const PREC_VER = 4; // súbelo si cambia el diseño para que se vuelva a publicar
 const PREC = { sig: null, busy: false, timer: 0, pending: false };
 
 
 const PIMG_ICONS = {
-  motos: '<circle cx="5.5" cy="16.5" r="3.5"/><circle cx="18.5" cy="16.5" r="3.5"/><path d="M5.5 16.5l4-6h5l4 6M9.5 10.5L8 7H5.5M14.5 10.5l1.5-3.5h2.5"/>',
+  moto: '<circle cx="5.5" cy="16.5" r="3.5"/><circle cx="18.5" cy="16.5" r="3.5"/><path d="M5.5 16.5l4-6h5l4 6M9.5 10.5L8 7H5.5M14.5 10.5l1.5-3.5h2.5"/>',
+  suv: '<path d="M2.5 16.5v-4l2.5-5.5h9.5l4 5.5h3v4z"/><path d="M5 12h15M10.5 7v5"/><circle cx="7" cy="17" r="2"/><circle cx="17.5" cy="17" r="2"/>',
   car: '<path d="M3 15l2-5h14l2 5v3H3z"/><path d="M7 10l2-3h6l2 3"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/>',
-  sport: '<path d="M2 16l3-4 6-2h5l6 3v3H2z"/><circle cx="7" cy="17" r="2"/><circle cx="17.5" cy="17" r="2"/><path d="M11 10l1-2h3"/>',
+  sport: '<path d="M1.5 16.5l1-3.5 6-2.5 3.5-3h4l3 3.5 3 .5.5 5z"/><path d="M8.5 10.5h11"/><circle cx="6.5" cy="17" r="2"/><circle cx="17.5" cy="17" r="2"/>',
   vip: '<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6 3-6M12 9v12"/>',
-  camiones: '<path d="M2 6h11v10H2zM13 10h5l3 3v3h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
-  aereos: '<path d="M21 15l-8-4V5a1.5 1.5 0 0 0-3 0v6l-8 4v2l8-2v4l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-4l8 2z"/>',
+  truck: '<path d="M2 6h11v10H2zM13 10h5l3 3v3h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+  heli: '<path d="M3 4h16M11 4v3"/><path d="M4.5 12.5a5.5 5.5 0 0 1 5.5-5.5h3.5v9H8a3.5 3.5 0 0 1-3.5-3.5z"/><path d="M13.5 9.5h4.5l3 2.5M21 9v6M8 20h9M9.5 16.5V20M15 16.5V20"/>',
   wrench: '<path d="M14 6a4 4 0 0 0 5 5l-9 9a2 2 0 0 1-3-3l9-9a4 4 0 0 0 5-5l-2 2-2-2z"/>',
-  grua: '<path d="M4 20h16M6 20V8l10-4v4"/><path d="M16 8v5a2 2 0 1 1-2 2"/>',
-  tienda: '<path d="M5 8h14l-1 13H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
-  cam: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/>',
-  neon: '<path d="M4 16c2-4 4-4 6 0s4 4 6 0 4-4 4-4"/><path d="M4 10c2-4 4-4 6 0s4 4 6 0"/>',
-  nitro: '<rect x="7" y="5" width="10" height="17" rx="3.8"/><path d="M10.5 5V2.8h3V5M9 2.4h6"/>',
-  doc: '<path d="M6 2h9l4 4v16H6z"/><path d="M15 2v4h4M9 11h7M9 15h7M9 19h4"/>',
-  pin: '<path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
-  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  tools: '<path d="M15.5 4.5a3.5 3.5 0 0 0 4 4.5L9 19.5a1.8 1.8 0 0 1-2.5-2.5L17 6.5a3.5 3.5 0 0 0 4.5-4l-1.8 1.8-1.7-.3-.3-1.7z"/><path d="M3 5.5L5.5 3l3.5 3.5-2.5 2.5zM7.8 7.8l10 10a1.6 1.6 0 0 1-2.3 2.3l-10-10"/>',
+  sponge: '<rect x="3" y="10" width="14" height="10" rx="2.5"/><circle cx="7" cy="14" r=".6"/><circle cx="11" cy="16.5" r=".6"/><circle cx="13" cy="13" r=".6"/><circle cx="18.5" cy="6.5" r="2"/><circle cx="14.5" cy="4" r="1.3"/>',
+  fuel: '<path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M2.5 21h13M6.5 8h5"/><path d="M14 11h1.5a2 2 0 0 1 2 2v3.5a1.5 1.5 0 0 0 3 0V8.5L18 6"/>',
+  box: '<path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5l9 4.5 9-4.5M12 12v9M7.5 5.2l9 4.5"/>',
+  shine: '<path d="M12 4l2.2 4.6 5 .7-3.6 3.5.9 5L12 15.4l-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 .8v1.4M21 7.5l1.2-.7M3 7.5l-1.2-.7M19 19.5l.9 1M5 19.5l-.9 1"/>',
   star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  roll: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 21v-5h-5"/>',
+  tire: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3v5.5M12 15.5V21M3 12h5.5M15.5 12H21"/>',
+  pad: '<path d="M7 8h10a4 4 0 0 1 4 4l.5 4a2.5 2.5 0 0 1-4.5 1.5L15.5 16h-7L7 17.5A2.5 2.5 0 0 1 2.5 16L3 12a4 4 0 0 1 4-4z"/><path d="M7 10.5v3.5M5.25 12.25h3.5"/><circle cx="16" cy="11" r=".7"/><circle cx="18" cy="13.2" r=".7"/>',
+  palette: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2c1-3-2-11-7-11z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/>',
+  repeat: '<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+  sparkles: '<path d="M11 3l1.8 4.7 4.7 1.8-4.7 1.8L11 16l-1.8-4.7L4.5 9.5l4.7-1.8z"/><path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>',
+  flask: '<path d="M9 3h6M10 3v6.5L4.8 18.3A1.8 1.8 0 0 0 6.4 21h11.2a1.8 1.8 0 0 0 1.6-2.7L14 9.5V3"/><path d="M7.2 15h9.6"/>',
+  buoy: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/>',
+  cart: '<path d="M2 3h3l2.5 12h11l2.5-8H6"/><circle cx="9" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>',
+  bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  front: '<path d="M5.5 11l1.5-5h10l1.5 5"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M5.5 17v2.5M18.5 17v2.5"/><circle cx="7.5" cy="14" r="1"/><circle cx="16.5" cy="14" r="1"/>',
+  gear: '<path d="M10.3 2h3.4l.5 2.6 2.2 1 2.2-1.5 2.4 2.4-1.5 2.2 1 2.2 2.5.4v3.4l-2.6.5-1 2.2 1.5 2.2-2.4 2.4-2.2-1.5-2.2 1-.4 2.5h-3.4l-.5-2.6-2.2-1-2.2 1.5-2.4-2.4 1.5-2.2-1-2.2L2 13.7v-3.4l2.6-.5 1-2.2-1.5-2.2 2.4-2.4 2.2 1.5 2.2-1z"/><circle cx="12" cy="12" r="3"/>',
+  lizard: '<ellipse cx="12" cy="4.4" rx="2.1" ry="2.3"/><ellipse cx="12" cy="11.2" rx="2.3" ry="4.4"/><path d="M12 15.6c0 3 1.3 5.4 3.8 5.4 1.8 0 2.4-1.8 1.2-2.7"/><path d="M10.2 9L7 7.6l-.8-1.8M13.8 9L17 7.6l.8-1.8M10.2 13.6L7 15.2l-.8 1.8M13.8 13.6l3.2 1.4.6 1.6"/>',
+  shake: '<path d="M2 8l4-2 4 2 3-2 4 1 5 3"/><path d="M2 8v6l3 2M22 10v5l-3 2"/><path d="M8 14l3 3a1.5 1.5 0 0 0 2.2-2l-3-3"/><path d="M11 17l1.5 1.5a1.5 1.5 0 0 0 2.2-2L13 15M14.5 16.5a1.5 1.5 0 0 0 2.2-2L13 11l-2 1.5a1.8 1.8 0 0 1-2.5-2.5L10 8"/>',
+  pin: '<path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
+  flag: '<path d="M5 21.5V3.5"/><path d="M5 4h14v9H5"/><path d="M5 4h3.5v3H5zM12 4h3.5v3H12zM8.5 7H12v3H8.5zM15.5 7H19v3h-3.5zM5 10h3.5v3H5zM12 10h3.5v3H12z" fill="currentColor" stroke="none"/>',
 };
 
 const pimgIc = (k, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24">${PIMG_ICONS[k] || ""}</svg>`;
@@ -72,7 +87,7 @@ function precImgHTML(d) {
   .pimg .pcard::before{content:"";position:absolute;left:24px;top:-2px;width:120px;height:4px;border-radius:0 0 4px 4px;background:linear-gradient(90deg,var(--or2),var(--or))}
   .pimg .row3 h2{font-size:36px;gap:10px}.pimg .row3 h2 .ic{width:32px;height:32px}.pimg .row3 li{font-size:22px}.pimg .row3 li .p{font-size:23px}
   .pimg h2{margin:0 0 12px;font:400 44px/1 Anton,sans-serif;text-transform:uppercase;color:#fff;display:flex;align-items:center;gap:14px;letter-spacing:.5px}
-  .pimg h2 .ic{color:var(--or);width:40px;height:40px;stroke-width:2}
+  .pimg h2 .ic{color:var(--c,var(--or));width:40px;height:40px;stroke-width:2}
   .pimg h2 .emo{font:400 34px/1 "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}
   .pimg h2 em{font-style:normal;color:var(--or)}
   .pimg h2 small{font:600 20px Barlow;color:#bfb2a6;text-transform:none;margin-left:auto;letter-spacing:0}
@@ -81,7 +96,7 @@ function precImgHTML(d) {
   .tt th{text-transform:uppercase;position:static;text-align:center}
   table.tt{width:100%;margin:0;background:none;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:24px}
   .tt th{font:400 19px Russo,sans-serif;color:#efe6dc;text-transform:uppercase;padding:6px 4px 12px;vertical-align:bottom;border-bottom:2px solid var(--or)}
-  .tt th .ic{display:block;margin:0 auto 6px;width:40px;height:40px;color:var(--or2);stroke-width:1.6}
+  .tt th .ic{display:block;margin:0 auto 6px;width:40px;height:40px;color:var(--c,var(--or2));stroke-width:1.6}
   .tt th.first{text-align:left;color:var(--or);font-size:22px;padding-left:12px}
   .tt th small{display:block;font:700 13px Barlow;color:var(--or);letter-spacing:.15em}
   .tt td{padding:7px 4px;text-align:center;font:700 25px Chakra,sans-serif;color:#fff;border-bottom:1px solid rgba(255,255,255,.06)}
@@ -90,6 +105,7 @@ function precImgHTML(d) {
   .tt th.vip{background:linear-gradient(180deg,transparent,rgba(255,180,60,.12));border-radius:12px 12px 0 0}
   .tt tr.g td{padding:14px 12px 5px;border:0;text-align:left;font:400 16px Russo,sans-serif;letter-spacing:.3em;color:var(--or)}
   .tt tr.g td span{display:inline-flex;align-items:center;gap:10px}
+  .tt tr.g td .ic{width:20px;height:20px;color:var(--c);stroke-width:2}
   .tt tr.g td span::after{content:"";width:1100px;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
   .tt tr.ftr td{background:linear-gradient(90deg,#ff8a1c,#ff5e00);color:#fff;font-size:29px;border:0;text-shadow:0 2px 0 rgba(0,0,0,.25);padding:12px 4px}
   .tt tr.ftr td.n{font:400 30px Anton,sans-serif;letter-spacing:.5px;border-radius:12px 0 0 12px;padding-left:14px}
@@ -103,7 +119,7 @@ function precImgHTML(d) {
   .pimg ul{list-style:none;margin:0;padding:0}
   .pimg li{display:flex;align-items:center;gap:12px;padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.07);font:600 24px Barlow}
   .pimg li:last-child{border-bottom:0}
-  .pimg li .ic{color:var(--or);width:22px;height:22px;flex:none}
+  .pimg li .ic{color:var(--c,var(--or));width:27px;height:27px;flex:none;stroke-width:1.9}
   .pimg li .t{flex:1;min-width:0;line-height:1.1}
   .pimg li .t small{display:block;font:600 15px Barlow;color:var(--or2);letter-spacing:.03em;margin-top:2px}
   .pimg li .p{font:700 25px Chakra,sans-serif;color:#fff;white-space:nowrap}
@@ -131,9 +147,9 @@ function precImgHTML(d) {
   const vipIdx = d.cols.findIndex((c) => c.key === "gama_vip");
   const td = (v, i) => `<td class="${i === vipIdx ? "vip" : ""}">${pimgMoney(v)}</td>`;
   const table = `<table class="tt"><colgroup><col style="width:250px">${d.cols.map((c)=>`<col${c.key==="camiones"||c.key==="gama_media"?' style="width:150px"':""}>`).join("")}</colgroup><thead><tr><th class="first">Modificación</th>${d.cols
-    .map((c, i) => `<th class="${i === vipIdx ? "vip" : ""}">${pimgIc(c.icon)}${pimgEsc(c.label)}${c.sub ? `<small>${pimgEsc(c.sub)}</small>` : ""}</th>`)
+    .map((c, i) => `<th class="${i === vipIdx ? "vip" : ""}" style="--c:${c.color}">${pimgIc(c.icon)}${pimgEsc(c.label)}${c.sub ? `<small>${pimgEsc(c.sub)}</small>` : ""}</th>`)
     .join("")}</tr></thead><tbody>${d.groups
-    .map((g) => `<tr class="g"><td colspan="${d.cols.length + 1}"><span>${pimgEsc(g.label)}</span></td></tr>` + g.rows.map((r) => `<tr><td class="n">${pimgEsc(r.name)}</td>${r.prices.map(td).join("")}</tr>`).join(""))
+    .map((g) => `<tr class="g"><td colspan="${d.cols.length + 1}"><span style="--c:${g.color}">${pimgIc(g.icon)}${pimgEsc(g.label)}</span></td></tr>` + g.rows.map((r) => `<tr><td class="n">${pimgEsc(r.name)}</td>${r.prices.map(td).join("")}</tr>`).join(""))
     .join("")}<tr><td colspan="${d.cols.length + 1}" style="border:0;padding:6px"></td></tr><tr class="ftr"><td class="n">${pimgIc("star")}Full Tuning</td>${d.full.map((v) => `<td>${pimgMoney(v)}</td>`).join("")}</tr></tbody></table>`;
   return `<style>${css}</style><div class="pimg">
   <div class="flag"></div>
@@ -141,25 +157,25 @@ function precImgHTML(d) {
     <div class="brand"><h1>Aguila <span>Motors</span></h1><div class="tag">TALLER <b>·</b> MODIFICACIONES <b>·</b> SERVICIOS</div></div>
     <div class="slogan">Tu vehículo,<br>nuestra <span>pasión</span></div><div class="speed"></div></div>
   <div class="wrap">
-    <section class="pcard"><h2>${pimgIc("wrench")}Modificaciones <em>de vehículos</em><small>Precio por pieza, según la gama</small></h2>${table}
+    <section class="pcard" style="--c:#ffd966"><h2>${pimgIc("wrench")}Modificaciones <em>de vehículos</em><small>Precio por pieza, según la gama</small></h2>${table}
       <div class="note"><b>💎 Gama VIP:</b> ${pimgEsc(d.vipNote)}</div></section>
     <div class="row2">
       <div class="col">
-        <section class="pcard"><h2>${pimgIc("wrench")}Servicios <em>en el taller</em></h2>${list(d.taller, "wrench")}</section>
-        <section class="pcard"><h2>${pimgIc("tienda")}Tienda</h2>${list(d.tienda, "tienda")}</section>
+        <section class="pcard" style="--c:#8ff0c8"><h2>${pimgIc("tools")}Servicios <em>en el taller</em></h2>${list(d.taller, "wrench")}</section>
+        <section class="pcard" style="--c:#ffc0db"><h2>${pimgIc("cart")}Tienda</h2>${list(d.tienda, "cart")}</section>
       </div>
-      <section class="pcard"><h2>${pimgIc("grua")}Fuera del taller <em>(grúa)</em></h2>${list(d.grua, "wrench")}
+      <section class="pcard" style="--c:#d3dce8"><h2>${pimgIc("truck")}Fuera del taller <em>(grúa)</em></h2>${list(d.grua, "wrench")}
         <div class="warn">⚠ El desplazamiento se cobra aparte, en cualquier zona del mapa.</div>
-        <h3>DESPLAZAMIENTO Y RESCATE</h3>${list(d.gruaExtra, "grua")}</section>
+        <h3>DESPLAZAMIENTO Y RESCATE</h3>${list(d.gruaExtra, "truck")}</section>
     </div>
     <div class="row3">
-      <section class="pcard"><h2><span class="emo">🦎</span>Pintura <em>camaleónica</em></h2>${list(d.cam, "cam")}</section>
-      <section class="pcard"><h2>${pimgIc("neon")}Neones <em>RGB</em></h2>${list(d.neon, "neon")}</section>
-      <section class="pcard"><h2><span class="emo">🤝</span>Mediación <em>de venta</em></h2>${list(d.cv, "doc")}</section>
+      <section class="pcard" style="--c:#ffb3d9"><h2>${pimgIc("lizard")}Pintura <em>camaleónica</em></h2>${list(d.cam, "palette")}</section>
+      <section class="pcard" style="--c:#f0b3ff"><h2>${pimgIc("bulb")}Neones <em>RGB</em></h2>${list(d.neon, "sparkles")}</section>
+      <section class="pcard" style="--c:#ffaaa3"><h2>${pimgIc("shake")}Mediación <em>de venta</em></h2>${list(d.cv, "car")}</section>
     </div>
-    <section class="pcard"><h2>${pimgIc("bolt")}<em>Nitro</em><small>Pregunta por él en el taller</small></h2><div class="nitro">${list(d.nitro.slice(0, 1), "nitro")}${list(d.nitro.slice(1), "nitro")}</div></section>
+    <section class="pcard" style="--c:#8ff7ff"><h2>${pimgIc("bolt")}<em>Nitro</em><small>Pregunta por él en el taller</small></h2><div class="nitro">${list(d.nitro.slice(0, 1), "wrench")}${list(d.nitro.slice(1), "flask")}</div></section>
   </div>
-  <div class="loc"><div>${pimgIc("pin")}Parcela 7231</div><div>${pimgIc("grua")}¿No puedes venir? Pide un mecánico: vamos donde estés</div></div>
+  <div class="loc"><div>${pimgIc("flag")}Parcela 7231</div><div>${pimgIc("wrench")}¿No puedes venir? Pide un mecánico: vamos donde estés</div></div>
   <div class="ft"><div class="ln"></div><div class="c"><b>Aguila <span>Motors</span></b><div>Precios actualizados al ${pimgEsc(d.fecha)}</div></div><div class="ln r"></div></div>
   <div class="flag b" style="margin-top:22px"></div>
 </div>`;
@@ -169,13 +185,13 @@ function precImgHTML(d) {
 function precImgData(priceOf, fecha, extra = {}) {
   const plus = (cat, icon) => (extra[cat] || []).map((x) => ({ name: x.name, price: x.price, icon }));
   const cols = [
-    { key: "motos", label: "Motos", icon: "motos" },
-    { key: "gama_baja", label: "Gama Baja", icon: "car" },
-    { key: "gama_media", label: "Gama Media", icon: "car" },
-    { key: "gama_alta", label: "Gama Alta", icon: "sport" },
-    { key: "gama_vip", label: "Gama VIP", icon: "vip", sub: "DONACIÓN" },
-    { key: "camiones", label: "Camiones", icon: "camiones" },
-    { key: "aereos", label: "Aéreos", icon: "aereos" },
+    { key: "motos", label: "Motos", icon: "moto", color: "#7ff0dd" },
+    { key: "gama_baja", label: "Gama Baja", icon: "suv", color: "#a7ec8c" },
+    { key: "gama_media", label: "Gama Media", icon: "car", color: "#ffe27a" },
+    { key: "gama_alta", label: "Gama Alta", icon: "sport", color: "#ffb15c" },
+    { key: "gama_vip", label: "Gama VIP", icon: "vip", sub: "DONACIÓN", color: "#dcb0ff" },
+    { key: "camiones", label: "Camiones", icon: "truck", color: "#a9c3ff" },
+    { key: "aereos", label: "Aéreos", icon: "heli", color: "#9fe0ff" },
   ];
   const gl = Object.fromEntries(GAMAS.map((g) => [g.key, g.label]));
   const row = (piece) => ({ name: piece, prices: cols.map((c) => priceOf(`${piece} (${gl[c.key]})`)) });
@@ -183,51 +199,51 @@ function precImgData(priceOf, fecha, extra = {}) {
   return {
     cols,
     groups: [
-      { label: "ESTÉTICA", rows: ["Pintura", "Neones", "Cambio de Luces", "Ruedas", "Humo de Ruedas", "Claxon", "Tintado de Lunas"].map(row) },
-      { label: "CARROCERÍA", rows: ["Carrocería"].map(row) },
-      { label: "RENDIMIENTO", rows: ["Turbo", "Motor", "Transmisión", "Blindaje", "Suspensión", "Frenos"].map(row) },
+      { label: "ESTÉTICA", icon: "palette", color: "#ffb3d9", rows: ["Pintura", "Neones", "Cambio de Luces", "Ruedas", "Humo de Ruedas", "Claxon", "Tintado de Lunas"].map(row) },
+      { label: "CARROCERÍA", icon: "front", color: "#a9c3ff", rows: ["Carrocería"].map(row) },
+      { label: "RENDIMIENTO", icon: "gear", color: "#8ff7ff", rows: ["Turbo", "Motor", "Transmisión", "Blindaje", "Suspensión", "Frenos"].map(row) },
     ],
     full: cols.map((c) => priceOf(`Full Tuning (${gl[c.key]})`)),
     vipNote: "todos los vehículos por donación al servidor (Prime, Deluxe, VIP, únicos, de coleccionista y personalizados) se cobran con estos precios, sea moto, coche, avión o camión. También su Full Tuning.",
     taller: [
-      s("Reparación (Taller)", "Reparación"),
-      s("Limpieza (Taller)", "Limpieza"),
-      s("Repostaje (Taller)", "Repostaje"),
-      s("Repostaje + Limpieza (Taller)", "Repostaje + Limpieza", { pack: "PACK" }),
-      s("Reparación + Repostaje (Taller)", "Reparación + Repostaje", { pack: "PACK" }),
-      s("Reparación + Limpieza (Taller)", "Reparación + Limpieza", { pack: "PACK" }),
-      s("Reparación + Limpieza + Repostaje (Taller)", "Reparación + Limpieza + Repostaje", { pack: "COMPLETO", big: true }),
+      s("Reparación (Taller)", "Reparación", { icon: "wrench" }),
+      s("Limpieza (Taller)", "Limpieza", { icon: "sponge" }),
+      s("Repostaje (Taller)", "Repostaje", { icon: "fuel" }),
+      s("Repostaje + Limpieza (Taller)", "Repostaje + Limpieza", { pack: "PACK", icon: "box" }),
+      s("Reparación + Repostaje (Taller)", "Reparación + Repostaje", { pack: "PACK", icon: "box" }),
+      s("Reparación + Limpieza (Taller)", "Reparación + Limpieza", { pack: "PACK", icon: "box" }),
+      s("Reparación + Limpieza + Repostaje (Taller)", "Reparación + Limpieza + Repostaje", { pack: "COMPLETO", big: true, icon: "shine" }),
       ...plus("servicios_taller"),
     ],
     grua: [
-      s("Reparación (Grúa)", "Reparación"),
-      s("Bayetas o Limpieza (Grúa)", "Bayetas o Limpieza"),
-      s("Repostaje (Grúa)", "Repostaje"),
-      s("Repostaje + Limpieza (Grúa)", "Repostaje + Limpieza", { pack: "PACK" }),
-      s("Reparación + Repostaje (Grúa)", "Reparación + Repostaje", { pack: "PACK" }),
-      s("Reparación + Limpieza (Grúa)", "Reparación + Limpieza", { pack: "PACK" }),
-      s("Reparación + Limpieza + Repostaje (Grúa)", "Reparación + Limpieza + Repostaje", { pack: "COMPLETO", big: true }),
+      s("Reparación (Grúa)", "Reparación", { icon: "wrench" }),
+      s("Bayetas o Limpieza (Grúa)", "Bayetas o Limpieza", { icon: "sponge" }),
+      s("Repostaje (Grúa)", "Repostaje", { icon: "fuel" }),
+      s("Repostaje + Limpieza (Grúa)", "Repostaje + Limpieza", { pack: "PACK", icon: "box" }),
+      s("Reparación + Repostaje (Grúa)", "Reparación + Repostaje", { pack: "PACK", icon: "box" }),
+      s("Reparación + Limpieza (Grúa)", "Reparación + Limpieza", { pack: "PACK", icon: "box" }),
+      s("Reparación + Limpieza + Repostaje (Grúa)", "Reparación + Limpieza + Repostaje", { pack: "COMPLETO", big: true, icon: "shine" }),
     ],
     gruaExtra: [
-      s("Grúa Terrestre", "", { sub: "Desplazamiento", icon: "grua" }),
-      s("Grúa Aérea", "", { sub: "Desplazamiento en helicóptero", icon: "aereos" }),
-      s("Rescate Aéreo Completo", "", { sub: "Grúa aérea + reparación + limpieza + repostaje", icon: "aereos", big: true }),
+      s("Grúa Terrestre", "", { sub: "Desplazamiento", icon: "truck" }),
+      s("Grúa Aérea", "", { sub: "Desplazamiento en helicóptero", icon: "heli" }),
+      s("Rescate Aéreo Completo", "", { sub: "Grúa aérea + reparación + limpieza + repostaje", icon: "buoy", big: true }),
       ...plus("servicios_grua", "grua"),
     ],
-    tienda: [s("Kit de Desvuelco"), s("Rueda"), s("Mando de Neones RGB"), s("Bayetas"), ...plus("tienda")],
+    tienda: [s("Kit de Desvuelco", "", { icon: "roll" }), s("Rueda", "", { icon: "tire" }), s("Mando de Neones RGB", "", { icon: "pad" }), s("Bayetas", "", { icon: "sponge" }), ...plus("tienda")],
     cam: [
-      s("Pintura Camaleónica (primera vez)", "Primera vez", { big: true }),
-      s("Cambio de Color Camaleónico", "Cambio de color"),
-      s("Cambio de Color Camaleónico (Aéreos)", "Cambio de color (aéreos)"),
+      s("Pintura Camaleónica (primera vez)", "Primera vez", { big: true, icon: "palette" }),
+      s("Cambio de Color Camaleónico", "Cambio de color", { icon: "repeat" }),
+      s("Cambio de Color Camaleónico (Aéreos)", "Cambio de color (aéreos)", { icon: "heli" }),
       ...plus("camaleonica"),
     ],
-    neon: [s("Instalación de Neones RGB", "Instalación de neones RGB", { big: true }), s("Mando de Neones RGB", "Mando de neones RGB", { sub: "Se compra en la tienda" }), ...plus("neones")],
+    neon: [s("Instalación de Neones RGB", "Instalación de neones RGB", { big: true }), s("Mando de Neones RGB", "Mando de neones RGB", { sub: "Se compra en la tienda", icon: "pad" }), ...plus("neones")],
     nitro: [s("Instalación de Nitro ⚠", "Instalación de nitro", { big: true }), s("Botella de Nitro", "Botella de nitro"), ...plus("nitro")],
     cv: [
-      s("Mediación de Venta (Gama Baja)", "Gama Baja"),
-      s("Mediación de Venta (Gama Media)", "Gama Media"),
-      s("Mediación de Venta (Gama Alta)", "Gama Alta"),
-      s("Mediación de Venta (Gama Camiones)", "Camiones"),
+      s("Mediación de Venta (Gama Baja)", "Gama Baja", { icon: "suv" }),
+      s("Mediación de Venta (Gama Media)", "Gama Media", { icon: "car" }),
+      s("Mediación de Venta (Gama Alta)", "Gama Alta", { icon: "sport" }),
+      s("Mediación de Venta (Gama Camiones)", "Camiones", { icon: "truck" }),
       ...plus("compraventa"),
     ],
     fecha,
