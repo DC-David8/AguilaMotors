@@ -5,7 +5,7 @@
 // mensajes solos. Fuentes de la imagen: libres (OFL/Apache), en /fonts.
 
 const PREC_CANAL_TXT = "canal de precios";
-const PREC_VER = 2; // súbelo si cambia el diseño para que se vuelva a publicar
+const PREC_VER = 3; // súbelo si cambia el diseño para que se vuelva a publicar
 const PREC = { sig: null, busy: false, timer: 0, pending: false };
 
 
@@ -298,7 +298,7 @@ function precText(src, fecha) {
   const cvIc = { "Gama Baja": "🚙", "Gama Media": "🚗", "Gama Alta": "🏎️", Camiones: "🚛" };
   const sec = (title, body, foot = "") => (body ? `## ${title}\n${body}${foot ? `\n${foot}` : ""}` : "");
   return [
-    `# <:aguilamotors:1553837572307030126> TABLA DE PRECIOS · AGUILA MOTORS\n-# Tu vehículo, nuestra pasión. <:aguila:1573757761911660656> · Precios actualizados al ${fecha}`,
+    `# <:aguilamotors:1553837572307030126> TABLA DE PRECIOS · AGUILA MOTORS\n-# Tu vehículo, nuestra pasión. <:aguila:1573757688024797350> · Precios actualizados al ${fecha}`,
     `━━━━━━━━━━━━━━━━━━━━\n## 🔧 MODIFICACIONES DE VEHÍCULOS\n-# Precio **por pieza**, según la gama del vehículo:\n> 🎨 **Estética** → Pintura · Neones · Luces · Ruedas · Humo de ruedas · Claxon · Tintado\n> 🚘 **Carrocería**\n> ⚙️ **Rendimiento** → Turbo · Motor · Transmisión · Blindaje · Suspensión · Frenos\n> ⭐ **Full Tuning** → todo de una vez`,
     gamaTxt + (rango ? "\n-# Donde ves dos precios, depende de la pieza: el de cada una está en la imagen de abajo 👇" : ""),
     sec("🛠️ SERVICIOS EN EL TALLER", q(D.taller, svcIcon)),
@@ -309,7 +309,7 @@ function precText(src, fecha) {
     sec("⚡ NITRO", q(D.nitro, (x) => (/Instal/.test(x.name) ? "🔧" : /Botella/.test(x.name) ? "🧪" : "🔹")), "-# 🤫 Pregunta por él en el taller."),
     sec("🤝 MEDIACIÓN DE VENTA", q(D.cv, (x) => cvIc[x.name] || "📄")),
     `━━━━━━━━━━━━━━━━━━━━\n### 📍 ¿Dónde estamos?\n> 🏁 **Parcela 7231** · o pide un mecánico: ¡te atendemos donde estés! 🔧\n-# 👷 Mecánicos: el cobro exacto y el concepto para el datáfono, en la **[página del taller](<https://dc-david8.github.io/AguilaMotors/>)**.`,
-    `<:aguilamotors:1553837572307030126> **AGUILA MOTORS** · *Tu vehículo, nuestra pasión.* 🔥<:aguila:1573757761911660656>`,
+    `<:aguilamotors:1553837572307030126> **AGUILA MOTORS** · *Tu vehículo, nuestra pasión.* 🔥<:aguila:1573757688024797350>`,
   ]
     .filter(Boolean)
     .join("\n\n");
